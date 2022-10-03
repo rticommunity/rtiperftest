@@ -394,6 +394,18 @@ void ParameterManager::initialize()
     create("doNotDropNetworkCapture", doNotDropNetworkCapture);
   #endif
 
+    Parameter<std::string> *outputFile = new Parameter<std::string>("stdout");
+    outputFile->set_command_line_argument("-outputFile", "<file>");
+    outputFile->set_description(
+            "Save the data information (but not the summary info) to a file.\n"
+            "Default: Stdout (terminal output)");
+    outputFile->set_type(T_STR);
+    outputFile->set_extra_argument(YES);
+    outputFile->set_group(GENERAL);
+    outputFile->set_supported_middleware(Middleware::ALL);
+    create("outputFile", outputFile);
+
+
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
     preallocateFragmentation->set_description(
@@ -963,8 +975,8 @@ void ParameterManager::initialize()
     peer->set_command_line_argument("-peer", "<address>");
     peer->set_description(
             "Adds a peer to the peer host address list.\n"
-            "If -rawTransport is used, a optional ID of the subscriber could be"
-            "provied\n"
+            "If -rawTransport is used, a optional ID of the subscriber could be\n"
+            "provided.\n"
             "This argument may be repeated to indicate multiple peers");
     peer->set_type(T_VECTOR_STR);
     peer->set_extra_argument(YES);
@@ -1105,13 +1117,12 @@ void ParameterManager::initialize()
             "-transportPublicAddress", "<ip>");
     transportPublicAddress->set_description(
             "For TCP: Public IP address and port (WAN address\n"
-            "and port) (separated with ‘:’ ) related\n"
+            "and port) (separated with \':\' ) related\n"
             "to the TCP transport instantiation. This is\n"
             "required when using server mode.\n"
             #ifdef PERFTEST_CONNEXT_PRO_610
             "For UDPv4_WAN (Real-Time WAN Transport): Public address of the UDPv4_WAN\n"
-            "transport instantiation. Format:\n"
-            "<public_ip>:<public_send_port>.\n"
+            "transport instantiation. Format: <public_ip>:<public_send_port>\n"
             "Default: Not Set\n"
             #endif //PERFTEST_CONNEXT_PRO_610
             );
@@ -1145,7 +1156,7 @@ void ParameterManager::initialize()
             "-transportWanServerAddress", "<a>");
     transportWanServerAddress->set_description(
             "Address where to find the WAN Server\n"
-            "Default: Not Set (Required)\n");
+            "Default: Not Set (Required)");
     transportWanServerAddress->set_type(T_STR);
     transportWanServerAddress->set_extra_argument(YES);
     transportWanServerAddress->set_group(TRANSPORT);
@@ -1265,6 +1276,19 @@ void ParameterManager::initialize()
     create("noBlockingSockets", noBlockingSockets);
   #endif
 
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_FAST_QUEUE)
+    //  This parameter is just supported in the traditional C++ language.
+    Parameter<bool> *fastQueue = new Parameter<bool>(false);
+    fastQueue->set_command_line_argument("-fastQueue", "");
+    fastQueue->set_description(
+            "Private option for measuring using FasQueue.\n");
+    fastQueue->set_type(T_BOOL);
+    fastQueue->set_extra_argument(NO);
+    fastQueue->set_group(GENERAL);
+    fastQueue->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("fastQueue", fastQueue);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
@@ -1331,7 +1355,8 @@ void ParameterManager::initialize()
             "Governance file. If specified, the authentication,\n"
             "signing, and encryption arguments are ignored. The\n"
             "governance document configuration will be used instead.\n"
-            "Default: built using the secure options");
+            "Default: Perftest will choose the right governance file\n"
+            "given the rest of the security command line options provided");
     secureGovernanceFile->set_type(T_STR);
     secureGovernanceFile->set_extra_argument(YES);
     secureGovernanceFile->set_group(SECURE);
@@ -1406,6 +1431,19 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RTIDDSMICRO);
     create("secureLibrary", secureLibrary);
+
+    Parameter<std::string> *secureEncryptionAlgo = new Parameter<std::string>();
+    secureEncryptionAlgo->set_command_line_argument("-secureEncryptionAlgorithm", "<value>");
+    secureEncryptionAlgo->set_description(
+            "Set the value for the Encryption Algorithm.\n"
+            "Default: \"aes-128-gcm\"");
+    secureEncryptionAlgo->set_type(T_STR);
+    secureEncryptionAlgo->set_extra_argument(YES);
+    secureEncryptionAlgo->set_group(SECURE);
+    secureEncryptionAlgo->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureEncryptionAlgo", secureEncryptionAlgo);
 
     Parameter<int> *secureDebug = new Parameter<int>(1);
     secureDebug->set_command_line_argument("-secureDebug", "<level>");

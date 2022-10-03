@@ -25,7 +25,7 @@ the certificates from the ``release/2.0`` branch. You can do that by
 using the following git command from the top-level directory of your
 repository:
 
-::
+.. code-block:: console
 
     git checkout release/2.0 -- resource/secure
 
@@ -40,7 +40,7 @@ When building a Windows application, *RTI Perftest* must now link against
 `here <https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/migration_guide/601/product601/security601.html>`__.
 
 This breaks compatibility against previous versions of *RTI Connext DDS*. In order
-to compile against previous versions a manual change has to be made in the `build.bat`
+to compile against previous versions a manual change has to be made in the ``build.bat``
 script:
 
 Search and replace all references for ``crypt32 libcryptoz libsslz`` with ``libeay32z ssleay32z``.
@@ -56,8 +56,9 @@ DDS* versions, since the build scripts make use of certain specific
 parameters in *rtiddsgen* that might change or not be present between
 releases:
 
--  The ``--secure`` and ``--openssl-home`` parameters will not work for
-   versions prior to *RTI Connext DDS* 5.2.5.
+-  The ``--openssl-home`` command-line option will not work for versions prior to *RTI Connext DDS* 5.2.5.
+
+-  The ``--wolfssl-home`` command-line option will not work for versions prior to *RTI Connext DDS* 6.1.1.
 
 -  Java code generation against *RTI Connext DDS 5.2.0.x* will fail
    out-of-the-box. You can disable this by adding the ``--skip-java-build``
@@ -82,7 +83,7 @@ the legacy C# implementation and adopt the new one provided in *RTI ConnextDDS 6
 However, the old implementation can still be tested using the existing code provided in
 the *RTI Perftest 3.2* release branch. You can easily access that code by doing:
 
-::
+.. code-block:: console
 
     git clean -xdf -- srcCs
     git checkout -b feature/3.2 -- srcCs
@@ -90,7 +91,7 @@ the *RTI Perftest 3.2* release branch. You can easily access that code by doing:
 
 For compiling:
 
-::
+.. code-block:: console
 
     build.bat --platform <platform> --nddshome <ConnextDDS installation directory> --cs-build
 
@@ -107,7 +108,7 @@ documented in the Know Issues for *RTI Connext DDS*, when compiling with
 *Visual Studio 2017 Express*, you need to set the `RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION`
 as follows to avoid compilation errors:
 
-::
+.. code-block:: console
 
     set RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION=10.0.16299.0
 
@@ -121,7 +122,7 @@ systems don't support Shared Memory, or the default configuration is not enough 
 *RTI Connext DDS* to work properly. In these cases *RTI Perftest* will show
 errors when trying to create the Participant entity:
 
-::
+.. code-block:: console
 
     [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894a
     [D0001|ENABLE]NDDS_Transport_Shmem_create_recvresource_rrEA:failed to initialize shared memory resource segment for key 0x40894c
@@ -146,7 +147,7 @@ Warning when compiling the *Traditional* C++ API Implementation
 API implementation for *RTI Connext DDS Pro* (in versions prior to 6.0.0) and
 for *RTI Connext DDS Micro*:
 
-::
+.. code-block:: console
 
     In file included from perftestSupport.h:15:0,
                     from perftestSupport.cxx:11:
@@ -164,7 +165,6 @@ These warnings are the result of a known issue in *RTI Code Generator (rtiddsgen
 the code for a const string is generated. This issue will be fixed in future releases of *RTI Connext DDS Micro* and has been
 already fixed for *RTI Connext DDS Pro* 6.0.0.
 
-
 Building RTI Perftest Java API against RTI Connext DDS 5.2.0.x
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -173,7 +173,7 @@ Perftest* now makes use of *Unbounded Sequences*. This feature was not
 added to *RTI Connext DDS* in *5.2.0.x*, so the following error will be
 reported when trying to compile the Java API:
 
-::
+.. code-block:: console
 
     [INFO]: Generating types and makefiles for java.
     [INFO]: Command: "/home/test/nevada/bin/rtiddsgen" -language java -unboundedSupport -replace -package com.rti.perftest.gen -d "/home/test/test-antonio/srcJava" "/home/test/test-antonio/srcIdl/perftest.idl"
@@ -220,12 +220,12 @@ use the ``-debug`` and ``-dynamic`` flags.
 Warnings Compiling on Windows systems when using the *RTI Security* plugin
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-We have found that in certain installations of *Openssl* a missing `pdb` file
+We have found that in certain installations of *Openssl* a missing ``pdb`` file
 causes several warnings when compiling statically *RTI Perftest* for C++
 (Traditional and Modern implementations). The warning that will show should be
 similar to this one:
 
-::
+.. code-block:: console
 
     libeay32z.lib(wp_block.obj) : warning LNK4099: PDB 'lib.pdb' was not found with
     'libeay32z.lib(wp_block.obj)' or at 'rtiperftest\srcCpp11\objs\i86Win32VS2015\lib.pdb';
@@ -245,3 +245,21 @@ no effect.
 
 ``rtiddsgen`` code generator will fail with the following message: ``Option
 -sharedLib is not supported by this version of rtiddsgen``.
+
+Warnings compiling *RTI Connext DDS Secure* in static mode
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to force the use of static SSL libraries (*OpenSSL* or *wolfSSL*) in
+*Pertest*, we use the ``-static`` linker option. That causes in some operative
+systems the linker to show the following warning:
+
+.. code-block:: console
+
+    /bin/ld: /libnddscorez.a(Library.c.o): in function `RTIOsapiLibrary_openEx':
+    Library.c:(.text+0x379): warning: Using 'dlopen' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+    /bin/ld: /libnddscorez.a(SocketUtil.c.o): in function `NDDS_Transport_SocketUtil_V6StringAddress_to_transportAddress':
+    SocketUtil.c:(.text+0x331): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+    /bin/ld: /libcrypto.a(b_sock.o): in function `BIO_gethostbyname':
+    b_sock.c:(.text+0x71): warning: Using 'gethostbyname' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+
+This warning should be innocuous.

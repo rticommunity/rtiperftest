@@ -9,7 +9,7 @@
 #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
   #include "Infrastructure_common.h"
 #elif defined(RTI_LANGUAGE_CPP_MODERN)
-  #define PERFT_TIME_UNIT "us"
+  #define PERFT_TIME_UNIT "μs"
 #endif
 #include <iostream>
 #include <stdio.h>
@@ -19,6 +19,7 @@
 class PerftestPrinter {
 
 protected:
+
     bool _showCPU;
     bool _printIntervals;
     bool _printSummaryHeaders;
@@ -27,11 +28,16 @@ protected:
 public:
     unsigned int _dataLength;
     bool _printHeaders;
+    FILE *_outputFile;
 
     PerftestPrinter() : _printSummaryHeaders(true), _dataLength(100) {};
-    virtual ~PerftestPrinter() {};
+    virtual ~PerftestPrinter() {
+        if (_outputFile != NULL) {
+            fclose(_outputFile);
+        }
+    };
 
-    void initialize(ParameterManager *_PM);
+    bool initialize(ParameterManager *_PM);
 
     virtual void print_latency_header() = 0;
 
@@ -103,7 +109,7 @@ public:
     void print_final_output() {};
 };
 
-class PerftestCSVPrinter : public  PerftestPrinter {
+class PerftestCSVPrinter : public PerftestPrinter {
 public:
     ~PerftestCSVPrinter() {};
     void print_latency_header();
@@ -148,7 +154,7 @@ public:
             double outputCpu);
 };
 
-class PerftestJSONPrinter : public  PerftestPrinter {
+class PerftestJSONPrinter : public PerftestPrinter {
 
 private:
     bool _isJsonInitialized;
@@ -156,10 +162,11 @@ private:
 
 public:
 
-    void initialize(ParameterManager *_PM)
+    bool initialize(ParameterManager *_PM)
     {
-        PerftestPrinter::initialize(_PM);
+        bool ok = PerftestPrinter::initialize(_PM);
         _isJsonInitialized = false;
+        return ok;
     };
 
     ~PerftestJSONPrinter() {};

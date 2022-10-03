@@ -10,7 +10,7 @@ JAVA=`which java`
 test -z "$JAVA" && echo "[ERROR]: java not found in \$PATH" && exit -1
 test -z "$NDDSHOME" && echo "[ERROR]: The NDDSHOME environment variable is not set." && exit -1
 test -z "$RTI_PERFTEST_ARCH" && echo "[ERROR]: The RTI_PERFTEST_ARCH environment variable is not set." && exit -1
-test -z "$RTI_OPENSSL_PATH" && echo "[INFO]: The RTI_OPENSSL_PATH environment variable is not set. Needed for DTLS, TLS and RTI Security Libraries."
+test -z "$RTI_OPENSSL_PATH" && >&2 echo "[INFO]: The RTI_OPENSSL_PATH environment variable is not set. Needed for DTLS, TLS and RTI Security Libraries."
 
 export LD_LIBRARY_PATH=${RTI_OPENSSL_PATH}/${RTI_PERFTEST_ARCH}/release/lib:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${NDDSHOME}/lib/java:${LD_LIBRARY_PATH}

@@ -16,9 +16,17 @@
  * ConnextDDS Pro, we will use the version number of the middleware:
  *
  * Version list:
+ * Ironside -- 7.0.0 -- PERFTEST_CONNEXT_PRO_700
  * Hercules -- 6.1.0 -- PERFTEST_CONNEXT_PRO_610
  */
+
 #if RTI_DDS_VERSION_MAJOR >= 6 && RTI_DDS_VERSION_MINOR >= 1
+    #define PERFTEST_CONNEXT_PRO_610
+#endif
+
+#if RTI_DDS_VERSION_MAJOR >= 7 && RTI_DDS_VERSION_MINOR >= 0
+    #define PERFTEST_CONNEXT_PRO_700
+    // 6.1.X features are also in 7.0.0
     #define PERFTEST_CONNEXT_PRO_610
 #endif
 
@@ -126,6 +134,20 @@ struct PerftestThread* PerftestThread_new(
         void *threadParam);
 
 #endif //#ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
+/*
+ * After 7.0.0 we have changed the name of some RTI utility functions. The following
+ * code is to be able to keep compatibility between 7.0.0, 6.1.X and everything
+ * that will come after. The trick is that now we have a "osapi_file_h", so we should
+ * be able to check if it was loaded or not already.
+ */
+#ifdef osapi_file_h
+  #define PerftestFile_remove RTIOsapiFile_remove
+  #define PerftestFile_exists RTIOsapiFile_exists
+#else
+  #define PerftestFile_remove RTIOsapi_removeFile
+  #define PerftestFile_exists RTIOsapiUtility_fileExists
+#endif //osapi_file_h
 
 /********************************************************************/
 /* Transport Related functions */

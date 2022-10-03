@@ -254,7 +254,12 @@ int perftest_cpp::Run(int argc, char *argv[])
     } else if (outputFormat == "legacy") {
         _printer = new PerftestLegacyPrinter();
     }
-    _printer->initialize(&_PM);
+
+    if (!_printer->initialize(&_PM)) {
+        fprintf(stderr,
+            "[Error] Issue initializing printer class.\n");
+        return -1;
+    }
 
     print_configuration();
 
@@ -526,12 +531,22 @@ bool perftest_cpp::validate_input()
     }
 
     // Manage the lowResolutionClock parameter
-    if (_PM.get<bool>("lowResolutionClock")
-                && _PM.get<unsigned long long>("latencyCount") != 1) {
+    if (_PM.get<bool>("lowResolutionClock")) {
+        if (_PM.get<unsigned long long>("latencyCount") != 1) {
             fprintf(stderr,
-            "The -lowResolutionClock option should only be used if "
-            "latencyCount is 1. Ignoring command line option.\n");
-            _PM.set<bool>("lowResolutionClock", false);
+                "The -lowResolutionClock option should only be used if "
+                "latencyCount is 1.\n");
+            return false;
+        }
+
+        if (_PM.is_set("sleep")
+                || _PM.is_set("pubRate")
+                || _PM.is_set("spin")) {
+            fprintf(stderr,
+                "The -lowResolutionClock cannot be used with the "
+                "sleep, spin or pubRate command-line options.\n");
+            return false;
+        }
     }
 
     #ifdef RTI_FLATDATA_AVAILABLE
@@ -1683,27 +1698,22 @@ public:
 
         now = PerftestClock::getInstance().getTime();
 
-        switch (message.size)
-        {
+        switch (message.size) {
             // Initializing message, don't process
             case perftest_cpp::INITIALIZE_SIZE:
                 return;
-
             // Test finished message
             case perftest_cpp::FINISHED_SIZE:
                 return;
-
             // Data length is changing size
             case perftest_cpp::LENGTH_CHANGED_SIZE:
                 print_summary_latency();
                 return;
-
             default:
                 break;
         }
 
-        if (last_data_length != message.size)
-        {
+        if (last_data_length != message.size) {
             latency_sum = 0;
             latency_sum_square = 0;
             latency_min = perftest_cpp::LATENCY_RESET_VALUE;
@@ -1713,86 +1723,79 @@ public:
 
         sec = message.timestamp_sec;
         usec = message.timestamp_usec;
-        sentTime = ((unsigned long long)sec << 32) | (unsigned long long)usec;
+        sentTime = ((unsigned long long) sec << 32) | (unsigned long long) usec;
 
-        if (now >= sentTime)
-        {
-            latency = (unsigned long)(now - sentTime);
-
+        if (now >= sentTime) {
+            latency = (unsigned long) (now - sentTime);
             // keep track of one-way latency
             latency /= 2;
-        }
-        else
-        {
+
+            // store value for percentile calculations
+            if (_latency_history != NULL) {
+                if (count >= _num_latency) {
+                    fprintf(stderr,
+                            "Too many latency pongs received."
+                            " Do you have more than 1 app with "
+                            "-pidMultiPubTest = 0 or"
+                            " -sidMultiSubTest 0?\n");
+                    return;
+                } else {
+                    _latency_history[count] = latency;
+                }
+            }
+
+            if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
+                latency_min = latency;
+                latency_max = latency;
+            } else {
+                if (latency < latency_min) {
+                    latency_min = latency;
+                } else if (latency > latency_max) {
+                    latency_max = latency;
+                }
+            }
+
+            ++count;
+            latency_sum += latency;
+            latency_sum_square +=
+                    ((unsigned long long) latency
+                     * (unsigned long long) latency);
+
+            // if data sized changed, print out stats and zero counters
+            if (last_data_length != message.size) {
+                last_data_length = message.size;
+                _printer->_dataLength =
+                        last_data_length + perftest_cpp::OVERHEAD_BYTES;
+                _printer->print_latency_header();
+            } else {
+                if (printIntervals) {
+                    latency_ave = (double) latency_sum / (double) count;
+                    latency_std =
+                            sqrt((double) latency_sum_square / (double) count
+                                 - (latency_ave * latency_ave));
+
+                    if (showCpu) {
+                        outputCpu = cpu.get_cpu_instant();
+                    }
+                    _printer->print_latency_interval(
+                            latency,
+                            latency_ave,
+                            latency_std,
+                            latency_min,
+                            latency_max,
+                            outputCpu);
+                }
+            }
+        } else {
             fprintf(stderr,
                     "Clock skew suspected: received time %llu usec,"
                     " sent time %llu usec\n",
                     now,
                     sentTime);
             ++clock_skew_count;
-            return;
         }
 
-        // store value for percentile calculations
-        if (_latency_history != NULL)
-        {
-            if (count >= _num_latency)
-            {
-                fprintf(stderr,"Too many latency pongs received."
-                " Do you have more than 1 app with -pidMultiPubTest = 0 or"
-                " -sidMultiSubTest 0?\n");
-                return;
-            }
-            else
-            {
-                _latency_history[count] = latency;
-            }
-        }
-
-        if (latency_min == perftest_cpp::LATENCY_RESET_VALUE) {
-            latency_min = latency;
-            latency_max = latency;
-        }
-        else {
-            if (latency < latency_min) {
-                latency_min = latency;
-            } else if (latency > latency_max) {
-                latency_max = latency;
-            }
-        }
-
-        ++count;
-        latency_sum += latency;
-        latency_sum_square += ((unsigned long long)latency * (unsigned long long)latency);
-
-        // if data sized changed, print out stats and zero counters
-        if (last_data_length != message.size)
-        {
-            last_data_length = message.size;
-            _printer->_dataLength =
-                    last_data_length + perftest_cpp::OVERHEAD_BYTES;
-            _printer->print_latency_header();
-        }
-        else {
-            if (printIntervals) {
-                latency_ave = (double)latency_sum / (double)count;
-                latency_std = sqrt(
-                        (double)latency_sum_square / (double)count - (latency_ave * latency_ave));
-
-                if (showCpu) {
-                    outputCpu = cpu.get_cpu_instant();
-                }
-                _printer->print_latency_interval(
-                    latency,
-                    latency_ave,
-                    latency_std,
-                    latency_min,
-                    latency_max,
-                    outputCpu);
-            }
-        }
-
-        if(_writer != NULL) {
+        if (_writer != NULL) {
             _writer->notify_ping_response();
         }
     }

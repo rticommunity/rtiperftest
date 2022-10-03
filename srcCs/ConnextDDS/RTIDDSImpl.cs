@@ -348,8 +348,9 @@ namespace PerformanceTest
                     sb.Append(parameters.DataLen);
                     sb.Append(") is \n             larger than MAX_BOUNDED_SEQ_SIZE (");
                     sb.Append(MAX_BOUNDED_SEQ_SIZE.Value);
+                    sb.Append(")");
                 }
-                sb.Append(")\n");
+                sb.Append("\n");
             }
 
             return sb.ToString();
@@ -720,6 +721,11 @@ namespace PerformanceTest
                 secureArgumentsString += "\t debug level: " + parameters.SecureDebug + "\n";
             }
 
+            if (parameters.SecureEncryptionAlgo != null)
+            {
+                secureArgumentsString += "\t Encryption Algorithm: " + parameters.SecureEncryptionAlgo + "\n";
+            }
+
             return secureArgumentsString;
         }
 
@@ -819,6 +825,13 @@ namespace PerformanceTest
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.logging.log_level",
                     parameters.SecureDebug.ToString()));
+            }
+
+            if (parameters.SecureEncryptionAlgo != null)
+            {
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.encryption_algorithm",
+                    parameters.SecureEncryptionAlgo));
             }
         }
 
@@ -1195,6 +1208,13 @@ namespace PerformanceTest
                     dataWriterQos = dataWriterQos.WithResourceLimits(policy =>
                             policy.MaxSamples = AllocationSettings.Unlimited);
                 }
+            }
+
+            if (parameters.UnboundedSize > 0)
+            {
+                dataWriterQos = dataWriterQos.WithProperty(policy =>
+                            policy.Add("dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                            parameters.UnboundedSize.ToString()));
             }
 
             return dataWriterQos;

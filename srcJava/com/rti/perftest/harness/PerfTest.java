@@ -278,7 +278,7 @@ public final class PerfTest {
         ddsVString.append((int)ddsV.release);
 
 
-        System.out.print(
+        System.err.print(
                 "RTI Perftest "
                 + perftestVString.toString()
                 + " (RTI Connext DDS "

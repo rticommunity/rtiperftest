@@ -5,92 +5,103 @@
 Overview
 ========
 
-**RTI Perftest** is a command line tool intended to measure the minimum latency,
-maximum throughput and loaded latency in a very configurable set of scenarios.
+*RTI Perftest* is a command-line tool for measuring the minimum latency,
+maximum throughput, and loaded latency in a configurable set of scenarios.
 It can help you answer questions such as:
 
-* For a given publishing configuration (e.g., queue size, batching settings), sample size, and subscribing configuration (e.g., queue size, Listener vs. WaitSet), what is the throughput of my network?
-* When my network is heavily loaded, what latency can I expect?
-* For a given configuration, what is the best-case latency with no other traffic on the network?
+- For a given publishing configuration (e.g., queue size, batching settings), 
+  sample size, and subscribing configuration (e.g., queue size, Listener vs. WaitSet), 
+  what is the throughput of my network?
+- When my network is heavily loaded, what latency can I expect?
+- For a given configuration, what is the best-case latency with no other traffic 
+  on the network?
 
-How does it work
-----------------
+*RTI Perftest* works by making the publishing side of the test write data as fast 
+as it can. Every few samples (configured through the command line), *RTI Perftest*
+sends a special sample requesting an echo from the subscribing side. *RTI Perftest*
+uses this ping -> pong exchange to measure the round-trip time (RTT) for latency.
+From the RTT, it calculates the one-way latency time (RTT/2).
 
-The publishing side of the test writes data as fast as it can. Every few samples
-(configured through the command line), it sends a special sample requesting an echo
-from the subscribing side. It uses this ping -> pong exchange to measure the
-round-trip time latency (RTT) and then the one-way latency (RTT/2).
-
-The publisher prints the latency test results while the subscriber prints the throughput results.
+The Perftest Publisher prints the latency test results, and the Perftest Subscriber
+prints the throughput results.
 
 .. figure:: _static/PerfTest_Overview_Diagram.png
    :alt: PerfTest Overview Diagram
+   :align: center
 
-**RTI Perftest** allows 2 operational modes: *Throughput Test* and *Latency Test*.
+*RTI Perftest* allows two operational modes: **Throughput Test** and **Latency Test**.
 
 Learn more in the :ref:`section-introduction` section.
 
 Features
---------
+========
 
-**RTI Perftest** features include:
+*RTI Perftest* supports the following functionality:
 
-- Supports **RTI Connext DDS Professional** and **RTI Connext DDS Micro**.
-- Suppots multiple platform including Windows, Linux, Mac, VxWorks or Android.
-- Supports multiple test setups - Multicast, One-to-many communication (Pub -> Sub), Latency test, Throughput test, Latency vs Throughput test.
-- Supports using raw transports (UDPv4 Sockets and Shared Memory segments).
-- Suports benchmarking Connext Pro and Micro features such as Flat Data and Zero Copy.
+- *RTI Connext DDS Professional* and *RTI Connext DDS Micro*.
+- Multiple platforms, including Windows®, Linux®, macOS®, VxWorks®, and Android™.
+- Multiple test setups: multicast, one-to-many communication (Pub -> Sub),
+  latency test, throughput test, and latency vs. throughput test.
+- Raw transports (UDPv4 sockets and shared memory segments).
+- Benchmarking of *RTI Connext DDS Professional* and *RTI Connext DDS Micro*
+  features such as *FlatData™ language binding* and *Zero Copy transfer over shared
+  memory.*
 
-Getting Started
----------------
+Getting Started QuickGuide
+==========================
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+To get a local copy of your project up and running quickly, follow these simple
+example steps.
 
 Download
-++++++++
+--------
 
-**RTI Perftest** bundle is provided in 3 different ways:
+Get the *RTI Perftest* bundle in one of three different ways:
 
-1. Clone and compile from the official Github repository:
+- Clone and compile from the official Github repository:
 
-.. code-block:: console
+  .. code-block:: console
 
    git clone https://github.com/rticommunity/rtiperftest.git
 
-2. Download and compile from: `https://github.com/rticommunity/rtiperftest
-<https://github.com/rticommunity/rtiperftest>`_.
+- Download and compile from: `https://github.com/rticommunity/rtiperftest
+  <https://github.com/rticommunity/rtiperftest>`_.
 
-3. Download the executables for popular platforms from the binaries section in the
-**RTI Perftest** release page `here
-<https://github.com/rticommunity/rtiperftest/releases>`_.
+..
 
-To learn more about the supported platforms and installation, please refer to the :ref:`section-download` section.
+- Download the executables for popular platforms from the binaries section in the
+  *RTI Perftest* release page `here <https://github.com/rticommunity/rtiperftest/releases>`_.
 
-Requisites
-++++++++++
+To learn more about the supported platforms and installation, please refer to
+the more detailed :ref:`section-download` section.
 
-If you need to compile **RTI Perftest** these are the 2 main requisites. This is not
-needed if you downloaded the executables already compiled, you can skip this section.
+Prerequisites
+-------------
 
-- **RTI Connext DDS Professional** or **RTI Connext DDS Micro** should be installed
-  in the system where the build.sh script is going to run. The Target libraries for
+If you need to compile *RTI Perftest*, there are a few prerequisites; however,
+if you downloaded the executables already compiled, you can skip these steps:
+
+- *RTI Connext DDS Professional* or *RTI Connext DDS Micro* should be installed
+  in the system where the ``build.sh`` script is going to run. The target libraries for
   the platform to be generated should also be installed.
-- The `$NDDSHOME` environment variable should be set correctly. Alternatively,
-  `$NDDSHOME` can be passed directly to the `build.sh` script by using the `--nddshome <PATH>` command-line option.
+- The ``$NDDSHOME`` environment variable should be set correctly. Or, pass
+  ``$NDDSHOME`` directly to the ``build.sh`` script by using the ``--nddshome <PATH>``
+  command-line option.
 - If you intend to compile and test using *RTI Security Plugins*, you will need to
-  link against the OpenSSL libraries for your architecture.
+  link against the OpenSSL/wolfSSL libraries for your architecture.
 
 Learn more in the :ref:`section-compilation` section.
 
 Compile
-+++++++
+-------
 
-For Linux, MacOS, QNX, VxWorks, Lynx, and Android, **RTI Perftest** makes use of a script in the top-level directory named ``build.sh``.
-On Windows it uses an equivalent script named ``build.bat``. To build using these scripts, simply invoke them with the
+For Linux, macOS, QNX, VxWorks, Lynx, and Android, *RTI Perftest* makes use of a
+script in the top-level directory named ``build.sh``. On Windows, it uses an equivalent
+script named ``build.bat``. To build using these scripts, simply invoke them with the
 command-line parameters desired.
 
-For example, for a given architecture (``x64Darwin15clang7.0``) for C++ (traditional and modern) and Java, the command would be:
+For example, for a given architecture (``x64Darwin15clang7.0``), for C++ (traditional
+and modern) and Java, the command would be:
 
 .. code-block:: console
 
@@ -104,16 +115,20 @@ If you want to build the C# API implementation:
 
 Learn more about compilation for other platforms and examples in the :ref:`section-compilation` section.
 
-Usage
------
+Usage QuickGuide
+================
 
-The following are examples of how to run the performance test for two use cases:
+The following two examples show how to run the performance test for two
+use cases. Find more examples in :ref:`section-command_examples`.
 
-* The tests below print final results only; if you want to see intermediate values, remove the ``-noprint`` argument from the command line.
-* If you are running on two unequal machines---i.e., one machine is faster (has better processors) than another---you will see better performance by running the Publisher on the slower machine.
+* The tests below print final results only; if you want to see intermediate values,
+  remove the ``-noprint`` argument from the command line.
+* If you are running on two unequal machines—that is, one machine is faster (has
+  better processors) than the other—you will see better performance by running
+  the publisher on the slower machine.
 
 Example 1: 1-to-1, Unicast, Best Latency as a Function of Message Size
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+----------------------------------------------------------------------
 
 Publisher:
 
@@ -127,11 +142,11 @@ Subscriber:
 
   bin/<arch>/release/perftest_cpp -sub -noPrint -nic <ipaddr> -domain <ID> -multicast
 
-Modify `-dataLen <bytes> ` to see latencies for different data sizes. Set `-executionTime <seconds>`
-to be >=100 for statistically better results.
+Modify ``-dataLen <bytes>`` to see latencies for different data sizes. Set
+``-executionTime <seconds>`` to be >=100 for statistically better results.
 
 Example 2: 1-to-1, Multicast, Maximum Throughput as a Function of Message Size (with Batching)
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+----------------------------------------------------------------------------------------------
 
 Publisher:
 
@@ -145,9 +160,12 @@ Subscriber:
 
     bin/<arch>/release/perftest_cpp -sub -noprint -nic <ipaddr> -multicast
 
-To achieve maximum throughput, start by setting See ``-batchSize <bytes>`` to 8192, then increase the size to see if you get better throughput.
+To achieve maximum throughput, start by setting ``-batchSize <bytes>`` to 8192,
+then increase the size to see if you get better throughput.
 
-*Note: Batching will not be enabled if the data length is larger than 1/2 the batch size.*
+.. note::
+
+   Batching will not be enabled if the data length is larger than half the batch size.
 
 Explore the documentation for more information.
 

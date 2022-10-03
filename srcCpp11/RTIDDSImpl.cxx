@@ -568,12 +568,16 @@ public:
 
     /* time out in milliseconds */
     void wait_for_ping_response(int timeout) {
-        RTINtpTime blockDurationIn;
-        blockDurationIn.sec = timeout;
-        blockDurationIn.frac = 0;
-
         if (_useSemaphore) {
-            _pongSemaphore.take(&blockDurationIn);
+            try {
+                struct RTINtpTime blockDurationIn;
+                RTINtpTime_packFromMillisec(blockDurationIn, 0, timeout)
+                _pongSemaphore.take(&blockDurationIn);
+            /* 
+             * This is a timeout and might be expected if the
+             * sample is lost (it will never be answered).
+             */   
+            } catch (const dds::core::TimeoutError &) {}             
         }
     }
 
@@ -592,7 +596,7 @@ public:
         if (_isReliable) {
             try {
                 _writer->wait_for_acknowledgments(dds::core::Duration(sec, nsec));
-            } catch (const dds::core::TimeoutError) {} // Expected exception
+            } catch (const dds::core::TimeoutError &) {} // Expected exception
         } else {
             perftest_cpp::MilliSleep(nsec / 1000000);
         }
@@ -1505,6 +1509,11 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         dpQosProperties["com.rti.serv.secure.logging.log_level"] =
                 string_stream_object.str();
     }
+
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        dpQosProperties["com.rti.serv.secure.cryptography.encryption_algorithm"]
+                = _PM->get<std::string>("secureEncryptionAlgo");
+    }
 }
 
 template <typename T>
@@ -1630,6 +1639,12 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     if (_PM->is_set("secureDebug")) {
         stringStream << "\tDebug level: "
                      << _PM->get<int>("secureDebug")
+                     << "\n";
+    }
+
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        stringStream << "\tEncryption Algorithm: "
+                     << _PM->get<std::string>("secureEncryptionAlgo")
                      << "\n";
     }
 

@@ -7,6 +7,9 @@
 #include "perftestPlugin.h"
 #include "perftestSupport.h"
 #include "MessagingIF.h"
+#ifdef PERFTEST_FAST_QUEUE
+  #include "FastMemory.h"
+#endif
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
 #ifndef PERFTEST_RTI_MICRO
@@ -243,8 +246,8 @@ void RTIDDSImpl<T>::shutdown()
             if (_isNetworkCapture && !_PM->get<bool>("doNotDropNetworkCapture")) {
                 std::string outputFile =
                         std::string(_networkCaptureOutputFile) + ".pcap";
-                if (RTIOsapiUtility_fileExists(outputFile.c_str())
-                        && !RTIOsapi_removeFile(outputFile.c_str())) {
+                if (PerftestFile_exists(outputFile.c_str())
+                        && !PerftestFile_remove(outputFile.c_str())) {
                     fprintf(stderr, "Unexpected error removing network capture's pcap output\n");
                 }
             }
@@ -492,6 +495,16 @@ bool RTIDDSImpl<T>::validate_input()
         configure_middleware_verbosity(_PM->get<int>("verbosity"));
     }
 
+  #ifdef PERFTEST_FAST_QUEUE
+    // FastQueue can only be used if the type is not keyed and we use best Effort.
+    if (_PM->get<bool>("fastQueue")
+            && (!_PM->get<bool>("bestEffort") || _PM->get<bool>("keyed"))) {
+        fprintf(stderr,
+                "FastQueue can only be used with Best Effort reliability and Unkeyed Data.\n");
+        return false;
+    }
+  #endif
+
     return true;
 }
 
@@ -521,6 +534,12 @@ std::string RTIDDSImpl<T>::print_configuration()
     } else {
         stringStream << "No\n";
     }
+  #endif
+
+  #ifdef PERFTEST_FAST_QUEUE
+    stringStream << "\tFast Queue (Only for Best-Effort): "
+                 << (_PM->get<bool>("fastQueue") ? "Yes" : "No")
+                 << std::endl;
   #endif
 
   #ifdef RTI_FLATDATA_AVAILABLE
@@ -2727,13 +2746,41 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
   #endif
 
   #ifdef PERFTEST_RTI_PRO
+
   #ifdef RTI_LEGACY_DD_IMPL
     // If we are using Dynamic Data, check if we want to use the new or old impl
     if (_PM->get<bool>("dynamicData") && _PM->get<bool>("useLegacyDynamicData")) {
         DDS_DynamicData_enable_legacy_impl();
     }
-  #endif
-  #endif
+  #endif // RTI_LEGACY_DD_IMPL
+
+  #ifdef PERFTEST_FAST_QUEUE
+    if (_PM->get<bool>("bestEffort") && _PM->get<bool>("fastQueue")) {
+        struct NDDS_WriterHistory_Plugin *plugin = NULL;
+        RTI_INT32 plugin_retcode =
+                NDDS_WriterHistory_FastMemoryPlugin_create(&plugin);
+        if (plugin_retcode != NDDS_WRITERHISTORY_RETCODE_OK) {
+            fprintf(stderr, "!NDDS_WriterHistory_FastMemoryPlugin_create\n");
+            return false;
+        }
+
+        if (plugin == NULL) {
+            fprintf(stderr, "NDDS_WriterHistory_Plugin plugin == NULL\n");
+            return false;
+        }
+
+        if (!NDDS_WriterHistory_PluginSupport_register_plugin(
+                    _participant->get_c_domain_participantI(),
+                    plugin,
+                    "FastMemory")) {
+            fprintf(stderr,
+                    "NDDS_WriterHistory_PluginSupport_register_plugin error\n");
+            return false;
+        }
+    }
+  #endif // PERFTEST_FAST_QUEUE
+
+  #endif // PERFTEST_RTI_PRO
 
     /* Register the types and create the topics except for FlatData types,
      * They will be registered in  RTIDDSImpl_FlatData
@@ -3210,6 +3257,16 @@ bool RTIDDSImpl<T>::configure_writer_qos(
         else {
             // override to best-effort
             dw_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+
+          #ifdef PERFTEST_FAST_QUEUE
+            if (_PM->get<bool>("fastQueue")) {
+                 DDSPropertyQosPolicyHelper::add_property(
+                        dw_qos.property,
+                        "dds.data_writer.history.plugin_name",
+                        "FastMemory",
+                        false);
+             }
+          #endif
         }
     }
 
@@ -3823,6 +3880,27 @@ bool RTIDDSImpl<T>::configure_reader_qos(
     }
   #endif
 
+  #ifdef PERFTEST_RTI_MICRO
+
+    if (_PM->get<bool>("multicast")) {
+
+        if (_transport.getMulticastAddr(topic_name.c_str()).empty()) {
+            fprintf(stderr,
+                    "topic name must either be %s or %s or %s.\n",
+                    THROUGHPUT_TOPIC_NAME,
+                    LATENCY_TOPIC_NAME,
+                    ANNOUNCEMENT_TOPIC_NAME);
+            return false;
+        }
+
+        std::string receive_address = "_udp://" + _transport.getMulticastAddr(topic_name.c_str());
+        DDS_StringSeq_set_maximum(&dr_qos.transport.enabled_transports, 1);
+        DDS_StringSeq_set_length(&dr_qos.transport.enabled_transports, 1);
+        *DDS_StringSeq_get_reference(&dr_qos.transport.enabled_transports, 0) =
+                DDS_String_dup(receive_address.c_str());
+
+    }
+  #endif
 
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifdef PERFTEST_RTI_PRO

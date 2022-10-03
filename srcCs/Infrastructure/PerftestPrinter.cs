@@ -16,7 +16,7 @@ namespace PerformanceTest
 
     public class PerftestPrinter
     {
-        public const string TimeUnit = "us";
+        public const string TimeUnit = "μs";
         private readonly Parameters arguments;
         private int dataLength = 100;
         private readonly bool printHeaders;
@@ -116,8 +116,8 @@ namespace PerformanceTest
                         Console.Write("\nIntervals Throughput for {0} " +
                                       "Bytes:\n", dataLength);
                         Console.Write("Length (Bytes), Total Samples,  " +
-                                      "Samples/s, Ave Samples/s,     " +
-                                      "Mbps,  Ave Mbps" +
+                                      "Samples/s, Avg Samples/s,     " +
+                                      "Mbps,  Avg Mbps" +
                                       ", Lost Samples, Lost Samples (%)");
                         if (showCPU)
                         {
@@ -247,8 +247,12 @@ namespace PerformanceTest
                         {
                             printSummaryHeaders = printIntervals;
                         }
-                        Console.Write("\nOne-way Latency Summary:\n");
-                        Console.Write("Length (Bytes)" +
+
+                        if (printIntervals)
+                        {
+                            Console.Write("\nOne-way Latency Summary:\n");
+                        }
+                        Console.Write("Sample Size (Bytes)" +
                                       ", Ave ({0}" +
                                       "), Std ({0}" +
                                       "), Min ({0}" +
@@ -265,7 +269,7 @@ namespace PerformanceTest
                         }
                         Console.Write("\n");
                     }
-                    Console.Write("{0,14},{1,9:F0},{2,9:F1},{3,9},{4,9}," +
+                    Console.Write("{0,19},{1,9:F0},{2,9:F1},{3,9},{4,9}," +
                                   "{5,9},{6,9},{7,9},{8,12},{9,14}",
                                   dataLength,
                                   latencyAve,
@@ -451,9 +455,13 @@ namespace PerformanceTest
                         {
                             printSummaryHeaders = printIntervals;
                         }
-                        Console.Write("\nThroughput Summary:\n");
-                        Console.Write("Length (Bytes), Total Samples," +
-                                      " Ave Samples/s,    Ave Mbps, " +
+
+                        if (printIntervals)
+                        {
+                            Console.Write("\nThroughput Summary:\n");
+                        }
+                        Console.Write("Sample Size (Bytes), Total Samples," +
+                                      " Avg Samples/s,    Avg Mbps, " +
                                       "Lost Samples, Lost Samples (%)");
                         if (showCPU)
                         {
@@ -461,7 +469,7 @@ namespace PerformanceTest
                         }
                         Console.Write("\n");
                     }
-                    Console.Write("{0,14},{1,14},{2,14:F0},{3,12:F1}," +
+                    Console.Write("{0,19},{1,14},{2,14:F0},{3,12:F1}," +
                                   "{4,13},{5,17:F2}",
                                   length,
                                   intervalPacketsReceived,

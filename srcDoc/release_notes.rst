@@ -17,130 +17,113 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~
 
-Support for the new C# API |newTag|
-+++++++++++++++++++++++++++++++++++
+Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-*RTI Perftest*'s C# API implementation has been fully rewritten
-to support the *RTI Connext DDS* new C# implementation.
+*Perftest* now adds support for *wolfSSL* in addition to *OpenSSL* when using
+*RTI Connext DDS Secure 6.1.1*. This support has only been added for *Linux*
+and *QNX* platforms, as these are the ones supported by *RTI Connext DDS Secure 6.1.1*.
 
-The build system now allows building for all supported platform and not only for Windows. The code
-has been improved, not only to support the new API, but also to follow the C# coding standards.
+A new parameter (``--wolfSSL-home``) has been added to the compilation script in order
+to be able to specify the location of the libraries when compiling statically.
 
-The old *Perftest C# API implementation* has been replaced with the new one. In order to test with
-that implementation, some changes are required. See the **Using the Old C# Implementation**
-section in :ref:`section-compatibility` for more details.
+New command-line option to output data to a file |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-New command-line option for Real-Time WAN Transport to specify host Port |enhancedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Perftest* has added a new command-line parameter, ``-outputFile``. This parameter
+enables you to output the performance data to a file instead of printing it on the screen.
 
-*RTI Perftest* now supports configuring the host port when using Real-Time WAN Transport.
+The output content is the same as when using the ``>`` or ``>>``,
+options in the command-line: the performance data is sent to the specified file,
+while the summary information and errors are still printed on the screen.
 
-The configuration can be done using the new command-line option:
-``-transportHostPort <port>``
+Set default Encryption Algorithm to aes-128-gcm |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-This feature is intended to be used in conjuction with the
-``-transportPublicAddress`` option for Real-Time WAN Transport.
+In previous versions *Perftest* would use the default value for the Encryption
+algorithm when using *RTI Connext DDS Secure*. However, starting in 7.0.0. The
+default value has been upgraded to `aes-256-gcm`. While this new value offers a
+higher level of security, `aes-128-gcm`remains being secure and slightly more
+efficient CPU/Performance wise. For that reason as well as for comparison with
+previous versions of *RTI Connext DDS Secure*, *Perftest* has adopted that new
+value.
 
-Improved documentation about configuration settings for *Waitsets* |enhancedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The documentation about ``-waitsetDelayUsec`` and ``-waitsetEventCount`` has been
-improved, clarifying the effect in both latency and throughput as well as the
-recommended values when performing a latency test.
-
-Switched to C++11 clock implementation in Modern C++ API |enhancedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-*RTI Perftest* for *Modern C++* compilation now requires *C++11* compatibility.
-To simplify the *Modern C++* API implementation, *RTI Perftest* now uses the *C++11* clocks, instead
-of the ones provided by *RTI Connext DDS*.
-
-This enhancement resolves the issue ``PERF-300``.
-
-Build options for the different APIs are now stackable |enhancedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-*RTI Perftest* has improved the behavior when selecting the APIs to build when using the
-the ``build.sh`` and ``build.bat`` scripts.
-
-These options are: ``--cpp-build``, ``--cpp11-build``, ``--java-build`` and ``--cs-build``.
-In the past, when providing more than one of these parameters, *RTI Perftest* would build
-just the last one provided. Now, the options are stackable, meaning that if you specify
-``--cpp-build --cs-build`` both APIs will be compiled one after the other.
-
-This enhancement resolves the issue ``PERF-313``.
+In addition, a new parameter (``-secureEncryptionAlgorithm``) has been added to support
+manually setting the desired value.
 
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Compiler build option not passed correctly to ``cmake`` when compiling *Connext DDS Micro* |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Unclear table output headers |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++
 
-The compiler build option is used to specify a compiler different than the system
-default. This option is useful when you need to cross-compile for an architecture
-that is not your build machine's architecture.
+The output headers displayed by *Perftest* during and after the test have been updated to
+show a clearer description of the content of the tables.
 
-This command-line option was passed correctly when using *Connext DDS Professional*
-but not when using *Connext DDS Micro*.
+In addition, when the ``-noPrintIntervals`` option is used, the header is a single line, which
+simplifies parsing it later on.
 
-``CPUMonitor`` class not correctly protected in *VxWorks* |fixedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Bug in C# API when testing with large data sizes and unbounded types |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Compiling *RTI Perftest* for some *VxWorks* platforms could cause missing symbols when
-loading the modules into the kernel. For example:
+A bug in *Perftest*'s C# API implementation made it impossible
+to test using large data types (``dataLen`` larger than ``65470`` bytes) or when forcing
+the use of unbounded sequences (``-unbounded``). This problem has been fixed.
 
-.. code-block:: console
+Compilation issue when enabling security in static mode|fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    -> ld 1 < bin/armv8Vx7SR0660llvm10.0.1/release/perftest_cpp11.so
-    Warning: module 0xffff8000008722d0 holds reference to undefined symbol __floatunditf.
-    ld(): module contains undefined symbol(s) and may be unusable.
+When trying to compile statically (default behavior), *Perftest*
+would try to find and link against the Openssl libraries ``cryptoz`` and
+``sslz``; however, these names are no longer used. The right names of the
+libraries are ``crypto`` and ``ssl``.
 
-This issue was caused by the ``CPUMonitor`` class, which is not supported in *VxWorks* but
-was only partially protected. This issue has been resolved.
+Fixed warning in Modern C++ implementation |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-``CPUMonitor`` warning not displayed if feature is not requested |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-In previous *RTI Perftest* versions, a message was displayed on all platforms
-where the ``-cpu`` command-line option was not supported. This message unnecessarily
-added to the verbosity for customers testing in these OSes:
+The following warning may appear when compiling *Perftest*'s Modern C++ API implementation:
 
 .. code-block:: console
 
-    [WARNING] get CPU consumption feature is not available in this OS
+    RTIDDSImpl.cxx: In instantiation of 'void RTIPublisherBase<T>::wait_for_ack(long int, long unsigned int) [with T = rti::flat::Sample<TestDataLarge_ZeroCopy_w_FlatData_tOffset>]':
+    RTIDDSImpl.cxx:595:10:   required from here
+    RTIDDSImpl.cxx:600:15: warning: catching polymorphic type 'const class dds::core::TimeoutError' by value [-Wcatch-value=]
+    600 |             } catch (const dds::core::TimeoutError) {} // Expected exception
+        |               ^~~~~
 
-Now this warning is displayed only if ``-cpu`` is entered as a command-line option.
+This warning has been fixed.
 
-Crash in *VxWorks kernel mode* and incorrect behavior when running Perftest multiple times |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Fixed unhandled exception in Modern C++ API implementation |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In previous versions of *RTI Perftest*, the Traditional and Modern C++ API implementations
-failed to run multiple times on *VxWorks* in *kernel mode* if the ``-executionTime``
-command-line option was provided. This was due to an issue where some static variables
-were initialized when loading the libraries, but not reset when calling the initialization
-Therefore, the second run's last value came from the previous run.
+When using *Perftest*'s Modern C++ API implementation with the ``-bestEffort`` command-line option 
+an unhandled exception might be raised if a sample wasn't answered before a certain ammount of time
+(which could happen if the sample was lost or coudn't be replied). This exception was caught at the ``main()``
+level, stopping the flow of the program, however it should simply be ignored (and treat the failure as a sample lost).
+This issue has been corrected.
 
-This fix resolves the issue ``PERF-301``.
+Issue compiling Connext DDS Micro on Windows |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-*Modern C++* API implementation not returning loaned memory for samples fast enough |fixedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-The *Modern C++* API Implementation for *RTI Perftest* retained loaned samples
-for too long after reading them from the *DataReader*. In some scenarios (where
-other errors would also be involved), retaining the loaned samples for too long
-led to issues deleting the *DataReaders* at the end of the test, showing
-errors similar to the following:
+The build scripts for *Windows* (``build.bat``) failed with the following error when trying to compile *Perftest*
+against *RTI Connext DDS Micro*. The error displayed was:
 
 .. code-block:: console
 
-    [D0047|Sub(80000009)|T=Latency|DELETE Reader] PRESPsService_destroyLocalEndpointWithCursor:outstanding loans <<<
-    [D0047|Sub(80000009)|T=Latency|DELETE Reader] PRESPsService_destroyLocalEndpoint:!delete local reader
-    [D0047|Sub(80000009)|T=Latency|DELETE Reader] DDS_DataReader_deleteI:!delete PRESLocalEndpoint
-    [D0047|Sub(80000009)|T=Latency|DELETE Reader] DDS_Subscriber_delete_datareader:!delete reader
+    CMake Error: Unknown argument --target
+    CMake Error: Run 'cmake --help' for all supported options.
 
-This fix resolves the issue ``PERF-312``.
+This problem has been fixed.
 
-Deprecations in Develop
+Clock skews caused publisher side to hang |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Clock skews caused the publisher side to hang. This problem was usually
+seen in operating systems (such as VxWorks) with low-resolution clocks.
+
+This problem has been resolved.
+
+Deprecations in Master
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 ``-scan`` option will be removed in future versions of *RTI Perftest*

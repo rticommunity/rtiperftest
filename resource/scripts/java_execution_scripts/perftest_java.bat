@@ -14,7 +14,7 @@ IF NOT DEFINED RTI_PERFTEST_ARCH (
     GOTO endscript
 )
 IF NOT DEFINED RTI_OPENSSL_PATH (
-    ECHO "[INFO]: The RTI_OPENSSL_PATH environment variable is not set. Needed for DTLS, TLS and RTI Security Libraries."
+    ECHO "[INFO]: The RTI_OPENSSL_PATH environment variable is not set. Needed for DTLS, TLS and RTI Security Libraries." 1>&2
 )
 
 set PATH=%NDDSHOME%\lib\java;%PATH%

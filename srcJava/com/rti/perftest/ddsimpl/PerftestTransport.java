@@ -991,7 +991,7 @@ public class PerftestTransport {
         // * plugin to handle the extreme case.
         // *
         // * The receivedMessageCountMax should be set to a value that can hold
-        // * more than “-sendQueueSize" samples in perftest in order block in the
+        // * more than "-sendQueueSize" samples in perftest in order block in the
         // * send window before starting to lose messages on the Shared Memory
         // * transport
         // */

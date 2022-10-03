@@ -715,8 +715,8 @@ bool configureShmemTransport(
      * the message_size_max - RTPS headers.
      */
     int fragmentSize = (std::min)(
-            parentMsgSizeMax - COMMEND_WRITER_MAX_RTPS_OVERHEAD,
-            flowControllerTokenSize - COMMEND_WRITER_MAX_RTPS_OVERHEAD);
+            parentMsgSizeMax - TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD,
+            flowControllerTokenSize - TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD);
 
     unsigned long long rtpsMessagesPerSample = (std::max)(
             1ull, (datalen / fragmentSize) + 1);
@@ -727,7 +727,7 @@ bool configureShmemTransport(
     unsigned long long receiveBufferSize = (std::min)(
         (unsigned long long) maxBufferSize,
         receivedMessageCountMax *
-                (COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
+                (TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD + fragmentSize));
 
 
     if (DDSPropertyQosPolicyHelper::lookup_property(
@@ -1198,6 +1198,16 @@ bool PerftestConfigureSecurity(
         }
     }
 
+    if (_PM->is_set("secureEncryptionAlgo")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.encryption_algorithm",
+                _PM->get<std::string>("secureEncryptionAlgo"))) {
+            return false;
+        }
+    }
+
     return true;
 }
+
 #endif

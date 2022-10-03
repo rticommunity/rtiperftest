@@ -1106,17 +1106,28 @@ bool RTIRawTransportImpl::configure_sockets_transport()
 
             /* Peers address and ID parse to NDDS_Transport_Address_t */
             for (unsigned int i = 0; i < peers.size(); i++) {
-                id_sub = 0;
-                /* Regular expression to identify ADDRESS:ID */
-                sscanf(peers[i].c_str(), "%[^:]:%d", addr_sub, &id_sub);
+                unsigned int id_sub_first = 0;
+                unsigned int id_sub_last = 0;
 
-                if (NDDS_Transport_UDP_string_to_address_cEA(
-                        _plugin,
-                        &addr,
-                        addr_sub)) {
-                    _peersMap.push_back(
-                            std::pair<NDDS_Transport_Address_t, int>(
-                                    addr, id_sub));
+                /* Regular expression to identify ADDRESS:ID_SUB_FIRST-ID_SUB_LAST */
+                sscanf(peers[i].c_str(), "%[^:]:%d-%d", addr_sub, &id_sub_first, &id_sub_last);
+
+                /* If no id_sub_last was scanned, only one id_sub will be used */
+                if (id_sub_last == 0 && id_sub_first != 0){
+                    id_sub_last = id_sub_first;
+                }
+                id_sub = 0;
+
+                for (unsigned int index_sub = id_sub_first; index_sub <= id_sub_last; ++index_sub){
+                    id_sub = index_sub;
+                    if (NDDS_Transport_UDP_string_to_address_cEA(
+                            _plugin,
+                            &addr,
+                            addr_sub)) {
+                        _peersMap.push_back(
+                                std::pair<NDDS_Transport_Address_t, int>(
+                                        addr, id_sub));
+                    }
                 }
             }
 
@@ -1162,10 +1173,22 @@ bool RTIRawTransportImpl::configure_sockets_transport()
 
         for (unsigned int i = 0; i < peers.size(); i++) {
             id_sub = 0;
-            sscanf(peers[i].c_str(), "%[^:]:%d", addr_sub, &id_sub);
+            int id_sub_first = 0;
+            int id_sub_last = 0;
 
-            _peersMap.push_back(
-                    std::pair<NDDS_Transport_Address_t, int>(addr, id_sub));
+            /* Regular expression to identify ADDRESS:ID_SUB_FIRST-ID_SUB_LAST */
+            sscanf(peers[i].c_str(), "%[^:]:%d-%d", addr_sub, &id_sub_first, &id_sub_last);
+
+            /* If no id_sub_last was scanned, only one id_sub will be used */
+            if (id_sub_last == 0 && id_sub_first != 0) {
+                id_sub_last = id_sub_first;
+            }
+
+            for (int index_sub = id_sub_first; index_sub <= id_sub_last; ++index_sub) {
+                id_sub = index_sub;
+                _peersMap.push_back(
+                        std::pair<NDDS_Transport_Address_t, int>(addr, id_sub));
+            }
         }
 
         /*
