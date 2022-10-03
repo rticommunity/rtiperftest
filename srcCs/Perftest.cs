@@ -36,7 +36,7 @@ namespace PerformanceTest
         private static bool showCpu;
         private static bool testCompleted;
         public readonly TimeSpan timeoutWaitForAckTimeSpan = new TimeSpan(0, 0, 0, 0, 10);
-        public static readonly PerftestVersion version = new PerftestVersion(0, 0, 0, 0);
+        public static readonly PerftestVersion version = new PerftestVersion(9, 9, 9, 9);
 
         /*
          * PERFTEST-108

@@ -149,6 +149,4 @@ latex_documents = [
      u'Real-Time Innovations, Inc.', 'manual'),
 ]
 
-pdf_documents = [
-    ('index', 'RTI_Perftest_3.3', 'RTI Perftest', 'Real-Time Innovations, Inc.'),
-]
+pdf_documents = [(master_doc, u'RTI Perftest Documentation', u'RTI Perftest Documentation', u'Real-Time Innovations, Inc.'),]
