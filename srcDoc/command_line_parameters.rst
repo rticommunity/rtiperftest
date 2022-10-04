@@ -40,6 +40,8 @@ For additional information on setting the parameters, see sections:
 
 .. _Test Parameters for Publishing and Subscribing Applications:
 
+.. _section-pubsub_command_line_parameters:
+
 Test Parameters for Publishing and Subscribing Applications
 ------------------------------------------------------------
 
@@ -547,6 +549,16 @@ Test Parameters for Publishing and Subscribing Applications
    and above, in the Traditional C++ API implementation.
 
    | **Default:** Not set: *RTI Perftest* will delete the file
+
+- ``-loaningSendReceive``
+
+   Only available when compiling for *RTI Connext TSS*.
+
+   Make use of the underlying DDS loan function to avoid copying the sample
+   at the application level.
+
+   | **Default:** Not set: Perftest will avoid using underlying DDS functions by default.
+
 
 Transport-Specific Options
 --------------------------
@@ -1390,3 +1402,96 @@ is ignored.
 
 To achieve the best latency under maximum throughput conditions, use
 ``-enableAutoThrottle`` and ``-enableTurboMode`` in combination.
+
+.. _section-not_available_params_tss:
+
+Perftest parameters not available when using Connext TSS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following parameters are not available when using *Perftest* with *TSS*:
+
+-  ``-dynamicData``
+
+-  ``-flatData``
+
+-  ``-zeroCopy``
+
+-  ``-checkConsistency``
+
+-  ``-preallocateFragmentedSamples``
+
+-  ``-flowController <flow>``
+
+-  ``-unbounded``
+
+-  ``-peer``
+
+-  ``-threadPriorities``
+
+-  ``-cacheStats``
+
+-  ``-compressionId``
+
+- ``-compressionLevel``
+
+- ``-compressionThreshold``
+
+- ``-networkCapture``
+
+- ``-doNotDropNetworkCapture``
+
+-  ``-transportWan``
+
+-  ``-transportPublicAddress``
+
+-  ``-transportHostPort``
+
+-  ``-transportWanServerAddress``
+
+-  ``-transportWanServerPort``
+
+-  ``-transportWanId``
+
+-  ``-transportSecureWan``
+
+-  ``-transportCertAuthority``
+
+-  ``-transportCertFile``
+
+-  ``-transportPrivateKey``
+
+-  ``-writerStats``
+
+-  ``-showSerializationTime``
+
+-  ``-cft``
+
+-  ``-checkConsistency``
+
+-  ``-secureEncryptDiscovery``
+
+-  ``-secureSign``
+
+-  ``-secureEncryptData``
+
+-  ``-secureEncryptSM``
+
+-  ``-secureGovernanceFile <file>``
+
+-  ``-securePermissionsFile <file>``
+
+-  ``-secureCertAuthority <file>``
+
+-  ``-secureCertFile``
+
+-  ``-securePrivateKey``
+
+-  ``-secureEncryptionAlgorithm``
+
+-  ``-rawTransport``
+
+-  ``-noBlockingSockets``
+
+Please keep in mind that *RTI Connext TSS* uses *RTI Connext Pro* or
+*RTI Connext Micro* underneath, so any argument that's not available for Pro,
+won't be available for TSS + Pro, and the same applies to Micro and TSS + Micro.

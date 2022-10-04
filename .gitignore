@@ -4,6 +4,10 @@
 /srcC*/perftestSupport.*
 /srcC*/perftest_publisher.*
 /srcC*/perftest_subscriber.*
+/srcC*/perftest_TypeSupport.*
+/srcC*/perftest_QosSupport.*
+/srcC*/perftest_Config.*
+/srcC*/perftest_TypedTS*
 /srcC*/makefile_*
 /srcC*/objs
 /srcCs/bin

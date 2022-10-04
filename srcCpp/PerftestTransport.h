@@ -28,7 +28,7 @@
  * TODO: that Encapsulation should be taken out from the sample instead of here.
  */
 
-#ifdef PERFTEST_RTI_PRO
+#if defined(PERFTEST_RTI_PRO) || defined(RTI_PERF_TSS_PRO)
   #define TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD 512
   #define MESSAGE_OVERHEAD_BYTES (TMP_COMMEND_WRITER_MAX_RTPS_OVERHEAD + 48 + RTI_CDR_ENCAPSULATION_HEADER_SIZE + 3)
 #else

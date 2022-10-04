@@ -46,7 +46,7 @@ bool PerftestSemaphore_give(PerftestSemaphore* semaphore)
 
 bool PerftestSemaphore_take(PerftestSemaphore* semaphore, int timeout)
 {
-    return semaphore->take();
+    return semaphore->take(timeout);
 }
 
 /********************************************************************/
@@ -115,7 +115,7 @@ void PerftestClock::sleep(const struct DDS_Duration_t& sleep_period)
     NDDSUtility::sleep(sleep_period);
 }
 
-#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
+#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO) && !defined(RTI_PERF_TSS_PRO)
 void NDDSUtility::sleep(const struct DDS_Duration_t &durationIn)
 {
     std::this_thread::sleep_for(
@@ -166,7 +166,8 @@ NDDSUtility::get_spin_per_microsecond(unsigned int precision)
     return (unsigned long long) (iterations * spinCount) / usec;
 }
 
-#endif //#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO)
+#endif //#if !defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO) &&
+       // !defined(RTI_PERF_TSS_PRO)
 
 /********************************************************************/
 /* Perftest Thread class */
