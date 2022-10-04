@@ -150,6 +150,32 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64"
+        },
+        {
+            "name": "Linux TSS C++",
+            "includePath": [
+                "${workspaceFolder}/srcCpp/",
+                "${workspaceFolder}/srcCppCommon/",
+                "${workspaceFolder}/srcCpp/connextDDS",
+                "${workspaceFolder}/srcCpp/connextDDS/TSS",
+                "${env.NDDSHOME}/include",
+                "${env.NDDSHOME}/include/ndds",
+                "${env.NDDSHOME}/include/ndds/hpp",
+                "${env.RTIMEHOME}/include/",
+                "${env.RTITSSHOME}/include",
+                "${env.RTITSSHOME}/include/*"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "RTI_PERF_TSS",
+                "RTI_PERF_TSS_PRO",
+                "PERFTEST_RTI_MICRO_24x_COMPATIBILITY"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++11"
         }
     ],
     "version": 4

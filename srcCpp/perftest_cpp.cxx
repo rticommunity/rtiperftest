@@ -7,7 +7,9 @@
 #define TO_STRING(x) STRINGIFY(x)
 
 #include "perftest_cpp.h"
-#ifdef PERFTEST_RTI_PRO
+#ifdef RTI_PERF_TSS
+  #include "RTITSSImpl.h"
+#elif defined(PERFTEST_RTI_PRO)
   #include "RTIRawTransportImpl.h"
   #include "RTIDDSImpl.h"
 #elif defined(PERFTEST_RTI_MICRO)
@@ -163,7 +165,7 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
-  #if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
+  #if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS)
     if (_PM.get<bool>("rawTransport")) {
       #ifdef PERFTEST_RTI_PRO
         _MessagingImpl = new RTIRawTransportImpl();
@@ -174,62 +176,96 @@ int perftest_cpp::Run(int argc, char *argv[])
         mask += _PM.get<bool>("flatdata") << 2;
         mask += _PM.get<bool>("zerocopy") << 3;
 
+      #ifndef RTI_PERF_TSS
         switch (mask)
         {
-        case 0: // = 0000 (bounded)
-            _MessagingImpl = new RTIDDSImpl<TestData_t>();
-            break;
+            case 0: // = 0000 (bounded)
+                _MessagingImpl = new RTIDDSImpl<TestData_t>();
+                break;
 
-        case 1: // unbounded = 0001
-            _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
-            break;
+            case 1: // unbounded = 0001
+                _MessagingImpl = new RTIDDSImpl<TestDataLarge_t>();
+                break;
 
-        case 2: // keyed = 0010
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
-            break;
+            case 2: // keyed = 0010
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyed_t>();
+                break;
 
-        case 3: // unbounded + keyed = 0011
-            _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
-            break;
-      #ifdef RTI_FLATDATA_AVAILABLE
-        #ifdef RTI_ZEROCOPY_AVAILABLE
-        case 15: // unbounded + keyed + flat + zero = 1111
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
-            break;
+            case 3: // unbounded + keyed = 0011
+                _MessagingImpl = new RTIDDSImpl<TestDataKeyedLarge_t>();
+                break;
 
-        case 14: // keyed + flat + zero = 1110
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
-            break;
+        #ifdef RTI_FLATDATA_AVAILABLE
+          #ifdef RTI_ZEROCOPY_AVAILABLE
+            case 15: // unbounded + keyed + flat + zero = 1111
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_ZeroCopy_w_FlatData_t>(true);
+                break;
 
-        case 13: // unbounded + flat + zero = 1101
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
-            break;
+            case 14: // keyed + flat + zero = 1110
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_ZeroCopy_w_FlatData_t>(true);
+                break;
 
-        case 12: // flat + Zero = 1100
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
-            break;
+            case 13: // unbounded + flat + zero = 1101
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_ZeroCopy_w_FlatData_t>(true);
+                break;
+
+            case 12: // flat + Zero = 1100
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestData_ZeroCopy_w_FlatData_t>(true);
+                break;
+          #endif
+            case 7: // unbounded + keyed + flat = 0111
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
+                break;
+
+            case 6: // Keyed + flat = 0110
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
+                break;
+
+            case 5: // unbounded + flat = 0101
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
+                break;
+
+            case 4: // flat = 0100
+                _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
+                break;
+                break;
         #endif
-        case 7: // unbounded + keyed + flat = 0111
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyedLarge_FlatData_t>();
-            break;
 
-        case 6: // Keyed + flat = 0110
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataKeyed_FlatData_t>();
-            break;
-
-        case 5: // unbounded + flat = 0101
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestDataLarge_FlatData_t>();
-            break;
-
-        case 4: // flat = 0100
-            _MessagingImpl = new RTIDDSImpl_FlatData<TestData_FlatData_t>();
-            break;
-             break;
-      #endif
-
-        default:
-            break;
+            default:
+                break;
         }
+      #else /* RTI_PERF_TSS defined */
+        switch (mask)
+        {
+            case 0: // = 0000 (bounded)
+                _MessagingImpl = new RTITSSImpl<FACE::DM::TestData_t,
+                                        TestData_t::TypedTS,
+                                        TestData_t::Read_Callback>(
+                                            "FACE::DM::TestData_t");
+                break;
+
+            case 1: // unbounded = 0001
+                _MessagingImpl = new RTITSSImpl<FACE::DM::TestDataLarge_t,
+                                        TestDataLarge_t::TypedTS,
+                                        TestDataLarge_t::Read_Callback>(
+                                            "FACE::DM::TestDataLarge_t");
+                break;
+
+            case 2: // keyed = 0010
+                _MessagingImpl = new RTITSSImpl<FACE::DM::TestDataKeyed_t,
+                                        TestDataKeyed_t::TypedTS,
+                                        TestDataKeyed_t::Read_Callback>(
+                                            "FACE::DM::TestDataKeyed_t");
+                break;
+
+            case 3: // unbounded + keyed = 0011
+                _MessagingImpl = new RTITSSImpl<FACE::DM::TestDataKeyedLarge_t,
+                                        TestDataKeyedLarge_t::TypedTS,
+                                        TestDataKeyedLarge_t::Read_Callback>(
+                                            "FACE::DM::TestDataKeyedLarge_t");
+                break;
+        }
+      #endif /* RTI_PERF_TSS */
     }
   #else // No middleware is passed as -DPERFTEST_...
 
@@ -335,6 +371,10 @@ perftest_cpp::perftest_cpp()
     : _PM(Middleware::RTIDDSPRO)
 #elif defined(PERFTEST_RTI_MICRO)
     : _PM(Middleware::RTIDDSMICRO)
+#elif defined(RTI_PERF_TSS_PRO)
+    : _PM(Middleware::RTITSSPRO)
+#elif defined(RTI_PERF_TSS_MICRO)
+    : _PM(Middleware::RTITSSMICRO)
 #else
     : _PM()
 #endif
@@ -362,7 +402,7 @@ perftest_cpp::perftest_cpp()
 bool perftest_cpp::validate_input()
 {
     // Manage parameter -batchSize for micro
-  #ifndef PERFTEST_RTI_PRO
+  #if !defined(PERFTEST_RTI_PRO) && !defined(RTI_PERF_TSS_PRO)
     _PM.set("batchSize", 0);
   #endif
 
@@ -885,7 +925,6 @@ class ThroughputListener : public IMessagingCB
 
     void process_message(TestMessage &message)
     {
-
       #ifdef DEBUG_PING_PONG
         printf("-- ProcessMessage ...\n");
       #endif
@@ -1543,7 +1582,7 @@ public:
             cpu.initialize();
         }
 
-      #ifdef PERFTEST_RTI_PRO
+      #if defined(PERFTEST_RTI_PRO) && !defined(RTI_PERF_TSS)
         if (_PM->get<bool>("serializationTime")) {
 
             mask = (_PM->get<int>("unbounded") != 0) << 0;
@@ -2004,7 +2043,6 @@ int perftest_cpp::Publisher()
         reader->wait_for_writers(_PM.get<int>("numSubscribers"));
     }
     announcement_reader->wait_for_writers(_PM.get<int>("numSubscribers"));
-
     // We have to wait until every Subscriber sends an announcement message
     // indicating that it has discovered every Publisher
     fprintf(stderr,"Waiting for subscribers announcement ...\n");

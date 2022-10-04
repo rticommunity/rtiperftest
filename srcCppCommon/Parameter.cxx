@@ -14,11 +14,18 @@
 
 const MiddlewareMask Middleware::RTIDDSPRO = 1 << 0;
 const MiddlewareMask Middleware::RTIDDSMICRO = 1 << 1;
-const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 2;
+const MiddlewareMask Middleware::RTITSSPRO = 1 << 2;
+const MiddlewareMask Middleware::RTITSSMICRO = 1 << 3;
+const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 4;
+
+const MiddlewareMask Middleware::RTITSS =
+        Middleware::RTITSSPRO
+        | Middleware::RTITSSMICRO;
 
 const MiddlewareMask Middleware::RTIDDS =
         Middleware::RTIDDSPRO
-        | Middleware::RTIDDSMICRO;
+        | Middleware::RTIDDSMICRO
+        | Middleware::RTITSS;
 
 const MiddlewareMask Middleware::ALLDDS =
         Middleware::RTIDDS;

@@ -12,10 +12,33 @@ Release Notes
     </strong></p>
 
 Release Notes Master
---------------------
+---------------------
 
 What's New in Master
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+
+Support for **RTI Connext TSS 3.1.2** |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+We have added support for **RTI Connext TSS 3.1.2** compiled against *RTI
+Connext Pro 6.1.1.4* or against *RTI Connext Micro 2.4.13.4*.
+
+This support has been added for *Linux*, since *RTI Connext TSS 3.1.2* does not
+support *Windows* as a host or target platform.
+
+Examples of how to compile *Perftest* for *RTI Connext TSS 3.1.2* can be found
+in section :ref:`section-linux_compilation_examples`.
+
+Running *Perftest* against *RTI Connext TSS 3.1.2* is the same as
+running it when compiled against *RTI Connext Pro* or *RTI Connext Micro*,
+except for some command-line arguments that are available for *RTI Connext Pro*
+and/or *RTI Connext Micro*, but that aren't available for *RTI Connext TSS*.
+(See :ref:`section-not_available_params_tss`). The argument
+``-loaningSendReceive`` has been added to make *Perftest* use
+*RTI Connext Pro*/*RTI Connext Micro* loaning functions for receiving and
+sending samples, instead of the pure TSS approach that's followed
+by default. Find more information on this argument in section
+:ref:`section-pubsub_command_line_parameters`.
 
 Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

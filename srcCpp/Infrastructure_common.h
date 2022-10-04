@@ -8,12 +8,18 @@
 
 #if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
   #include "perftest.h"
+#elif defined(RTI_PERF_TSS)
+  #include "gen/perftest.h"
 #endif
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifdef RTI_PERF_TSS_PRO
+  #include "ndds/ndds_cpp.h"
+#endif
 
 #ifdef RTI_VXWORKS
   #include <unistd.h>
@@ -48,9 +54,9 @@
  * implementation for these classes.
  */
 
-#ifdef PERFTEST_RTI_PRO
+#if defined(PERFTEST_RTI_PRO) || defined(RTI_PERF_TSS_PRO)
   #include "Infrastructure_pro.h"
-#elif PERFTEST_RTI_MICRO
+#elif defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS_MICRO)
   #include "Infrastructure_micro.h"
 #endif
 
@@ -67,10 +73,14 @@
  * generated variable for a string is different. We need to move it to a generic
  * place and remove it from here in the future.
  */
-#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO)
+#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS)
 static const char *const THROUGHPUT_TOPIC_NAME = "Throughput";
 static const char *const LATENCY_TOPIC_NAME = "Latency";
 static const char *const ANNOUNCEMENT_TOPIC_NAME = "Announcement";
+#elif defined(RTI_PERF_TSS)
+static const char *const THROUGHPUT_TOPIC_NAME = THROUGHPUT_TOPIC_NAME_STRING.buffer();
+static const char *const LATENCY_TOPIC_NAME = LATENCY_TOPIC_NAME_STRING.buffer();
+static const char *const ANNOUNCEMENT_TOPIC_NAME = ANNOUNCEMENT_TOPIC_NAME_STRING.buffer();
 #endif
 
 
@@ -97,6 +107,20 @@ public:
         try {
             std::unique_lock<std::mutex> lock(mutex);
             condition.wait(lock, [&]() -> bool { return count > 0; });
+            --count;
+            return true;
+        } catch (std::exception& e) {
+            std::cerr << "[Exception]: "<<  e.what() << std::endl;
+            return false;
+        }
+    }
+
+    bool take(int timeout_millisec)
+    {
+        try {
+            std::chrono::milliseconds timeout(timeout_millisec);
+            std::unique_lock<std::mutex> lock(mutex);
+            condition.wait_for(lock, timeout, [&]() -> bool { return count > 0; });
             --count;
             return true;
         } catch (std::exception& e) {
@@ -170,12 +194,14 @@ PerftestThread *PerftestThread_new(
 
 void PerftestThread_delete(PerftestThread *thread);
 
-#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO)
+#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS)
 struct DDS_Duration_t {
     int sec;
     unsigned int nanosec;
 };
+#endif
 
+#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS_PRO)
 class NDDSUtility {
 public:
     /*e \dref_Utility_sleep */

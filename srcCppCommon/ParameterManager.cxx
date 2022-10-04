@@ -109,7 +109,8 @@ void ParameterManager::initialize()
     instanceHashBuckets->set_extra_argument(YES);
     instanceHashBuckets->set_range(1, 1000000);
     instanceHashBuckets->set_group(GENERAL);
-    instanceHashBuckets->set_supported_middleware(Middleware::RTIDDSPRO);
+    instanceHashBuckets->set_supported_middleware(Middleware::RTIDDSPRO
+                                                  | Middleware::RTITSSPRO);
     create("instanceHashBuckets", instanceHashBuckets);
 
     Parameter<bool> *keyed = new Parameter<bool>(false);
@@ -129,7 +130,8 @@ void ParameterManager::initialize()
     noDirectCommunication->set_type(T_BOOL);
     noDirectCommunication->set_extra_argument(NO);
     noDirectCommunication->set_group(GENERAL);
-    noDirectCommunication->set_supported_middleware(Middleware::RTIDDSPRO);
+    noDirectCommunication->set_supported_middleware(Middleware::RTIDDSPRO
+                                                    | Middleware::RTITSSPRO);
     create("noDirectCommunication", noDirectCommunication);
 
     Parameter<bool> *noPositiveAcks = new Parameter<bool>(false);
@@ -140,7 +142,8 @@ void ParameterManager::initialize()
     noPositiveAcks->set_type(T_BOOL);
     noPositiveAcks->set_extra_argument(NO);
     noPositiveAcks->set_group(GENERAL);
-    noPositiveAcks->set_supported_middleware(Middleware::RTIDDSPRO);
+    noPositiveAcks->set_supported_middleware(Middleware::RTIDDSPRO
+                                             | Middleware::RTITSSPRO);
     create("noPositiveAcks", noPositiveAcks);
 
     Parameter<unsigned long long> *keepDurationUsec =
@@ -150,7 +153,8 @@ void ParameterManager::initialize()
     keepDurationUsec->set_type(T_NUMERIC_LLU);
     keepDurationUsec->set_extra_argument(YES);
     keepDurationUsec->set_group(GENERAL);
-    keepDurationUsec->set_supported_middleware(Middleware::RTIDDSPRO);
+    keepDurationUsec->set_supported_middleware(Middleware::RTIDDSPRO
+                                               | Middleware::RTITSSPRO);
     keepDurationUsec->set_range(1,
                 (unsigned long long)365 * 24 * 60 * 60 * 1000000);
                 // One year in usec
@@ -175,7 +179,8 @@ void ParameterManager::initialize()
     qosFile->set_type(T_STR);
     qosFile->set_extra_argument(YES);
     qosFile->set_group(GENERAL);
-    qosFile->set_supported_middleware(Middleware::RTIDDSPRO);
+    qosFile->set_supported_middleware(Middleware::RTIDDSPRO
+                                      | Middleware::RTITSSPRO);
     create("qosFile", qosFile);
 
     Parameter<std::string> *qosLibrary =
@@ -187,7 +192,8 @@ void ParameterManager::initialize()
     qosLibrary->set_type(T_STR);
     qosLibrary->set_extra_argument(YES);
     qosLibrary->set_group(GENERAL);
-    qosLibrary->set_supported_middleware(Middleware::RTIDDSPRO);
+    qosLibrary->set_supported_middleware(Middleware::RTIDDSPRO
+                                         | Middleware::RTITSSPRO);
     create("qosLibrary", qosLibrary);
 
     Parameter<bool> *noXmlQos = new Parameter<bool>(false);
@@ -197,7 +203,8 @@ void ParameterManager::initialize()
     noXmlQos->set_type(T_BOOL);
     noXmlQos->set_extra_argument(NO);
     noXmlQos->set_group(GENERAL);
-    noXmlQos->set_supported_middleware(Middleware::RTIDDSPRO);
+    noXmlQos->set_supported_middleware(Middleware::RTIDDSPRO
+                                       | Middleware::RTITSSPRO);
     create("noXmlQos", noXmlQos);
 
     Parameter<bool> *useReadThread = new Parameter<bool>(false);
@@ -221,7 +228,8 @@ void ParameterManager::initialize()
     waitsetDelayUsec->set_type(T_NUMERIC_LLU);
     waitsetDelayUsec->set_extra_argument(YES);
     waitsetDelayUsec->set_group(GENERAL);
-    waitsetDelayUsec->set_supported_middleware(Middleware::RTIDDSPRO);
+    waitsetDelayUsec->set_supported_middleware(Middleware::RTIDDSPRO
+                                               | Middleware::RTITSSPRO);
     waitsetDelayUsec->set_range(0, 10000000);
     create("waitsetDelayUsec", waitsetDelayUsec);
 
@@ -235,7 +243,8 @@ void ParameterManager::initialize()
     waitsetEventCount->set_type(T_NUMERIC_LD);
     waitsetEventCount->set_extra_argument(YES);
     waitsetEventCount->set_group(GENERAL);
-    waitsetEventCount->set_supported_middleware(Middleware::RTIDDSPRO);
+    waitsetEventCount->set_supported_middleware(Middleware::RTIDDSPRO
+                                                | Middleware::RTITSSPRO);
     waitsetEventCount->set_range(1, LONG_MAX);
     create("waitsetEventCount", waitsetEventCount);
 
@@ -245,7 +254,8 @@ void ParameterManager::initialize()
     asynchronous->set_type(T_BOOL);
     asynchronous->set_extra_argument(NO);
     asynchronous->set_group(GENERAL);
-    asynchronous->set_supported_middleware(Middleware::RTIDDSPRO);
+    asynchronous->set_supported_middleware(Middleware::RTIDDSPRO
+                                           | Middleware::RTITSSPRO);
     create("asynchronous", asynchronous);
 
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
@@ -261,7 +271,8 @@ void ParameterManager::initialize()
     flowController->add_valid_str_value("1Gbps");
     flowController->add_valid_str_value("10Gbps");
     flowController->set_group(GENERAL);
-    flowController->set_supported_middleware(Middleware::RTIDDSPRO);
+    flowController->set_supported_middleware(Middleware::RTIDDSPRO
+                                             | Middleware::RTITSSPRO);
     create("flowController", flowController);
 
     Parameter<bool> *cpu = new Parameter<bool>(false);
@@ -283,7 +294,8 @@ void ParameterManager::initialize()
     unbounded->set_extra_argument(POSSIBLE);
     unbounded->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_BOUNDED_SEQ_SIZE);
     unbounded->set_group(GENERAL);
-    unbounded->set_supported_middleware(Middleware::RTIDDSPRO);
+    unbounded->set_supported_middleware(Middleware::RTIDDSPRO
+                                        | Middleware::RTITSSPRO);
     create("unbounded", unbounded);
 
     Parameter<std::string> *threadPriorities = new Parameter<std::string>("");
@@ -529,6 +541,19 @@ void ParameterManager::initialize()
     create("compressionThreshold", compressionThreshold);
   #endif //defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
 
+  #ifdef RTI_PERF_TSS
+    Parameter<bool> *loaningSendReceive = new Parameter<bool>(false);
+    loaningSendReceive->set_command_line_argument("-loaningSendReceive", "");
+    loaningSendReceive->set_description(
+            "Enables loaning samples when sending and receiving them.\n"
+            "Disabled by default.");
+    loaningSendReceive->set_type(T_BOOL);
+    loaningSendReceive->set_extra_argument(NO);
+    loaningSendReceive->set_group(GENERAL);
+    loaningSendReceive->set_supported_middleware(Middleware::RTITSS);
+    create("loaningSendReceive", loaningSendReceive);
+  #endif /* RTI_PERF_TSS */
+
     ////////////////////////////////////////////////////////////////////////////
     //PUBLISHER PARAMETER
 
@@ -544,7 +569,8 @@ void ParameterManager::initialize()
     batchSize->set_group(PUB);
     batchSize->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT);
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTITSSPRO);
     create("batchSize", batchSize);
 
     Parameter<bool> *enableAutoThrottle = new Parameter<bool>(false);
@@ -578,7 +604,8 @@ void ParameterManager::initialize()
     pub->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("pub", pub);
 
     Parameter<unsigned long long> *latencyCount =
@@ -660,7 +687,8 @@ void ParameterManager::initialize()
     numSubscribers->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("numSubscribers", numSubscribers);
 
     Parameter<int> *pidMultiPubTest = new Parameter<int>(0);
@@ -675,7 +703,8 @@ void ParameterManager::initialize()
     pidMultiPubTest->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("pidMultiPubTest", pidMultiPubTest);
 
     ParameterPair<unsigned long long, std::string> *pubRate =
@@ -779,7 +808,8 @@ void ParameterManager::initialize()
     writerStats->set_group(PUB);
     writerStats->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("writerStats", writerStats);
   #endif
 
@@ -800,7 +830,8 @@ void ParameterManager::initialize()
     lowResolutionClock->set_group(PUB);
     lowResolutionClock->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("lowResolutionClock", lowResolutionClock);
   #endif
 
@@ -818,7 +849,8 @@ void ParameterManager::initialize()
     writeInstance->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("writeInstance", writeInstance);
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
@@ -850,7 +882,8 @@ void ParameterManager::initialize()
     loadDataFromFile->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("loadDataFromFile", loadDataFromFile);
 
     Parameter<unsigned long long> *maximumAllocableBufferSize
@@ -869,7 +902,8 @@ void ParameterManager::initialize()
     maximumAllocableBufferSize->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("maximumAllocableBufferSize", maximumAllocableBufferSize);
   #endif //RTI_LANGUAGE_CPP_TRADITIONAL
 
@@ -896,7 +930,8 @@ void ParameterManager::initialize()
     sidMultiSubTest->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("sidMultiSubTest", sidMultiSubTest);
 
     Parameter<int> *numPublishers = new Parameter<int>(1);
@@ -910,7 +945,8 @@ void ParameterManager::initialize()
     numPublishers->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("numPublishers", numPublishers);
 
     ParameterVector<unsigned long long> *cft =
@@ -927,7 +963,8 @@ void ParameterManager::initialize()
     cft->set_range(0, MAX_CFT_VALUE - 1);
     cft->set_parse_method(SPLIT);
     cft->set_group(SUB);
-    cft->set_supported_middleware(Middleware::RTIDDSPRO);
+    cft->set_supported_middleware(Middleware::RTIDDSPRO
+                                  | Middleware::RTITSSPRO);
     create("cft", cft);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -984,7 +1021,8 @@ void ParameterManager::initialize()
     peer->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("peer", peer);
 
     Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
@@ -1017,7 +1055,8 @@ void ParameterManager::initialize()
     transport->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     transport->add_valid_str_value("UDPv4");
     transport->add_valid_str_value("SHMEM");
   #if defined(PERFTEST_RTI_PRO)
@@ -1050,7 +1089,8 @@ void ParameterManager::initialize()
     multicast->set_supported_middleware(
             Middleware::RTIDDSPRO
             | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO);
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS);
     create("multicast", multicast);
 
     Parameter<std::string> *multicastAddr = new Parameter<std::string>();
@@ -1071,7 +1111,8 @@ void ParameterManager::initialize()
     multicastAddr->set_group(TRANSPORT);
     multicastAddr->set_supported_middleware(
             Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT);
+            | Middleware::RAWTRANSPORT
+            | Middleware::RTITSSPRO);
     create("multicastAddr", multicastAddr);
 
     Parameter<std::string> *transportVerbosity = new Parameter<std::string>();
@@ -1084,7 +1125,7 @@ void ParameterManager::initialize()
     transportVerbosity->set_extra_argument(YES);
     transportVerbosity->set_group(TRANSPORT);
     transportVerbosity->set_supported_middleware(
-            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT);
+            Middleware::RTIDDSPRO | Middleware::RAWTRANSPORT | Middleware::RTITSSPRO);
     create("transportVerbosity", transportVerbosity);
 
     Parameter<std::string> *transportServerBindPort =

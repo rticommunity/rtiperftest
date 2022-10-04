@@ -11,7 +11,8 @@
 
 PerftestTransport::PerftestTransport()
 {
-    multicastAddrMap[LATENCY_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_LATENCY;
+    multicastAddrMap[LATENCY_TOPIC_NAME] =
+            TRANSPORT_MULTICAST_ADDR_LATENCY;
     multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] =
             TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
     multicastAddrMap[THROUGHPUT_TOPIC_NAME] =
