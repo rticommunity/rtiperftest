@@ -40,6 +40,13 @@ sending samples, instead of the pure TSS approach that's followed
 by default. Find more information on this argument in section
 :ref:`section-pubsub_command_line_parameters`.
 
+Support for *RTI Connext DDS 7.0.0* |newTag|
+++++++++++++++++++++++++++++++++++++++++++++
+
+We modified *RTI Perftest* to add support for *RTI Connext DDS 7.0.0*, since we
+were using some internal APIs to retrieve certain information that have changed
+from the previous version.
+
 Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -93,8 +100,8 @@ A bug in *Perftest*'s C# API implementation made it impossible
 to test using large data types (``dataLen`` larger than ``65470`` bytes) or when forcing
 the use of unbounded sequences (``-unbounded``). This problem has been fixed.
 
-Compilation issue when enabling security in static mode|fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Compilation issue when enabling security in static mode |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When trying to compile statically (default behavior), *Perftest*
 would try to find and link against the Openssl libraries ``cryptoz`` and
