@@ -19,6 +19,12 @@ cStringifyFile_script="${script_location}/resource/scripts/cStringifyFile.pl"
 qos_file="${script_location}/perftest_qos_profiles.xml"
 doc_folder="${script_location}/srcDoc"
 generate_doc_folder="${script_location}/doc"
+resource_folder="${script_location}/resource"
+
+# By default we will not build TSS with Pro libs
+BUILD_TSS=0
+BUILD_TSS_PRO=0
+FACE_COMPLIANCE="None"
 
 # By default we will build pro, not micro
 BUILD_MICRO=0
@@ -178,10 +184,14 @@ function usage()
     echo "    --flatData-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
+    echo "    --no-zeroCopy                Do not try to compile against Zero-Copy libs   "
     echo "    --osx-shmem-shmmax <size>    Maximum segment size for shared memory in OSX  "
     echo "                                 in bytes. Default 400MB                        "
     echo "    --ns-resolution              Try to use the system real-time clock to get   "
     echo "                                 nano-second resolution.                        "
+    echo "                                 For the Classic C++ Implementation only.       "
+    echo "                                 Default is not enabled.                        "
+    echo "    --tss                        Build against Connext TSS (pro and micro)      "
     echo "                                 For the Classic C++ Implementation only.       "
     echo "                                 Default is not enabled.                        "
     echo "    --help -h                    Display this message.                          "
@@ -256,7 +266,22 @@ function executable_checking()
     fi
 
     # If we are Building MICRO
-    if [ "${BUILD_MICRO}" -eq "1" ]; then
+    if [ "${BUILD_TSS}" -eq "1" ]; then
+        if [ -z "${RTITSSHOME}" ]; then
+            echo -e "${ERROR_TAG} The RTITSSHOME variable is not set or the path does not exist"
+            usage
+            exit -1
+        elif [ "${BUILD_TSS_PRO}" -eq "1" ] && [ -z "${NDDSHOME}" ]; then
+            echo -e "${ERROR_TAG} The NDDSHOME variable is not set or the path does not exist"
+            usage
+            exit -1
+        elif [ "${BUILD_MICRO}" -eq "1" ] && [ -z "${RTIMEHOME}" ]; then
+            echo -e "${ERROR_TAG} The RTIMEHOME variable is not set or the path does not exist"
+            usage
+            exit -1
+        fi
+
+    elif [ "${BUILD_MICRO}" -eq "1" ]; then
 
         # Is RTIMEHOME set?
         if [ -z "${RTIMEHOME}" ]; then
@@ -285,6 +310,7 @@ function executable_checking()
                 echo -e "${WARNING_TAG} ${MAKE_EXE} executable not found, perftest_cpp will not be built."
             fi
         fi
+
     else # If building pro
 
         # Is NDDSHOME set?
@@ -371,7 +397,7 @@ function executable_checking()
             BUILD_CS=0
         fi
 
-    fi #Micro/Pro
+    fi #TSS/Micro/Pro
 
 }
 
@@ -410,9 +436,9 @@ function additional_defines_calculation()
     # Avoid optimized out variables when debugging
     if [ "${RELEASE_DEBUG}" == "release" ]; then
         echo -e "${INFO_TAG} C++ code will be optimized."
-        additional_defines=${additional_defines}"O3"
+        additional_defines=${additional_defines}" O3"
     else
-        additional_defines=${additional_defines}"O0"
+        additional_defines=${additional_defines}" O0"
     fi
 
     if [ "${LEGACY_DD_IMPL}" == "1" ]; then
@@ -496,6 +522,10 @@ function additional_defines_calculation()
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
             additional_rtiddsgen_defines_flatdata=${additional_rtiddsgen_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+        fi
+
+        if [ "${SKIP_ZEROCOPY}" ==  "1" ]; then
+            export ZEROCOPY_AVAILABLE="0"
         fi
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
@@ -1069,6 +1099,68 @@ function build_micro_cpp()
     fi
 }
 
+function build_tss_cpp()
+{
+    copy_src_cpp_common
+
+    ##############################################################################
+    # Generate files for the custom type files
+    additional_defines_custom_type=""
+    additional_header_files_custom_type=""
+    additional_source_files_custom_type=""
+
+    if [ "${USE_CUSTOM_TYPE}" == "1" ]; then
+        build_cpp_custom_type
+    fi
+
+    if [ "${BUILD_MICRO}" == "1" ]; then
+        TSS_IMPL="micro"
+    else
+        additional_defines_calculation "CppTraditional"
+        TSS_IMPL="pro"
+    fi
+
+    additional_defines=${additional_defines}" DRTI_PERF_TSS"
+
+    cp "${resource_folder}/tss/CMakeLists.txt" \
+    "${classic_cpp_folder}/CMakeLists.txt"
+
+    ##############################################################################
+    # Compile srcCpp code
+    echo ""
+    echo -e "${INFO_TAG} Compiling perftest_cpp"
+    cd "${classic_cpp_folder}"
+
+    cmake_generate_command="RTITSSARCH=${platform} ${CMAKE_EXE} \
+                            -DRTI_CONNEXT_TYPE=${TSS_IMPL} \
+                            -DRTI_TSS_ENABLE_FACE_COMPLIANCE=${FACE_COMPLIANCE} \
+                            -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} \
+                            -G \"Unix Makefiles\" \
+                            -B./perftest_build -H."
+
+	echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
+    eval $cmake_generate_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating makefiles with cmake for ${classic_cpp_lang_string}."
+        cd ..
+        exit -1
+    fi
+
+	cmake_build_command="${CMAKE_EXE} --build ./perftest_build --config ${RELEASE_DEBUG}"
+    	echo -e "${INFO_TAG} Cmake Build Command: $cmake_build_command"
+    eval $cmake_build_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure compiling code for ${classic_cpp_lang_string}."
+        cd ..
+        exit -1
+    fi
+
+    echo -e "${INFO_TAG} Compilation successful"
+    cd ..
+
+    clean_copied_files
+}
+
 function build_cpp11()
 {
     copy_src_cpp_common
@@ -1466,6 +1558,13 @@ while [ "$1" != "" ]; do
             clean
             exit
             ;;
+        --tss)
+            BUILD_TSS=1
+            ;;
+        --face-profile)
+            FACE_COMPLIANCE=$2
+            shift
+            ;;
         --micro)
             BUILD_MICRO=1
             ;;
@@ -1643,6 +1742,9 @@ while [ "$1" != "" ]; do
         --fastQueue)
             FAST_QUEUE=1
             ;;
+        --no-zeroCopy)
+            SKIP_ZEROCOPY="1"
+            ;;
         *)
             echo -e "${ERROR_TAG} unknown parameter \"$1\""
             usage
@@ -1652,9 +1754,22 @@ while [ "$1" != "" ]; do
     shift
 done
 
+if [ "${BUILD_TSS}" -eq "1" ] && [ "${BUILD_MICRO}" -eq "0" ]; then
+    BUILD_TSS_PRO=1
+fi
+
 executable_checking
 
-if [ "${BUILD_MICRO}" -eq "1" ]; then
+if [ "${BUILD_TSS}" -eq "1" ]; then
+    rtiddsgen_executable="$RTITSSHOME/bin/rtiddsgen"
+    classic_cpp_lang_string=FACEC++
+
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        library_sufix_calculation
+        build_tss_cpp
+    fi
+
+elif [ "${BUILD_MICRO}" -eq "1" ]; then
 
     rtiddsgen_executable="$RTIMEHOME/rtiddsgen/scripts/rtiddsgen"
 

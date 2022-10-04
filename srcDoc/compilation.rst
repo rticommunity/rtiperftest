@@ -21,6 +21,8 @@ Potentially, ``build.sh`` can generate and compile code for every
 architecture supported by *rtiddsgen* where a makefile is generated as
 output when the ``-example`` command-line is specified.
 
+.. _section-prerequisites:
+
 Prerequisites
 ~~~~~~~~~~~~~
 For compiling *RTI Perftest*, there are a few prerequisites;
@@ -88,6 +90,27 @@ if you downloaded the executables already compiled, you can skip these steps:
    will need to link against the OpenSSL/wolfSSL libraries for your
    architecture.
 
+..
+
+-  If compiling for *RTI Connext TSS*, make sure that the *TSS* libraries have
+   been compiled for the GeneralPurpose FACE profile, since that is the profile
+   that has been tested with *Perftest*. *Perftest* does not currently support
+   *RTI Connext TSS* built with the SafetyBase profile.
+
+  Before building *Perftest* for *RTI Connext TSS*, the following
+  environment variables also have to be set:
+
+    -  ``RTITSSHOME``: absolute path to an *RTI Connext TSS* installation.
+    -  ``NDDSHOME``: absolute path to an *RTI Connext Pro* installation. Only
+       needed when compiling for *RTI Connext TSS* over *RTI Connext Pro*.
+    -  ``NDDSARCH`` (optional): architecture of the *RTI Connext Pro*
+       libraries to use. It should only be used when it is not the
+       same as the architecture of the *RTI Connext TSS* libraries.
+    -  ``RTIMEHOME``: absolute path to an *RTI Connext Micro* installation. Only
+       needed when compiling for *RTI Connext TSS* over *RTI Connext Micro*.
+    -  ``RTIMEARCH`` (optional): architecture of the *RTI Connext Micro*
+       libraries to use. It should only be used when it is not the
+       same as the architecture of the *RTI Connext TSS* libraries.
 
 .. _compilation-parameters-linux:
 
@@ -114,6 +137,10 @@ The ``build.sh`` script accepts the following list of parameters:
     * - ``--micro-24x-compatibility``
       - Optional
       - Compile *RTI Perftest* against *RTI Connext DDS Micro* 2.4.11 and above.
+    * - ``--tss``
+      - Optional
+      - Compile *RTI Perftest* against *RTI Connext TSS 3.1.2* over *RTI Connext
+        Pro 6.1.1.4* or *RTI Connext Micro 2.4.13.4*.
     * - ``--nddshome``
       - Optional
       - Path to the *RTI Connext DDS Professional* installation. If this parameter
@@ -167,6 +194,11 @@ The ``build.sh`` script accepts the following list of parameters:
       - Optional
       - Specify the maximum size in bytes of the sample to be sent when using FlatData
         language binding. Default: 10485760
+    * - ``--no-zeroCopy``
+      - Optional
+      - Avoid adding the libraries and flags for Zero-Copy. This might be needed
+        if the compilation fails due to missing libraries (`nddsmetpz`).
+        Default: Not enabled.
     * - ``--secure``
       - Optional
       - Enable the compilation of the Perfest code specific for security and adds the
@@ -233,6 +265,7 @@ The ``build.sh`` script accepts the following list of parameters:
       - If this option is present, the ``build.sh`` script will display
         a help description and exit
 
+.. _section-linux_compilation_examples:
 
 Examples Running Build Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -316,6 +349,32 @@ examples:
    .. code-block:: console
 
        ./build.sh --platform x64Darwin14clang6.0 --micro
+
+-  Generation and compilation for *RTI Connext TSS* over *RTI Connext Pro* for a
+   given architecture in debug mode.
+
+   .. code-block:: console
+
+       ./build.sh --platform x64Linux4gcc7.3.0FACE_GP --debug --tss
+
+   .. note::
+
+      Before building *Perftest* for *RTI Connext TSS* over *RTI Connext
+      Pro*, some environment variables have to be set. Check
+      :ref:`section-prerequisites` to know more.
+
+-  Generation and compilation for *RTI Connext TSS* over *RTI Connext Micro* for a
+   given architecture in release mode.
+
+   .. code-block:: console
+
+       ./build.sh --platform x64Linux4gcc7.3.0FACE_GP --tss --micro
+
+   .. note::
+
+      Before building *Perftest* for *RTI Connext TSS* over *RTI Connext
+      Micro*, some environment variables have to be set. Check
+      :ref:`section-prerequisites` to know more.
 
 -  *RTI Perftest* directory clean-up.
 
@@ -456,6 +515,8 @@ The ``build.bat`` script accepts the following list of parameters:
 +------------------------+-----------+-----------------------------------+
 | ``--cs-build``         | Optional  | Only C# code generation and       |
 |                        |           | compilation.                      |
++------------------------+-----------+-----------------------------------+
+| ``--tss``              | Optional  | Compile for *RTI Connext TSS*     |
 +------------------------+-----------+-----------------------------------+
 | ``--dynamic``          | Optional  | Compile using the *Connext DDS*   |
 |                        |           | dynamic libraries. Default:       |

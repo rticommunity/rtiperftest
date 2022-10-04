@@ -6,7 +6,7 @@
 #ifndef INFRASTRUCTURE_MICRO_H_
 #define INFRASTRUCTURE_MICRO_H_
 
-#ifdef PERFTEST_RTI_MICRO
+#if defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS_MICRO)
 
 #include "osapi/osapi_semaphore.h"
 #include "osapi/osapi_thread.h"
@@ -14,6 +14,8 @@
 #include "rti_me_cpp.hxx"
 #include "dds_cpp/dds_cpp_dpde.hxx"
 #include "PerftestTransport.h"
+
+#include "Infrastructure_common.h"
 
 #ifdef RTI_SECURE_PERFTEST
   #include "sec_core/sec_core_cpp.h"
@@ -121,6 +123,7 @@ bool PerftestConfigureSecurity(
         ParameterManager *_PM);
 #endif
 
+#ifndef RTI_PERF_TSS
 /********************************************************************/
 /* The following structures/classes are copied from RTI Connext DDS */
 
@@ -266,5 +269,6 @@ class NDDSUtility
     }
 };
 
-#endif // PERFTEST_RTI_MICRO
+#endif /* RTI_PERF_TSS */
+#endif /* PERFTEST_RTI_MICRO */
 #endif /* INFRASTRUCTURE_MICRO_H_ */

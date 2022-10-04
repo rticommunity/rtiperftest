@@ -66,6 +66,9 @@ struct Middleware {
     static const MiddlewareMask RTIDDSPRO;
     static const MiddlewareMask RTIDDSMICRO;
     static const MiddlewareMask RTIDDS;
+    static const MiddlewareMask RTITSSPRO;
+    static const MiddlewareMask RTITSSMICRO;
+    static const MiddlewareMask RTITSS;
     static const MiddlewareMask RAWTRANSPORT;
     static const MiddlewareMask ALLDDS;
     static const MiddlewareMask ALL;

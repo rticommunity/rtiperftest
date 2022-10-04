@@ -39,6 +39,8 @@ Features
 *RTI Perftest* supports the following functionality:
 
 - *RTI Connext DDS Professional* and *RTI Connext DDS Micro*.
+  *Perftest* also supports *RTI Connext TSS* over *RTI Connext DDS Professional*
+  or over *RTI Connext DDS Micro*.
 - Multiple platforms, including Windows®, Linux®, macOS®, VxWorks®, and Android™.
 - Multiple test setups: multicast, one-to-many communication (Pub -> Sub),
   latency test, throughput test, and latency vs. throughput test.

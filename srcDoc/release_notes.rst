@@ -17,6 +17,36 @@ Release Notes 4.0
 What's New in 4.0
 ~~~~~~~~~~~~~~~~~~~~
 
+Support for **RTI Connext TSS 3.1.2** |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+We have added support for **RTI Connext TSS 3.1.2** compiled against *RTI
+Connext Pro 6.1.1.4* or against *RTI Connext Micro 2.4.13.4*.
+
+This support has been added for *Linux*, since *RTI Connext TSS 3.1.2* does not
+support *Windows* as a host or target platform.
+
+Examples of how to compile *Perftest* for *RTI Connext TSS 3.1.2* can be found
+in section :ref:`section-linux_compilation_examples`.
+
+Running *Perftest* against *RTI Connext TSS 3.1.2* is the same as
+running it when compiled against *RTI Connext Pro* or *RTI Connext Micro*,
+except for some command-line arguments that are available for *RTI Connext Pro*
+and/or *RTI Connext Micro*, but that aren't available for *RTI Connext TSS*.
+(See :ref:`section-not_available_params_tss`). The argument
+``-loaningSendReceive`` has been added to make *Perftest* use
+*RTI Connext Pro*/*RTI Connext Micro* loaning functions for receiving and
+sending samples, instead of the pure TSS approach that's followed
+by default. Find more information on this argument in section
+:ref:`section-pubsub_command_line_parameters`.
+
+Support for *RTI Connext DDS 7.0.0* |newTag|
+++++++++++++++++++++++++++++++++++++++++++++
+
+We modified *RTI Perftest* to add support for *RTI Connext DDS 7.0.0*, since we
+were using some internal APIs to retrieve certain information that have changed
+from the previous version.
+
 Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -70,8 +100,8 @@ A bug in *Perftest*'s C# API implementation made it impossible
 to test using large data types (``dataLen`` larger than ``65470`` bytes) or when forcing
 the use of unbounded sequences (``-unbounded``). This problem has been fixed.
 
-Compilation issue when enabling security in static mode|fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Compilation issue when enabling security in static mode |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When trying to compile statically (default behavior), *Perftest*
 would try to find and link against the Openssl libraries ``cryptoz`` and

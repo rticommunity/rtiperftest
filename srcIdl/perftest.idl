@@ -25,6 +25,12 @@ const string LATENCY_TOPIC_NAME = "Latency";
 const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";
 #endif
 
+#if defined(RTI_PERF_TSS)
+const string THROUGHPUT_TOPIC_NAME_STRING = "Throughput";
+const string LATENCY_TOPIC_NAME_STRING = "Latency";
+const string ANNOUNCEMENT_TOPIC_NAME_STRING = "Announcement";
+#endif
+
 /*
  * This idl uses prefix annotations. In order to compile with previous versions
  * of *Connext DDS Professional* modify the following annotations:
@@ -34,6 +40,14 @@ const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";
  * - @key   -- Remove it and replace it at the end of the member with "//@key"
  *
  */
+
+/*
+ * FACE Types need to be inside a FACE::DM module
+ */
+#ifdef RTI_PERF_TSS
+module FACE {
+module DM {
+#endif
 
 @final
 struct TestData_t {
@@ -105,6 +119,11 @@ struct TestDataKeyedLarge_t {
     long custom_type_size;
   #endif
 };
+
+#ifdef RTI_PERF_TSS
+}; /* DM module */
+}; /* FACE module */
+#endif
 
 /********************************** FLATDATA **********************************/
 #ifdef RTI_FLATDATA_AVAILABLE

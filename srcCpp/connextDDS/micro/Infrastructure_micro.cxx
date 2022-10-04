@@ -3,7 +3,7 @@
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
-#ifdef PERFTEST_RTI_MICRO
+#if defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS_MICRO)
 
 #include "Infrastructure_common.h"
 
@@ -172,7 +172,13 @@ bool configureUDPv4Transport(
      * We will use the same values we use for Pro (XML) for the buffers
      * these values can be reduced for a smaller memory footprint.
      */
+#ifndef RTI_PERF_TSS_MICRO
     UDP_InterfaceFactoryProperty *udp_property =  new UDP_InterfaceFactoryProperty();
+#else
+    UDP_InterfaceFactoryProperty* udp_property = (struct UDP_InterfaceFactoryProperty *)
+            malloc(sizeof(struct UDP_InterfaceFactoryProperty));
+    *udp_property = UDP_INTERFACE_FACTORY_PROPERTY_DEFAULT;
+#endif
     udp_property->max_message_size = 65536;
     udp_property->max_receive_buffer_size = 2097152;
     udp_property->max_send_buffer_size = 524288;
@@ -194,12 +200,71 @@ bool configureUDPv4Transport(
                     _PM->get<std::string>("allowInterfaces").c_str());
             return false;
         }
+#ifndef RTI_PERF_TSS_MICRO
         udp_property->allow_interface.maximum(1);
         udp_property->allow_interface.length(1);
         *udp_property->allow_interface.get_reference(0) =
             DDS_String_dup(
                 _PM->get<std::string>("allowInterfaces").c_str());
+#else
+        if (!DDS_StringSeq_set_maximum(&udp_property->allow_interface,1))
+        {
+            printf("failed to set allow_interface maximum\n");
+            return false;
+        }
+        if (!DDS_StringSeq_set_length(&udp_property->allow_interface,1))
+        {
+            printf("failed to set allow_interface length\n");
+            return false;
+        }
+        *DDS_StringSeq_get_reference(&udp_property->allow_interface,0) =
+                DDS_String_dup(_PM->get<std::string>("allowInterfaces").c_str());
+#endif
     }
+
+#if defined(RTI_PERF_TSS_MICRO) && FACE_COMPLIANCE_LEVEL_SAFETY_BASE_OR_STRICTER
+
+    /* Safety Base or stricter, with Micro, must manually configure available
+    * interfaces.
+    * First we disable reading out the interface list. Note that on some
+    * platforms reading out the interface list has been compiled out, so
+    * this property could have no effect.
+    */
+    udp_property->disable_auto_interface_config = RTI_TRUE;
+
+    REDA_StringSeq_set_maximum(&udp_property->allow_interface,1);
+    REDA_StringSeq_set_length(&udp_property->allow_interface,1);
+
+    /* The name of the interface can be the anything, up to
+    * UDP_INTERFACE_MAX_IFNAME characters including the '\0' character
+    */
+    *DDS_StringSeq_get_reference(&udp_property->allow_interface,0) =
+    DDS_String_dup("loopback");
+
+    /* This function takes the following arguments:
+    * Param 1 is the iftable in the UDP property
+    * Param 2 is the IP address of the interface in host order
+    * Param 3 is the Netmask of the interface
+    * Param 4 is the name of the interface
+    * Param 5 are flags. The following flags are supported for Security and
+    *    Safety Base (use OR for multiple):
+        *        UDP_INTERFACE_INTERFACE_UP_FLAG - Interface is up
+        *
+        *    The following flags are supported for non-Security and non-Safety
+        *    Base:
+        *        UDP_INTERFACE_INTERFACE_MULTICAST_FLAG - Interface supports multicast
+        */
+        RTI_BOOL result;
+        result = UDP_InterfaceTable_add_entry(&udp_property->if_table,
+        0x7f000001,0xff000000,"loopback",
+        UDP_INTERFACE_INTERFACE_UP_FLAG);
+
+        if (!result)
+        {
+            printf("failed UDP table add entry!\n");
+            return DDS_BOOLEAN_FALSE;
+    }
+#endif
 
     if (!registry->register_component(
                 NETIO_DEFAULT_UDP_NAME,
@@ -218,6 +283,8 @@ bool configureUDPv4Transport(
     dpde_properties.max_samples_per_remote_builtin_endpoint_writer = 1;
   #endif
 
+// For TSS, this component is already registered
+#ifndef RTI_PERF_TSS_MICRO
     if (!registry->register_component("dpde",
                 DPDEDiscoveryFactory::get_interface(),
                 &dpde_properties._parent,
@@ -228,8 +295,13 @@ bool configureUDPv4Transport(
         }
         return false;
     }
+#endif
 
+#ifndef RTI_PERF_TSS_MICRO
     if (!qos.discovery.discovery.name.set_name("dpde")) {
+#else
+    if (!RT_ComponentFactoryId_set_name(&qos.discovery.discovery.name, "dpde")) {
+#endif
         printf("Micro: Failed to set discovery plugin name\n");
         if (udp_property != NULL) {
             delete udp_property;
@@ -254,6 +326,10 @@ bool configureUDPv4Transport(
     qos.resource_limits.remote_participant_allocation = 8;
     qos.resource_limits.remote_reader_allocation = 8;
     qos.resource_limits.remote_writer_allocation = 8;
+#ifdef RTI_PERF_TSS_MICRO
+    qos.resource_limits.local_publisher_allocation = 3;
+    qos.resource_limits.local_subscriber_allocation = 3;
+#endif
 
     transport.minimumMessageSizeMax = udp_property->max_message_size;
 
