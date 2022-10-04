@@ -178,6 +178,7 @@ function usage()
     echo "    --flatData-max-size <size>   Specify the maximum bounded size on bytes      "
     echo "                                 for sequences when using FlatData language     "
     echo "                                 binding. Default 10MB                          "
+    echo "    --no-zeroCopy                Do not try to compile against Zero-Copy libs   "
     echo "    --osx-shmem-shmmax <size>    Maximum segment size for shared memory in OSX  "
     echo "                                 in bytes. Default 400MB                        "
     echo "    --ns-resolution              Try to use the system real-time clock to get   "
@@ -496,6 +497,10 @@ function additional_defines_calculation()
         if [ "${RTI_FLATDATA_MAX_SIZE}" != "" ]; then
             additional_defines=${additional_defines}" DRTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
             additional_rtiddsgen_defines_flatdata=${additional_rtiddsgen_defines_flatdata}" -D RTI_FLATDATA_MAX_SIZE=${RTI_FLATDATA_MAX_SIZE}"
+        fi
+
+        if [ "${SKIP_ZEROCOPY}" ==  "1" ]; then
+            export ZEROCOPY_AVAILABLE="0"
         fi
 
         if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
@@ -1642,6 +1647,9 @@ while [ "$1" != "" ]; do
             ;;
         --fastQueue)
             FAST_QUEUE=1
+            ;;
+        --no-zeroCopy)
+            SKIP_ZEROCOPY="1"
             ;;
         *)
             echo -e "${ERROR_TAG} unknown parameter \"$1\""

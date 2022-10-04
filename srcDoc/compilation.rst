@@ -167,6 +167,11 @@ The ``build.sh`` script accepts the following list of parameters:
       - Optional
       - Specify the maximum size in bytes of the sample to be sent when using FlatData
         language binding. Default: 10485760
+    * - ``--no-zeroCopy``
+      - Optional
+      - Avoid adding the libraries and flags for Zero-Copy. This might be needed
+        if the compilation fails due to missing libraries (`nddsmetpz`).
+        Default: Not enabled.
     * - ``--secure``
       - Optional
       - Enable the compilation of the Perfest code specific for security and adds the
