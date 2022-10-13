@@ -3,14 +3,6 @@
 Release Notes
 =============
 
-.. raw:: html
-
-    <p style="color:#004C97"; align="centerw"><strong>
-    The New C# API is now supported in RTI Perftest! Check the performance improvements
-    with respect to the old one! Also, a lot of new improvements and fixes to make
-    Perftest even more stable, reliable and configurable.
-    </strong></p>
-
 Release Notes Master
 ---------------------
 
