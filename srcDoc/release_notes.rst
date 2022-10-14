@@ -3,19 +3,11 @@
 Release Notes
 =============
 
-.. raw:: html
+Release Notes 4.0
+--------------------
 
-    <p style="color:#004C97"; align="centerw"><strong>
-    The New C# API is now supported in RTI Perftest! Check the performance improvements
-    with respect to the old one! Also, a lot of new improvements and fixes to make
-    Perftest even more stable, reliable and configurable.
-    </strong></p>
-
-Release Notes Develop
----------------------
-
-What's New in Develop
-~~~~~~~~~~~~~~~~~~~~~
+What's New in 4.0
+~~~~~~~~~~~~~~~~~~~~
 
 Support for **RTI Connext TSS 3.1.2** |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -39,6 +31,13 @@ and/or *RTI Connext Micro*, but that aren't available for *RTI Connext TSS*.
 sending samples, instead of the pure TSS approach that's followed
 by default. Find more information on this argument in section
 :ref:`section-pubsub_command_line_parameters`.
+
+Support for *RTI Connext DDS 7.0.0* |newTag|
+++++++++++++++++++++++++++++++++++++++++++++
+
+We modified *RTI Perftest* to add support for *RTI Connext DDS 7.0.0*, since we
+were using some internal APIs to retrieve certain information that have changed
+from the previous version.
 
 Support for **wolfSSL** for *Linux* and *QNX* when using the *Security Plugins* |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -74,7 +73,7 @@ value.
 In addition, a new parameter (``-secureEncryptionAlgorithm``) has been added to support
 manually setting the desired value.
 
-What's Fixed in Develop
+What's Fixed in 4.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Unclear table output headers |enhancedTag|
@@ -93,8 +92,8 @@ A bug in *Perftest*'s C# API implementation made it impossible
 to test using large data types (``dataLen`` larger than ``65470`` bytes) or when forcing
 the use of unbounded sequences (``-unbounded``). This problem has been fixed.
 
-Compilation issue when enabling security in static mode|fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Compilation issue when enabling security in static mode |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When trying to compile statically (default behavior), *Perftest*
 would try to find and link against the Openssl libraries ``cryptoz`` and
@@ -146,7 +145,7 @@ seen in operating systems (such as VxWorks) with low-resolution clocks.
 
 This problem has been resolved.
 
-Deprecations in Develop
+Deprecations in 4.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 ``-scan`` option will be removed in future versions of *RTI Perftest*
