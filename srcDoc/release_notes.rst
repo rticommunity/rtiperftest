@@ -3,6 +3,34 @@
 Release Notes
 =============
 
+Release Notes Develop
+---------------------
+
+What's New in Develop
+~~~~~~~~~~~~~~~~~~~~~
+
+New option to save all latency times into a csv file |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The *RTI Perftest* publisher side has a new command-line option: ``--latencyFile <file>``.
+This option will, at the end of the test, save all the time values obtained for all the latency
+samples (those samples for which we calculate the Round-Trip Time) into a file.
+
+This option should be used when all the latency time values are required and the final
+summary information is not enough.
+
+We recommend the use of this option in conjunction with ``--noPrint`` when doing
+a latency test (``--lantecyTest``) or when latency samples are printed very often in the
+publisher side, as the printing operation is more costly and may affect the result of the
+test.
+
+Find more information in the :ref:`Test Parameters only for Publishing Applications` section.
+
+What's Fixed in Develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+--
+
 Release Notes 4.0
 --------------------
 

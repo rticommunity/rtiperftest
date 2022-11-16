@@ -724,6 +724,17 @@ void ParameterManager::initialize()
     pubRate->add_valid_str_value("spin");
     create("pubRate", pubRate);
 
+    Parameter<std::string> *latencyFile = new Parameter<std::string>("latency_samples.csv");
+    latencyFile->set_command_line_argument("-latencyFile", "<filename>");
+    latencyFile->set_description(
+            "Save at the end of the test all the latency samples as a csv file.\n"
+            "Default method: do not save");
+    latencyFile->set_type(T_STR);
+    latencyFile->set_extra_argument(YES);
+    latencyFile->set_group(PUB);
+    latencyFile->set_supported_middleware(Middleware::ALL);
+    create("latencyFile", latencyFile);
+
 #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     ParameterPair<unsigned long long, std::string> *pubRatebps =
             new ParameterPair<unsigned long long, std::string>(0, "spin");
