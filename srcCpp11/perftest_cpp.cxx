@@ -1504,13 +1504,15 @@ class LatencyListener : public IMessagingCB
         // Before Sorting the array, it is the right time to print into a file
         // if we have to.
         if (_PM->is_set("latencyFile")) {
-            std::string file_name= _PM->get<std::string>("latencyFile");
+            std::string file_name = _PM->get<std::string>("latencyFile");
             if (file_name.empty()) {
                 file_name = "LatencySamples.csv";
             }
             FILE *output_file = fopen(file_name.c_str(), "a");
             if (output_file == NULL) {
-                fprintf(stderr, "[Error]: print_summary_latency error opening file to save latency Samples");
+                fprintf(stderr,
+                        "[Error]: print_summary_latency error opening "
+                        "file to save latency Samples");
             } else {
                 std::cerr << "[Info] Saving latency information in \""
                           << file_name << "\"."

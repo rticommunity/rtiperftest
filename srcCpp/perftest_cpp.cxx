@@ -1574,15 +1574,19 @@ public:
         // Before Sorting the array, it is the right time to print into a file
         // if we have to.
         if (_PM->is_set("latencyFile")) {
-            std::string file_name= _PM->get<std::string>("latencyFile");
+            std::string file_name = _PM->get<std::string>("latencyFile");
             if (file_name.empty()) {
                 file_name = "LatencySamples.csv";
             }
             FILE *output_file = fopen(file_name.c_str(), "a");
             if (output_file == NULL) {
-                fprintf(stderr, "[Error]: print_summary_latency error opening file to save latency Samples");
+                fprintf(stderr,
+                        "[Error]: print_summary_latency error opening "
+                        "file to save latency Samples");
             } else {
-                fprintf(stderr, "Saving latency information in \"%s\".\n", file_name.c_str());
+                fprintf(stderr,
+                        "Saving latency information in \"%s\".\n",
+                        file_name.c_str());
                 fprintf(output_file, "Sample Number, Value\n");
                 for (unsigned int i = 0; i < count; i++) {
                     fprintf(output_file, "%u, %lu\n", i, _latency_history[i]);
