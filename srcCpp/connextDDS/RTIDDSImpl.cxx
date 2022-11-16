@@ -1344,7 +1344,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             if (retcode != DDS_RETCODE_OK) {
                 shutdown();
                 char errorMessage[21 + 21]; // enough to hold all numbers
-                sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
+                snprintf(errorMessage, 21 + 21, "set_octet_array(key) failed: %d", retcode);
                 throw std::runtime_error(errorMessage);
             }
 
@@ -1368,7 +1368,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         if (retcode != DDS_RETCODE_OK) {
             shutdown();
             char errorMessage[21 + 21]; // enough to hold all numbers
-            sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
+            snprintf(errorMessage, 21 + 21, "set_octet_array(key) failed: %d", retcode);
             throw std::runtime_error(errorMessage);
         }
 
@@ -3413,7 +3413,7 @@ bool RTIDDSImpl<T>::configure_writer_qos(
     // If is LargeData
     if (_PM->get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", (_isFlatData
+        snprintf(buf, 10, "%d", (_isFlatData
                 ? DDS_LENGTH_UNLIMITED // No dynamic alloc of serialize buffer
                 : _PM->get<int>("unbounded")));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
@@ -3836,7 +3836,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
     #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
         char buf[10];
-        sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
+        snprintf(buf, 10, "%d", DDS_LENGTH_UNLIMITED);
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
@@ -3905,7 +3905,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifdef PERFTEST_RTI_PRO
         char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        snprintf(buf, 10, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
@@ -4192,7 +4192,7 @@ DDSTopicDescription *RTIDDSImpl<T>::create_cft(
         printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
 
         for (int i = 0; i < KEY_SIZE ; i++) {
-            sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
+            snprintf(cft_param[i], 128, "%d", (unsigned char)(cftRange[0] >> i * 8));
         }
 
         parameters.from_array(param_list, KEY_SIZE);
@@ -4205,7 +4205,7 @@ DDSTopicDescription *RTIDDSImpl<T>::create_cft(
                 cftRange[1]);
 
         for (unsigned int i = 0; i < 2 * KEY_SIZE ; i++ ) {
-            sprintf(cft_param[i], "%d", (unsigned char)
+            snprintf(cft_param[i], 128, "%d", (unsigned char)
                     (cftRange[ i < KEY_SIZE? 0 : 1] >> (i % KEY_SIZE) * 8));
         }
 

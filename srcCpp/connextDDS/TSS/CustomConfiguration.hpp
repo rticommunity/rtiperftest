@@ -332,7 +332,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
 
         FACE::Boolean success = true;
 
-        sprintf(conf_name, "writer ");
+        snprintf(conf_name, 32, "writer ");
         strcat(conf_name, ANNOUNCEMENT_TOPIC_NAME);
 
         /***** Announcement *****/
@@ -350,7 +350,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        sprintf(conf_name, "reader ");
+        snprintf(conf_name, 32, "reader ");
         strcat(conf_name, ANNOUNCEMENT_TOPIC_NAME);
         _connection_configs.push_back(GenerateConnectionConfiguration(
                                          conf_name,
@@ -366,7 +366,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        sprintf(conf_name, "writer ");
+        snprintf(conf_name, "writer ");
         strcat(conf_name, LATENCY_TOPIC_NAME);
         /***** Latency *****/
         _connection_configs.push_back(GenerateConnectionConfiguration(
@@ -383,7 +383,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        sprintf(conf_name, "reader ");
+        snprintf(conf_name, 32, "reader ");
         strcat(conf_name, LATENCY_TOPIC_NAME);
         _connection_configs.push_back(GenerateConnectionConfiguration(
                                          conf_name,
@@ -399,7 +399,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        sprintf(conf_name, "writer ");
+        snprintf(conf_name, 32, "writer ");
         strcat(conf_name, THROUGHPUT_TOPIC_NAME);
         /*****Throughput *****/
         _connection_configs.push_back(GenerateConnectionConfiguration(
@@ -416,7 +416,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        sprintf(conf_name, "reader ");
+        snprintf(conf_name, 32, "reader ");
         strcat(conf_name, THROUGHPUT_TOPIC_NAME);
         _connection_configs.push_back(GenerateConnectionConfiguration(
                                          conf_name,

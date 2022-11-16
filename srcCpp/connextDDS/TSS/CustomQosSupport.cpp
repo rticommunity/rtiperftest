@@ -395,7 +395,7 @@ RTI_TSS_datawriter_qos(struct DDS_DataWriterQos *dw_qos, void *data)
     // If is LargeData
     if (ctx->pm->get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", ctx->pm->get<int>("unbounded"));
+        snprintf(buf, 10, "%d", ctx->pm->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf,
@@ -737,7 +737,7 @@ RTI_TSS_datareader_qos(struct DDS_DataReaderQos *dr_qos, void *data)
     {
       #ifdef RTI_PERF_TSS_PRO
         char buf[10];
-        sprintf(buf, "%d", ctx->pm->get<int>("unbounded"));
+        snprintf(buf, 10, "%d", ctx->pm->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos->property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
