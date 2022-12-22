@@ -1330,74 +1330,27 @@ void ParameterManager::initialize()
     create("fastQueue", fastQueue);
   #endif
 
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL)
+    //  This parameter is just supported in the traditional C++ language.
+    Parameter<bool> *crc = new Parameter<bool>(false);
+    crc->set_command_line_argument("-fastQueue", "");
+    crc->set_description("Enable CRC computation.\n");
+    crc->set_type(T_BOOL);
+    crc->set_extra_argument(NO);
+    crc->set_group(GENERAL);
+    crc->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("crc", crc);
+  #endif
+
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
-    Parameter<bool> *secureEncryptDiscovery = new Parameter<bool>(false);
-    secureEncryptDiscovery->set_command_line_argument(
-            "-secureEncryptDiscovery", "");
-    secureEncryptDiscovery->set_description("Encrypt discovery traffic");
-    secureEncryptDiscovery->set_type(T_BOOL);
-    secureEncryptDiscovery->set_extra_argument(NO);
-    secureEncryptDiscovery->set_group(SECURE);
-    secureEncryptDiscovery->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptDiscovery",  secureEncryptDiscovery);
-
-    Parameter<bool> *secureSign = new Parameter<bool>(false);
-    secureSign->set_command_line_argument("-secureSign", "");
-    secureSign->set_description("Sign (HMAC) discovery and user data");
-    secureSign->set_type(T_BOOL);
-    secureSign->set_extra_argument(NO);
-    secureSign->set_group(SECURE);
-    secureSign->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureSign", secureSign);
-
-    Parameter<bool> *secureEncryptBoth = new Parameter<bool>(false);
-    secureEncryptBoth->set_command_line_argument("-secureEncryptBoth", "");
-    secureEncryptBoth->set_description("Sign (HMAC) discovery and user data");
-    secureEncryptBoth->set_type(T_BOOL);
-    secureEncryptBoth->set_extra_argument(NO);
-    secureEncryptBoth->set_group(SECURE);
-    secureEncryptBoth->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptBoth", secureEncryptBoth);
-
-    Parameter<bool> *secureEncryptData = new Parameter<bool>(false);
-    secureEncryptData->set_command_line_argument("-secureEncryptData", "");
-    secureEncryptData->set_description("Encrypt topic (user) data");
-    secureEncryptData->set_type(T_BOOL);
-    secureEncryptData->set_extra_argument(NO);
-    secureEncryptData->set_group(SECURE);
-    secureEncryptData->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptData", secureEncryptData);
-
-    Parameter<bool> *secureEncryptSM = new Parameter<bool>(false);
-    secureEncryptSM->set_command_line_argument("-secureEncryptSM", "");
-    secureEncryptSM->set_description("Encrypt RTPS submessages");
-    secureEncryptSM->set_type(T_BOOL);
-    secureEncryptSM->set_extra_argument(NO);
-    secureEncryptSM->set_group(SECURE);
-    secureEncryptSM->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptSM", secureEncryptSM);
 
     Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>();
     secureGovernanceFile->set_command_line_argument(
             "-secureGovernanceFile", "<file>");
     secureGovernanceFile->set_description(
-            "Governance file. If specified, the authentication,\n"
-            "signing, and encryption arguments are ignored. The\n"
-            "governance document configuration will be used instead.\n"
-            "Default: Perftest will choose the right governance file\n"
-            "given the rest of the security command line options provided");
+            "Governance file to use.");
     secureGovernanceFile->set_type(T_STR);
     secureGovernanceFile->set_extra_argument(YES);
     secureGovernanceFile->set_group(SECURE);

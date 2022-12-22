@@ -142,15 +142,6 @@ namespace PerformanceTest
             get => instanceHashBuckets;
             set { instanceHashBuckets = value; InstanceHashBucketsSet = false; }
         }
-        public bool SecureSign { get; set; }
-        public bool SecureEncryptBoth
-        {
-            get => secureEncryptBoth;
-            set { secureEncryptBoth = SecureEncryptData = SecureEncryptSM = value; }
-        }
-        public bool SecureEncryptData { get; set; }
-        public bool SecureEncryptSM { get; set; }
-        public bool SecureEncryptDiscovery { get; set; }
         public string SecureGovernanceFile { get; set; }
         public string SecurePermissionsFile { get; set; }
         public string SecureCertAuthority { get; set; }

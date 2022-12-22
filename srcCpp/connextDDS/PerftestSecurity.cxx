@@ -110,35 +110,6 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";
 
-    if (!_PM->is_set("secureGovernanceFile")) {
-        stringStream << "\tEncrypt discovery: ";
-        if (_PM->get<bool>("secureEncryptDiscovery")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-
-        stringStream << "\tEncrypt topic (user) data: ";
-        if (_PM->get<bool>("secureEncryptData")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-
-        stringStream << "\tEncrypt submessage: ";
-        if (_PM->get<bool>("secureEncryptSM")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-
-        stringStream << "\tSign data: ";
-        if (_PM->get<bool>("secureSign")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-    }
     stringStream << "\tGovernance file: ";
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";

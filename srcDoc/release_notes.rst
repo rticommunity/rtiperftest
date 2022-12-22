@@ -3,6 +3,30 @@
 Release Notes
 =============
 
+Release Notes Develop
+---------------------
+
+What's New in Develop
+~~~~~~~~~~~~~~~~~~~~~
+
+Secure parameters have been simplified |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, *Perftest* had the option of building the name of the
+security governance file based on several command line options. These options
+would determine if the governance would be signed, the kind of RTPS protection,
+DATA protection, etc. This resulted in the need of having a governance file
+for every combination of security options.
+
+Instead we decided to keep a simpler option (also present in previous releases):
+``-secureGovernanceFile`` so *Perftest* can be directly pointed to the file to
+use.
+
+What's Fixed in Develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+WIP
+
 Release Notes 4.0
 --------------------
 

@@ -1448,36 +1448,9 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 
     // check if governance file provided
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        // choose a pre-built governance file
-        std::string governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
-        if (_PM->get<bool>("secureEncryptDiscovery")) {
-            governanceFilePath += "Discovery";
-        }
-
-        if (_PM->get<bool>("secureSign")) {
-            governanceFilePath += "Sign";
-        }
-
-        if (_PM->get<bool>("secureEncryptData")
-                && _PM->get<bool>("secureEncryptSM")) {
-            governanceFilePath += "EncryptBoth";
-        } else if (_PM->get<bool>("secureEncryptData")) {
-            governanceFilePath += "EncryptData";
-        } else if (_PM->get<bool>("secureEncryptSM")) {
-            governanceFilePath += "EncryptSubmessage";
-        }
-
-        governanceFilePath += ".xml";
-
-        dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                governanceFilePath;
-
-        /*
-         * Save the local variable governanceFilePath into
-         * the parameter "secureGovernanceFile"
-         */
-        _PM->set("secureGovernanceFile", governanceFilePath);
-
+        std::cerr << "[Error] secureGovernanceFile cannot be empty when using security."
+                  << std::endl;
+        return;
     } else {
         dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
                 _PM->get<std::string>("secureGovernanceFile");
@@ -1561,36 +1534,6 @@ std::string RTIDDSImpl<T>::printSecureArgs()
 {
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";
-
-    if (!_PM->is_set("secureGovernanceFile")) {
-        stringStream << "\tEncrypt discovery: ";
-        if (_PM->get<bool>("secureEncryptDiscovery")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-
-        stringStream << "\tEncrypt topic (user) data: ";
-        if (_PM->get<bool>("secureEncryptData")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-
-        stringStream << "\tEncrypt submessage: ";
-        if (_PM->get<bool>("secureEncryptData")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-
-        stringStream << "\tSign data: ";
-        if (_PM->get<bool>("secureSign")) {
-            stringStream << "True\n";
-        } else {
-            stringStream << "False\n";
-        }
-    }
 
     stringStream << "\tGovernance file: ";
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {

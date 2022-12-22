@@ -1100,31 +1100,10 @@ bool PerftestConfigureSecurity(
 
     // check if governance file provided
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        // choose a pre-built governance file
-        governanceFilePath = "./resource/secure/signed_PerftestGovernance_";
-        if (_PM->get<bool>("secureEncryptDiscovery")) {
-            governanceFilePath += "Discovery";
-        }
-        if (_PM->get<bool>("secureSign")) {
-            governanceFilePath += "Sign";
-        }
-        if (_PM->get<bool>("secureEncryptData")
-                && _PM->get<bool>("secureEncryptSM")) {
-            governanceFilePath += "EncryptBoth";
-        } else if (_PM->get<bool>("secureEncryptData")) {
-            governanceFilePath += "EncryptData";
-        } else if (_PM->get<bool>("secureEncryptSM")) {
-            governanceFilePath += "EncryptSubmessage";
-        }
-
-        governanceFilePath += ".xml";
-
-        if (!addPropertyToParticipantQos(
-                qos,
-                "com.rti.serv.secure.access_control.governance_file",
-                governanceFilePath)) {
-            return false;
-        }
+        fprintf(stderr,
+                "%s SecureGovernanceFile cannot be empty when using security.\n",
+                classLoggingString.c_str());
+        return false;
     } else {
         governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
         if (!addPropertyToParticipantQos(

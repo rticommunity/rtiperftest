@@ -125,10 +125,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
 
     private boolean _secureUseSecure = false;
-    private boolean _secureIsSigned = false;
-    private boolean _secureIsDataEncrypted = false; // User Data
-    private boolean _secureIsSMEncrypted = false; // Sub-message
-    private boolean _secureIsDiscoveryEncrypted = false;
     private String _secureCertAuthorityFile = null;
     private String _secureCertificateFile = null;
     private String _securePrivateKeyFile = null;
@@ -301,10 +297,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             usage_string += _transport.helpMessageString();
             usage_string += "\n" +
             "\t======================= SECURE Specific Options =======================\n\n" +
-            "\t-secureEncryptDiscovery       - Encrypt discovery traffic\n" +
-            "\t-secureSign                   - Sign (HMAC) discovery and user data\n" +
-            "\t-secureEncryptData            - Encrypt topic (user) data\n" +
-            "\t-secureEncryptSM              - Encrypt RTPS submessages\n" +
             "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
             "\t                                signing, and encryption arguments are ignored. The\n" +
             "\t                                governance document configuration will be used instead\n" +
@@ -767,14 +759,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         String secure_arguments_string =
                 "Secure Arguments:\n";
 
-        if (_governanceFile == null) {
-            secure_arguments_string +=
-                "\t encrypt discovery: " + _secureIsDiscoveryEncrypted + "\n" +
-                "\t encrypt topic (user) data: " + _secureIsDataEncrypted + "\n" +
-                "\t encrypt submessage: " + _secureIsSMEncrypted + "\n" +
-                "\t sign data: " +_secureIsSigned + "\n" +
-                "\t governance file: Not specified\n";
-        } else {
+        if (_governanceFile != null) {
             secure_arguments_string += "\t governance file: " + _governanceFile
                     + "\n";
         }
@@ -864,32 +849,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
         // check if governance file provided
         if (_governanceFile == null) {
-            // choose a pre-built governance file
-            _governanceFile = "resource/secure/signed_PerftestGovernance_";
-
-            if (_secureIsDiscoveryEncrypted) {
-                _governanceFile += "Discovery";
-            }
-
-            if (_secureIsSigned) {
-                _governanceFile += "Sign";
-            }
-
-            if (_secureIsDataEncrypted && _secureIsSMEncrypted) {
-                _governanceFile += "EncryptBoth";
-            } else if (_secureIsDataEncrypted) {
-                _governanceFile += "EncryptData";
-            } else if (_secureIsSMEncrypted) {
-                _governanceFile += "EncryptSubmessage";
-            }
-
-            _governanceFile += ".xml";
-
-            PropertyQosPolicyHelper.add_property(
-                    dpQos.property,
-                    "com.rti.serv.secure.access_control.governance_file",
-                    _governanceFile,
-                    false);
+            System.err.println("SecureGovernanceFile is required when using security.");
+            return false;
         } else {
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
@@ -1611,22 +1572,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _AutoThrottle = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _TurboMode = true;
-            } else if ("-secureSign".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _secureIsSigned = true;
-                _secureUseSecure = true;
-            } else if ("-secureEncryptBoth".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _secureIsDataEncrypted = true;
-                _secureIsSMEncrypted = true;
-                _secureUseSecure = true;
-            } else if ("-secureEncryptData".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _secureIsDataEncrypted = true;
-                _secureUseSecure = true;
-            } else if ("-secureEncryptSM".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _secureIsSMEncrypted = true;
-                _secureUseSecure = true;
-            } else if ("-secureEncryptDiscovery".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _secureIsDiscoveryEncrypted = true;
-                _secureUseSecure = true;
             } else if ("-secureGovernanceFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <file> after -secureGovernanceFile\n");

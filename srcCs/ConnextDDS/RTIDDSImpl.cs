@@ -518,9 +518,7 @@ namespace PerformanceTest
                         "be used instead\n");
             }
 
-            if (parameters.SecureSign || parameters.SecureEncryptData
-                || parameters.SecureEncryptSM || parameters.SecureEncryptDiscovery
-                || !string.IsNullOrEmpty(parameters.SecureGovernanceFile)
+            if (!string.IsNullOrEmpty(parameters.SecureGovernanceFile)
                 || !string.IsNullOrEmpty(parameters.SecurePermissionsFile)
                 || !string.IsNullOrEmpty(parameters.SecureCertAuthority)
                 || !string.IsNullOrEmpty(parameters.SecureCertFile)
@@ -654,15 +652,6 @@ namespace PerformanceTest
 
             if (!string.IsNullOrEmpty(parameters.SecureGovernanceFile))
             {
-                secureArgumentsString +=
-                        "\t encrypt discovery: " + parameters.SecureEncryptDiscovery + "\n" +
-                        "\t encrypt topic (user) data: " + parameters.SecureEncryptData + "\n" +
-                        "\t encrypt submessage: " + parameters.SecureEncryptSM + "\n" +
-                        "\t sign data: " + parameters.SecureSign + "\n" +
-                        "\t governance file: Not specified\n";
-            }
-            else
-            {
                 secureArgumentsString += "\t governance file: " + parameters.SecureGovernanceFile
                         + "\n";
             }
@@ -754,42 +743,7 @@ namespace PerformanceTest
             //  the legacy properties as an alternative.
 
             // check if governance file provided
-            if (parameters.SecureGovernanceFile == null)
-            {
-                // choose a pre-built governance file
-                parameters.SecureGovernanceFile = "resource/secure/signed_PerftestGovernance_";
-
-                if (parameters.SecureEncryptDiscovery)
-                {
-                    parameters.SecureGovernanceFile += "Discovery";
-                }
-
-                if (parameters.SecureSign)
-                {
-                    parameters.SecureGovernanceFile += "Sign";
-                }
-
-                if (parameters.SecureEncryptData && parameters.SecureEncryptSM)
-                {
-                    parameters.SecureGovernanceFile += "EncryptBoth";
-                }
-                else if (parameters.SecureEncryptData)
-                {
-                    parameters.SecureGovernanceFile += "EncryptData";
-                }
-                else if (parameters.SecureEncryptSM)
-                {
-                    parameters.SecureGovernanceFile += "EncryptSubmessage";
-                }
-
-                parameters.SecureGovernanceFile += ".xml";
-
-                dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.access_control.governance_file",
-                    parameters.SecureGovernanceFile));
-            }
-            else
-            {
+            if (parameters.SecureGovernanceFile != null)
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.access_control.governance_file",
                     parameters.SecureGovernanceFile));

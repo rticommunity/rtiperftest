@@ -1042,30 +1042,6 @@ Test Parameters only for Subscribing Applications
 Test Parameters to Control Connext DDS Secure Options
 -----------------------------------------------------
 
--  ``-secureEncryptDiscovery``
-
-   Encrypt discovery traffic.
-
-   **Default:** Not set
-
--  ``-secureSign``
-
-   Sign discovery and user data packages.
-
-   **Default:** Not set
-
--  ``-secureEncryptData``
-
-   Encrypt at the user data level.
-
-   **Default:** Not set
-
--  ``-secureEncryptSM``
-
-   Encrypt at the RTPS sub-message level.
-
-   **Default:** Not set
-
 -  ``-secureGovernanceFile <file>``
 
    Governance file. If specified, the authentication, signing, and
@@ -1467,14 +1443,6 @@ The following parameters are not available when using *Perftest* with *TSS*:
 -  ``-cft``
 
 -  ``-checkConsistency``
-
--  ``-secureEncryptDiscovery``
-
--  ``-secureSign``
-
--  ``-secureEncryptData``
-
--  ``-secureEncryptSM``
 
 -  ``-secureGovernanceFile <file>``
 

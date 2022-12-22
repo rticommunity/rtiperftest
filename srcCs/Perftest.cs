@@ -356,27 +356,9 @@ namespace PerformanceTest
                 new System.CommandLine.Option<int>(
                     new string[] { "--instanceHashBuckets", "-instanceHashBuckets" },
                     description: ""),
-                new System.CommandLine.Option<bool>(
-                    new string[] { "--secureSign", "-secureSign" },
-                    description: "Sign (HMAC) discovery and user data."),
-                new System.CommandLine.Option<bool>(
-                    new string[] { "--secureEncryptBoth", "-secureEncryptBoth" },
-                    description: "Encrypt topic (user) data and RTPS submessages."),
-                new System.CommandLine.Option<bool>(
-                    new string[] { "--secureEncryptData", "-secureEncryptData" },
-                    description: "Encrypt topic (user) data."),
-                new System.CommandLine.Option<bool>(
-                    new string[] { "--secureEncryptSM", "-secureEncryptSM" },
-                    description: "Encrypt RTPS submessages."),
-                new System.CommandLine.Option<bool>(
-                    new string[] { "--secureEncryptDiscovery", "-secureEncryptDiscovery" },
-                    description: "Encrypt RTPS submessages."),
                 new System.CommandLine.Option<string>(
                     new string[] { "--secureGovernanceFile", "-secureGovernanceFile" },
-                    description: "Governance file. If specified, the authentication,"
-                                    + " signing, and encryption arguments are ignored. The"
-                                    + " governance document configuration will be used instead."
-                                    + " [default: built using the secure options]"),
+                    description: "Governance file when using security."),
                 new System.CommandLine.Option<string>(
                     new string[] { "--securePermissionsFile", "-securePermissionsFile" },
                     description: "Permissions file <optional>."),
