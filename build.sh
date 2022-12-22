@@ -65,8 +65,9 @@ RTI_CRYPTOHOME=""
 # The security libraries are here when compiling statically a staged tree
 # This variable is populated when parsing the --openssl-home and --wolfssl-home
 # arguments.
-RTI_CRYPTO_LIB_DIRECTORY=""
 USE_OPENSSL=1
+RTI_CRYPTO_LIB_DIRECTORY="openssl-1.1.1"
+RTI_CRYPTO_LIB_DIRECTORY_VERSION="n"
 
 # Variables for customType
 custom_type_folder="${idl_location}/customType"
@@ -457,12 +458,20 @@ function additional_defines_calculation()
             echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
         else
             if [ "${RTI_CRYPTOHOME}" == "" ]; then
-                echo -e "${ERROR_TAG} In order to link statically using the " \
-                    "Security Plugins you need to also provide a path to a" \
-                    "crypto library. Set either the OpenSSL home path by" \
-                    "using the --openssl-home option or the WolfSSL home path" \
-                    "by using the --wolfssl-home option"
-                exit -1
+                # In this case, we are going to try to use the one that should be
+                # under $NDDSHOME/third_party/<crypto_lib_dir>/<arch>, we will check if
+                # it exists.
+                export RTI_CRYPTOHOME="$NDDSHOME/third_party/${RTI_CRYPTO_LIB_DIRECTORY}${RTI_CRYPTO_LIB_DIRECTORY_VERSION}/${platform}"
+                if [ ! -d "${RTI_CRYPTOHOME}" ]; then
+                    # Well, we tried...
+                    echo -e "${ERROR_TAG} In order to link statically using the" \
+                        "Security Plugins you need to also provide a path to a" \
+                        "crypto library. Set either the OpenSSL home path by" \
+                        "using the --openssl-home option or the WolfSSL home path" \
+                        "by using the --wolfssl-home option"
+                    exit -1
+                fi
+                echo -e "${INFO_TAG} Using the CRYPTO LIBS FROM openSSL from: \"${RTI_CRYPTOHOME}\""
             fi
             additional_rti_libs="nddssecurity ${additional_rti_libs}"
             # If the $NDDSHOME points to a staging directory, then the security
@@ -477,6 +486,7 @@ function additional_defines_calculation()
             else
                 rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
             fi
+            # This option would cause issues on certain platforms (like macOS)
             # export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${additional_lib_paths}\""
             echo -e "${INFO_TAG} Using the Security plugins. Linking Statically."
@@ -574,14 +584,21 @@ function additional_defines_calculation_micro()
             echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
         else
             if [ "${RTI_CRYPTOHOME}" == "" ]; then
-                echo -e "${ERROR_TAG} In order to link statically using the " \
-                    "Security Plugins you need to also provide a path to a" \
-                    "crypto library. Set either the OpenSSL home path by" \
-                    "using the --openssl-home option or the WolfSSL home path" \
-                    "by using the --wolfssl-home option"
-                exit -1
+                # In this case, we are going to try to use the one that should be
+                # under $NDDSHOME/third_party/<crypto_lib_dir>/<arch>, we will check if
+                # it exists.
+                export RTI_CRYPTOHOME="$NDDSHOME/third_party/${RTI_CRYPTO_LIB_DIRECTORY}${RTI_CRYPTO_LIB_DIRECTORY_VERSION}/${platform}"
+                if [ ! -f "${RTI_CRYPTOHOME}" ]; then
+                    # Well, we tried...
+                    echo -e "${ERROR_TAG} In order to link statically using the "\
+                        "Security Plugins you need to also provide a path to a"\
+                        "crypto library. Set either the OpenSSL home path by"\
+                        "using the --openssl-home option or the WolfSSL home path"\
+                        "by using the --wolfssl-home option"
+                    exit -1
+                fi
+                echo -e "${INFO_TAG} Using the CRYPTO LIBS FROM openSSL from: \"${RTI_CRYPTOHOME}\""
             fi
-            echo -e "${INFO_TAG} Using Security Plugin. Linking Statically."
         fi
     fi
 }
@@ -983,6 +1000,7 @@ function build_micro_cpp()
             else
                 rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
             fi
+            # This option would cause issues on certain platforms (like macOS)
             # export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${RTI_CRYPTOHOME}/${RELEASE_DEBUG}/lib\""
         fi

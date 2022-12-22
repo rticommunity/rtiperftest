@@ -3,6 +3,26 @@
 Release Notes
 =============
 
+Release Notes develop
+---------------------
+
+What's New in develop
+~~~~~~~~~~~~~~~~~~~~~
+
+Choose a default value for `openssl` if none is provided |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, when compiling statically against *RTI Connext* with the *Security Libraries*,
+a path to the ssl crypto libraries had to be provided (*openSSL* or *WolfSSL*).
+Starting in this version, if no path is provided, *RTI Perftest* will try to search
+in the default installation folder where the *OpenSSL Libraries* bundle is installed.
+
+What's fixed in develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. note::
+    Nothing added yet.
+
 Release Notes 4.0
 --------------------
 
