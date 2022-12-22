@@ -2319,7 +2319,7 @@ dds::sub::qos::DataReaderQos RTIDDSImpl<T>::configure_writer_qos(
 
     if (_PM->get<int>("unbounded") > 0 && !_isFlatData) {
         char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        snprintf(buf, 10, "%d", _PM->get<int>("unbounded"));
         properties["dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size"] = buf;
     }
 
@@ -2597,7 +2597,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::configure_reader_qos(
     // If is LargeData.
     if (_PM->get<int>("unbounded") > 0) {
         char buf[10];
-        sprintf(buf, "%d", (_isFlatData
+        snprintf(buf, 10, "%d", (_isFlatData
                 ? DDS_LENGTH_UNLIMITED // No dynamic alloc of serialize buffer
                 : _PM->get<int>("unbounded")));
         properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
