@@ -3,11 +3,19 @@
 Release Notes
 =============
 
-Release Notes Develop
+Release Notes develop
 ---------------------
 
-What's New in Develop
+What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
+
+Default value for `openssl` if none is provided |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, when compiling statically against *RTI Connext* with the *Security Libraries*,
+a path to the ssl crypto libraries had to be provided (*openSSL* or *WolfSSL*).
+Starting in this version, if no path is provided, *RTI Perftest* will try to search
+in the *RTI Connext* Installation (``$NDDSHOME``), in the default folder where the *OpenSSL Libraries* bundle is installed.
 
 Secure parameters have been simplified |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++
@@ -22,10 +30,11 @@ Instead we decided to keep a simpler option (also present in previous releases):
 ``-secureGovernanceFile`` so *Perftest* can be directly pointed to the file to
 use.
 
-What's Fixed in Develop
+What's fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-WIP
+.. note::
+    Nothing added yet.
 
 Release Notes 4.0
 --------------------
