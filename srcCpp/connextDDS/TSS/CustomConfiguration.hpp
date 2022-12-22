@@ -19,6 +19,8 @@
 #include "ParameterManager.h"
 #include "gen/perftest.h"
 
+#define DEFAULT_CHAR_VECTOR_SIZE 32
+
 /** CustomConfiguration is an extension of the generated Configuration.
  * This allows customization of the configuration without creating an entirely
  * new config.
@@ -323,7 +325,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
 
     FACE::Boolean _populate_custom_connection_config()
     {
-        char* conf_name = (char*)malloc(32);
+        char* conf_name = (char*)malloc(DEFAULT_CHAR_VECTOR_SIZE);
 
         if (!conf_name)
         {
@@ -332,7 +334,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
 
         FACE::Boolean success = true;
 
-        snprintf(conf_name, 32, "writer ");
+        snprintf(conf_name, DEFAULT_CHAR_VECTOR_SIZE, "writer ");
         strcat(conf_name, ANNOUNCEMENT_TOPIC_NAME);
 
         /***** Announcement *****/
@@ -350,7 +352,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        snprintf(conf_name, 32, "reader ");
+        snprintf(conf_name, DEFAULT_CHAR_VECTOR_SIZE, "reader ");
         strcat(conf_name, ANNOUNCEMENT_TOPIC_NAME);
         _connection_configs.push_back(GenerateConnectionConfiguration(
                                          conf_name,
@@ -366,7 +368,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        snprintf(conf_name, "writer ");
+        snprintf(conf_name, DEFAULT_CHAR_VECTOR_SIZE, "writer ");
         strcat(conf_name, LATENCY_TOPIC_NAME);
         /***** Latency *****/
         _connection_configs.push_back(GenerateConnectionConfiguration(
@@ -383,7 +385,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        snprintf(conf_name, 32, "reader ");
+        snprintf(conf_name, DEFAULT_CHAR_VECTOR_SIZE, "reader ");
         strcat(conf_name, LATENCY_TOPIC_NAME);
         _connection_configs.push_back(GenerateConnectionConfiguration(
                                          conf_name,
@@ -399,7 +401,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        snprintf(conf_name, 32, "writer ");
+        snprintf(conf_name, DEFAULT_CHAR_VECTOR_SIZE, "writer ");
         strcat(conf_name, THROUGHPUT_TOPIC_NAME);
         /*****Throughput *****/
         _connection_configs.push_back(GenerateConnectionConfiguration(
@@ -416,7 +418,7 @@ class CustomConfiguration : public RTI::perftest::Configuration
             return DDS_BOOLEAN_FALSE;
         }
 
-        snprintf(conf_name, 32, "reader ");
+        snprintf(conf_name, DEFAULT_CHAR_VECTOR_SIZE, "reader ");
         strcat(conf_name, THROUGHPUT_TOPIC_NAME);
         _connection_configs.push_back(GenerateConnectionConfiguration(
                                          conf_name,

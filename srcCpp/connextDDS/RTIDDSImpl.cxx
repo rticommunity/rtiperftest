@@ -4192,7 +4192,7 @@ DDSTopicDescription *RTIDDSImpl<T>::create_cft(
         printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
 
         for (int i = 0; i < KEY_SIZE ; i++) {
-            snprintf(cft_param[i], 128, "%d", (unsigned char)(cftRange[0] >> i * 8));
+            snprintf(cft_param[i], sizeof(cft_param)/sizeof(cft_param[0]), "%d", (unsigned char)(cftRange[0] >> i * 8));
         }
 
         parameters.from_array(param_list, KEY_SIZE);
