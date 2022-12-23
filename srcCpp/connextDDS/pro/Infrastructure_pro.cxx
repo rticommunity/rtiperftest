@@ -1186,6 +1186,15 @@ bool PerftestConfigureSecurity(
         }
     }
 
+    if (_PM->is_set("secureEnableAAD")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+                "1")) {
+            return false;
+        }
+    }
+
     return true;
 }
 

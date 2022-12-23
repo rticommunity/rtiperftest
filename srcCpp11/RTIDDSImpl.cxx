@@ -1487,6 +1487,11 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         dpQosProperties["com.rti.serv.secure.cryptography.encryption_algorithm"]
                 = _PM->get<std::string>("secureEncryptionAlgo");
     }
+
+    if (_PM->is_set("secureEnableAAD")) {
+        dpQosProperties["com.rti.serv.secure.cryptography.enable_additional_authenticated_data"]
+                = "1";
+    }
 }
 
 template <typename T>
@@ -1590,6 +1595,10 @@ std::string RTIDDSImpl<T>::printSecureArgs()
                      << _PM->get<std::string>("secureEncryptionAlgo")
                      << "\n";
     }
+
+    stringStream << "\tAdditional Authenticated Data: "
+                    << _PM->is_set("secureEnableAAD")
+                    << "\n";
 
     return stringStream.str();
 }

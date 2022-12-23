@@ -138,6 +138,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _secureLibrary = null;
     private String _secureEncryptionAlgo = null;
     private int _secureDebugLevel = -1;
+    private boolean _secureEnableAAD = false;
 
     private DomainParticipantFactory _factory = null;
     private DomainParticipant        _participant = null;
@@ -806,6 +807,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if( _secureDebugLevel != -1 ){
             secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
         }
+
+        secure_arguments_string += "\t Additional Authenticated Data: " + _secureEnableAAD + "\n";
+
         return secure_arguments_string;
     }
 
@@ -850,7 +854,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // check if governance file provided
         if (_governanceFile == null) {
             System.err.println("SecureGovernanceFile is required when using security.");
-            return false;
+            return;
         } else {
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
@@ -900,6 +904,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     "com.rti.serv.secure.logging.log_level",
                     (new Integer(_secureDebugLevel)).toString(),
                     false);
+        }
+
+        if (_secureEnableAAD) {
+            PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+                "1",
+                false);
         }
     }
 
@@ -1633,6 +1645,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     System.err.print("Bad value for -secureDebug\n");
                     return false;
                 }
+            } else if ("-secureEnableAAD".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureEnableAAD = true;
             } else if ("-asynchronous".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _IsAsynchronous = true;
             } else if ("-flowController".toLowerCase().startsWith(argv[i].toLowerCase())) {

@@ -148,8 +148,8 @@ namespace PerformanceTest
         public string SecureCertFile { get; set; }
         public string SecurePrivateKey { get; set; }
         public string SecureLibrary { get; set; }
-
         public string SecureEncryptionAlgo { get; set; }
+        public bool SecureEnableAAD{ get; set; }
         public int SecureDebug { get; set; }
         // Transport arguments
         public bool EnableTCP { get; set; }

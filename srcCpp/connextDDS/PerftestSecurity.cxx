@@ -170,6 +170,10 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
                      << "\n";
     }
 
+    stringStream << "\tAdditional Authenticated Data: "
+                    << _PM->is_set("secureEnableAAD")
+                    << "\n";
+
     return stringStream.str();
 }
 

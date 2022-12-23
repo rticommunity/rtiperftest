@@ -30,6 +30,12 @@ Instead we decided to keep a simpler option (also present in previous releases):
 ``-secureGovernanceFile`` so *Perftest* can be directly pointed to the file to
 use.
 
+Added Command-Line Option to enable AAD |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Starting in this new release, *Perftest* has a new Command-Line Option: ``-secureEnableAAD``
+which sets the right property to enable the "Additional Authenticated Data".
+
 What's fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

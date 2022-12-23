@@ -569,6 +569,17 @@ bool PerftestConfigureSecurity(
             return false;
         }
     }
+
+    if (_PM->is_set("secureEnableAAD")) {
+        if (!qos.property.value.assert_property(
+            "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+            "1",
+            false))
+        {
+            printf("Failed to add property enable_additional_authenticated_data\n");
+            return false;
+        }
+    }
     return true;
 }
 #endif

@@ -381,6 +381,10 @@ namespace PerformanceTest
                     new string[] { "--secureDebug", "-secureDebug" },
                     getDefaultValue: () => -1,
                     description: ""),
+                new System.CommandLine.Option<int>(
+                    new string[] { "--secureEnableAAD", "-secureEnableAAD" },
+                    getDefaultValue: () => false,
+                    description: "Enable AAD when using security."),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--enableTCP", "-enableTCP" },
                     description: "Enables TCP" ),

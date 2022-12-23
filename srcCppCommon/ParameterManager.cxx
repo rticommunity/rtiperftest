@@ -1450,6 +1450,18 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     secureDebug->set_internal(true);
     create("secureDebug", secureDebug);
+
+    Parameter<bool> *secureEnableAAD = new Parameter<bool>(false);
+    secureEnableAAD->set_command_line_argument("-secureEnableAAD", "");
+    secureEnableAAD->set_description("Enable AAD. Default: Not enabled.");
+    secureEnableAAD->set_type(T_BOOL);
+    secureEnableAAD->set_extra_argument(NO);
+    secureEnableAAD->set_group(SECURE);
+    secureEnableAAD->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureEnableAAD", secureEnableAAD);
+
 #endif
 }
 

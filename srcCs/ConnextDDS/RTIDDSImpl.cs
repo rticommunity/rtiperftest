@@ -715,6 +715,8 @@ namespace PerformanceTest
                 secureArgumentsString += "\t Encryption Algorithm: " + parameters.SecureEncryptionAlgo + "\n";
             }
 
+            secureArgumentsString += "\t Additional Authenticated Data: " + parameters.SecureEnableAAD + "\n";
+
             return secureArgumentsString;
         }
 
@@ -786,6 +788,13 @@ namespace PerformanceTest
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.cryptography.encryption_algorithm",
                     parameters.SecureEncryptionAlgo));
+            }
+
+            if (parameters.SecureEnableAAD)
+            {
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+                    "1"));
             }
         }
 

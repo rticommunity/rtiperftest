@@ -1085,6 +1085,12 @@ Test Parameters to Control Connext DDS Secure Options
 
   | **Default:** ``aes-128-gcm``
 
+-  ``-secureEnableAAD``
+
+   Enable Additional Authenticated Data when using Security.
+
+  | **Default:** Not Enabled.
+
 
 Raw Transport Options
 ---------------------
@@ -1455,6 +1461,8 @@ The following parameters are not available when using *Perftest* with *TSS*:
 -  ``-securePrivateKey``
 
 -  ``-secureEncryptionAlgorithm``
+
+-  ``-secureEnableAAD``
 
 -  ``-rawTransport``
 
