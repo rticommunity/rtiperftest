@@ -60,15 +60,6 @@ STATIC_DYNAMIC=static
 USE_SECURE_LIBS=0
 LEGACY_DD_IMPL=0
 
-# Needed when compiling statically using security
-RTI_CRYPTOHOME=""
-# The security libraries are here when compiling statically a staged tree
-# This variable is populated when parsing the --openssl-home and --wolfssl-home
-# arguments.
-USE_OPENSSL=1
-RTI_CRYPTO_LIB_DIRECTORY="openssl-1.1.1"
-RTI_CRYPTO_LIB_DIRECTORY_VERSION="n"
-
 # Variables for customType
 custom_type_folder="${idl_location}/customType"
 USE_CUSTOM_TYPE=0
@@ -99,7 +90,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 INFO_TAG="${GREEN}[INFO]:${NC}"
-WARNING_TAG="${WARNING_TAG}"
+WARNING_TAG="${YELLOW}[WARNING]:${NC}"
 ERROR_TAG="${RED}[ERROR]:${NC}"
 
 ################################################################################
@@ -263,6 +254,7 @@ function clean()
 
 function executable_checking()
 {
+    echo -e "\n${INFO_TAG} Pre-compilation checks."
     # Is platform specified?
     if [ -z "${platform}" ]; then
         echo -e "${ERROR_TAG} The platform argument is missing"
@@ -404,11 +396,153 @@ function executable_checking()
 
     fi #TSS/Micro/Pro
 
+    echo -e ""
+}
+
+# Check if a path that includes a wildcard exists and return the actual path
+function get_absolute_folder_path()
+{
+    local input="$1"
+    if [ -d "${input}"* ]; then
+
+        local current_dir=$PWD # To come back to this folder after we try to check if the folder exists
+
+        # If the folder exists, we will asume it is unique, and if so, we can use it.
+        
+        cd "${input}"*
+
+        # Check if that was successful
+        if [[ "$?" == "0" ]]; then
+            result=$PWD
+        else
+            result=""
+        fi
+
+        cd $current_dir
+    fi
+
+}
+
+# This function receives the ssl folder pattern and it tries to find it in the
+# third_party directory, then it does the same for the $NDDSHOME/lib/<arch> pattern
+# it receives as first argument the pattern.
+function find_ssl_libraries()
+{
+    local find_pattern=$1
+
+    # We will try to recreate the RTI_CRYPTOHOME, if it exists
+    # We will not modify it.
+
+    if [ "${RTI_CRYPTOHOME}" == "" ]; then
+
+        get_absolute_folder_path "$NDDSHOME/third_party/${find_pattern}"
+
+        if [[ "$result" == "" ]]; then
+            # The path does not exist.
+            return
+        else
+            export RTI_CRYPTOHOME="${result}/${platform}"
+            cd $current_dir
+            if [ -d "$RTI_CRYPTOHOME" ]; then
+                echo -e "${INFO_TAG} Using the CRYPTO LIBS from: \"${RTI_CRYPTOHOME}\""
+            else
+                export RTI_CRYPTOHOME=""
+                echo -e "${INFO_TAG} \"${RTI_CRYPTOHOME}\" does not exist."
+                return
+            fi
+        fi
+    fi
+}
+
+# If the NDDSHOME is staged, we might find that the nddssecurity library
+# is not under $NDDSHOME/lib/$platform/ but under $NDDSHOME/lib/$platform/$ndds_security_cryto_lib_folder
+# lets try to find this path. This is a best effort approach if we cannof find
+# we will not fail.
+function rti_security_lib_path_calculation()
+{
+    local find_pattern=$1
+
+    get_absolute_folder_path "${NDDSHOME}/lib/${platform}/${find_pattern}"
+    if [[ "$result" != "" ]]; then
+        export ndds_security_cryto_lib_folder=$result
+        echo -e "${INFO_TAG} Using the Connext Security libs from: \"${ndds_security_cryto_lib_folder}\""
+        return
+    fi
+}
+
+# If the NDDSHOME is staged, we might find that the nddssecurity library
+# is not under $NDDSHOME/lib/$platform/ but under $NDDSHOME/lib/$platform/$ndds_security_cryto_lib_folder
+# lets try to find this path. This is a best effort approach if we cannof find
+# we will not fail.
+function get_rti_security_lib_path_for_cryto_path()
+{
+    local ssl_version="openssl-3"
+    if [[ "${RTI_CRYPTOHOME}" == *"$ssl_version"* ]]; then
+        rti_security_lib_path_calculation $ssl_version
+        return
+    fi
+
+    ssl_version="openssl-1"
+    if [[ "${RTI_CRYPTOHOME}" == *"$ssl_version"* ]]; then
+        rti_security_lib_path_calculation $ssl_version
+        return
+    fi
+
+    ssl_version="wolfssl-"
+    if [[ "${RTI_CRYPTOHOME}" == *"$ssl_version"* ]]; then
+        rti_security_lib_path_calculation $ssl_version
+        return
+    fi
+}
+
+# Function to try and get the RTI_CRYPTOHOME and RTI_CRYPTO_LIB_FOLDER when no
+# SSL version is provided
+function crypto_path_calculation()
+{
+    # We are going to try the following options:
+    # - Find first openssl 3 and use that
+    # - Find openssl 1 and use that
+    # - Find WolfSSL and use that
+    # - Fail if nothing was found.
+
+    echo -e "\n${INFO_TAG} Finding crypto libraries to use:"
+
+    local ssl_version="openssl-3"
+    find_ssl_libraries $ssl_version
+    if [[ "${RTI_CRYPTOHOME}" != "" ]]; then
+        rti_security_lib_path_calculation $ssl_version
+        USE_OPENSSL=1
+        return
+    fi
+
+    ssl_version="openssl-1"
+    find_ssl_libraries $ssl_version
+    if [[ "${RTI_CRYPTOHOME}" != "" ]]; then
+        rti_security_lib_path_calculation $ssl_version
+        USE_OPENSSL=1
+        return
+    fi
+
+    ssl_version="wolfssl-"
+    find_ssl_libraries $ssl_version
+    if [[ "${RTI_CRYPTOHOME}" != "" ]]; then
+        rti_security_lib_path_calculation $ssl_version
+        USE_OPENSSL=0
+        return
+    fi
+
+    # Well, we tried...
+    echo -e "${ERROR_TAG} We couldn't find Any SSL libraries in your Connext " \
+            "installation folder. You need to provide us with a path to a" \
+            "crypto library. Set either the OpenSSL home path by" \
+            "using the --openssl-home option or the WolfSSL home path" \
+            "by using the --wolfssl-home option"
+    exit -1
 }
 
 function library_sufix_calculation()
 {
-    echo ""
+    echo -e "\n${INFO_TAG} Library calculations"
 
     library_sufix=""
     if [ "${STATIC_DYNAMIC}" == "static" ]; then
@@ -452,40 +586,58 @@ function additional_defines_calculation()
     fi
 
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
+        echo -e "\n${INFO_TAG} Using Security Plugins"
+
         additional_defines=${additional_defines}" DRTI_SECURE_PERFTEST"
+
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_DYNAMIC_LINKING"
-            echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
-        else
-            if [ "${RTI_CRYPTOHOME}" == "" ]; then
-                # In this case, we are going to try to use the one that should be
-                # under $NDDSHOME/third_party/<crypto_lib_dir>/<arch>, we will check if
-                # it exists.
-                export RTI_CRYPTOHOME="$NDDSHOME/third_party/${RTI_CRYPTO_LIB_DIRECTORY}${RTI_CRYPTO_LIB_DIRECTORY_VERSION}/${platform}"
-                if [ ! -d "${RTI_CRYPTOHOME}" ]; then
-                    # Well, we tried...
-                    echo -e "${ERROR_TAG} In order to link statically using the" \
-                        "Security Plugins you need to also provide a path to a" \
-                        "crypto library. Set either the OpenSSL home path by" \
-                        "using the --openssl-home option or the WolfSSL home path" \
-                        "by using the --wolfssl-home option"
+            echo -e "${INFO_TAG} Linking Dynamically."
+
+        else # Linking Statically.
+
+            # If we have provided the SSL Version (Hence the RTI_CRYPTOHOME will
+            # be empty, no need to check)
+            if [[ "${SSL_VERSION}" != "" ]]; then
+                find_ssl_libraries $SSL_VERSION
+                if [[ "${RTI_CRYPTOHOME}" == "" ]]; then
+                    echo -e "${ERROR_TAG} ${SSL_VERSION} Not found."
                     exit -1
                 fi
-                echo -e "${INFO_TAG} Using the CRYPTO LIBS FROM openSSL from: \"${RTI_CRYPTOHOME}\""
             fi
+
+            # If the SSL_VERSION is empty and the $RTI_CRYPTOHOME is empty too
+            # we need to be creative. If we set the $SSL_VERSION before, we will
+            # not enter here.
+            if [ "${RTI_CRYPTOHOME}" == "" ]; then
+                crypto_path_calculation
+            else
+                # Check that the RTI_CRYPTOHOME exists
+                if [ ! -d ${RTI_CRYPTOHOME} ]; then
+                    echo -e "${ERROR_TAG} ${RTI_CRYPTOHOME} Is not a folder."
+                    exit -1
+                fi
+
+                # Lets try to load the ndds_security_cryto_lib_folder if we can.
+                get_rti_security_lib_path_for_cryto_path
+            fi
+
             additional_rti_libs="nddssecurity ${additional_rti_libs}"
             # If the $NDDSHOME points to a staging directory, then the security
-            # libraries will be in a folder specific to the crypto library.
-            if [ -d "${NDDSHOME}/lib/${platform}/${RTI_CRYPTO_LIB_DIRECTORY}" ]; then
-                additional_lib_paths="${NDDSHOME}/lib/${platform}/${RTI_CRYPTO_LIB_DIRECTORY} ${additional_lib_paths}"
+            # libraries will be in a folder specific to the crypto library, we should
+            # have calculated this in advance.
+            if [ -d "${ndds_security_cryto_lib_folder}" ]; then
+                additional_lib_paths="${ndds_security_cryto_lib_folder} ${additional_lib_paths}"
             fi
             # Add the path to the crypto libraries.
             additional_lib_paths="${RTI_CRYPTOHOME}/${RELEASE_DEBUG}/lib ${additional_lib_paths}"
+
             if [ "${USE_OPENSSL}" = "1" ]; then
                 rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"ssl crypto\""
             else
                 rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraries \"wolfssl\""
             fi
+
             # This option would cause issues on certain platforms (like macOS)
             # export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${additional_lib_paths}\""
@@ -1731,7 +1883,6 @@ while [ "$1" != "" ]; do
                 exit -1
             fi
             RTI_CRYPTOHOME=$2
-            RTI_CRYPTO_LIB_DIRECTORY="openssl-1.1.1"
             USE_OPENSSL=1
             shift
             ;;
@@ -1744,8 +1895,39 @@ while [ "$1" != "" ]; do
                 exit -1
             fi
             RTI_CRYPTOHOME=$2
-            RTI_CRYPTO_LIB_DIRECTORY="wolfssl-4.7"
             USE_OPENSSL=0
+            shift
+            ;;
+        --openssl-version)
+            if [ ! -z "${RTI_CRYPTOHOME}" ]; then
+                echo -e "${WARNING_TAG} --openssl-version will be ignored, as either " \
+                        "--openssl-home or --wolfssl-home were provided already."
+            else
+                SSL_VERSION=$2
+                USE_OPENSSL=1
+            fi
+            shift
+            ;;
+        --wolfssl-version)
+            if [ ! -z "${RTI_CRYPTOHOME}" ]; then
+                echo -e "${WARNING_TAG} --wolfssl-version will be ignored, as either " \
+                        "--openssl-home or --wolfssl-home were provided already."
+            else
+                SSL_VERSION=$2
+                USE_OPENSSL=0
+            fi
+            shift
+            ;;
+        --ssl-version)
+            if [ ! -z "${RTI_CRYPTOHOME}" ]; then
+                echo -e "${WARNING_TAG} --ssl-version will be ignored, as either " \
+                        "--openssl-home or --wolfssl-home were provided already."
+            else
+                SSL_VERSION=$2
+                if [[ "${SSL_VERSION}" == "wolf"* ]]; then
+                    USE_OPENSSL=0
+                fi
+            fi
             shift
             ;;
         --flatData-max-size)
