@@ -417,6 +417,38 @@ void ParameterManager::initialize()
     outputFile->set_supported_middleware(Middleware::ALL);
     create("outputFile", outputFile);
 
+    Parameter<bool> *crc = new Parameter<bool>(false);
+    crc->set_command_line_argument("-crc", "");
+    crc->set_description(
+            "Enable CRC checking. Default: Disabled");
+    crc->set_type(T_BOOL);
+    crc->set_extra_argument(NO);
+    crc->set_group(GENERAL);
+    crc->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("crc", crc);
+
+    Parameter<std::string> *crcKind = new Parameter<std::string>("CRC_32_CUSTOM");
+    crcKind->set_command_line_argument("-crc-kind", "<value>");
+    crcKind->set_description(
+            "Modify the default value to compute the CRC.\n"
+            "Options: CRC_32_CUSTOM | CRC_32_LEGACY\n"
+            "Default: CRC_32_CUSTOM");
+    crcKind->set_type(T_STR);
+    crcKind->set_extra_argument(YES);
+    crcKind->set_group(GENERAL);
+    crcKind->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("crc-kind", crcKind);
+
+
+    Parameter<bool> *headerExtension = new Parameter<bool>(false);
+    headerExtension->set_command_line_argument("-enable-header-extension", "");
+    headerExtension->set_description(
+            "Enable enable_message_length_header_extension. Default: Disabled");
+    crc->set_type(T_BOOL);
+    crc->set_extra_argument(NO);
+    crc->set_group(GENERAL);
+    crc->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("enable-header-extension", headerExtension);
 
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
@@ -1328,18 +1360,6 @@ void ParameterManager::initialize()
     fastQueue->set_group(GENERAL);
     fastQueue->set_supported_middleware(Middleware::RTIDDSPRO);
     create("fastQueue", fastQueue);
-  #endif
-
-  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL)
-    //  This parameter is just supported in the traditional C++ language.
-    Parameter<bool> *crc = new Parameter<bool>(false);
-    crc->set_command_line_argument("-fastQueue", "");
-    crc->set_description("Enable CRC computation.\n");
-    crc->set_type(T_BOOL);
-    crc->set_extra_argument(NO);
-    crc->set_group(GENERAL);
-    crc->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("crc", crc);
   #endif
 
     ////////////////////////////////////////////////////////////////////////////

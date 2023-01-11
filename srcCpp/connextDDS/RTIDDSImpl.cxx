@@ -542,6 +542,16 @@ std::string RTIDDSImpl<T>::print_configuration()
                  << std::endl;
   #endif
 
+    stringStream << "\tCRC Enabled: "
+                 << (_PM->get<bool>("crc") ? "Yes" : "No")
+                 << " ( computed_crc_kind = " << _PM->get<std::string>("crckind") << ")"
+                 << std::endl;
+
+
+    stringStream << "\tMessage Length Header Extension Enabled: "
+                 << (_PM->get<bool>("enable-header-extension") ? "Yes" : "No")
+                 << std::endl;
+
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
     stringStream << "\tFlatData: "
@@ -2524,6 +2534,31 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
                 "dds.domain_participant.auto_throttle.enable",
                 "true",
                 false);
+    }
+
+    if (_PM->get<bool>("crc") || _PM->is_set("crckind")) {
+        _PM->set<bool>("crc", true);
+        qos.wire_protocol.compute_crc = RTI_TRUE;
+
+        if (_PM->get<std::string>("crckind") != "CRC_32_LEGACY") {
+            DDSPropertyQosPolicyHelper::add_property(qos.property,
+                "dds.participant.wire_protocol.computed_crc_kind",
+                _PM->get<std::string>("crckind").c_str(),
+                false);
+        }
+    }
+
+    if (_PM->get<bool>("enable-header-extension")) {
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+            "dds.participant.wire_protocol.enable_message_length_header_extension",
+            "true",
+            false);
+        
+        // If you enable header extensions and you are going to use security,
+        // you are forced to enable AAD.
+        if (_PM->group_is_used(SECURE)) {
+            _PM->set("secureEnableAAD", true);
+        }
     }
 
   #else // if defined PERFTEST_RTI_MICRO
