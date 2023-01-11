@@ -408,7 +408,7 @@ function get_absolute_folder_path()
         local current_dir=$PWD # To come back to this folder after we try to check if the folder exists
 
         # If the folder exists, we will asume it is unique, and if so, we can use it.
-        
+
         cd "${input}"*
 
         # Check if that was successful
@@ -424,8 +424,7 @@ function get_absolute_folder_path()
 }
 
 # This function receives the ssl folder pattern and it tries to find it in the
-# third_party directory, then it does the same for the $NDDSHOME/lib/<arch> pattern
-# it receives as first argument the pattern.
+# third_party directory.
 function find_ssl_libraries()
 {
     local find_pattern=$1
@@ -442,7 +441,6 @@ function find_ssl_libraries()
             return
         else
             export RTI_CRYPTOHOME="${result}/${platform}"
-            cd $current_dir
             if [ -d "$RTI_CRYPTOHOME" ]; then
                 echo -e "${INFO_TAG} Using the CRYPTO LIBS from: \"${RTI_CRYPTOHOME}\""
             else
@@ -495,7 +493,7 @@ function get_rti_security_lib_path_for_cryto_path()
     fi
 }
 
-# Function to try and get the RTI_CRYPTOHOME and RTI_CRYPTO_LIB_FOLDER when no
+# Function to try and get the RTI_CRYPTOHOME and ndds_security_cryto_lib_folder when no
 # SSL version is provided
 function crypto_path_calculation()
 {
@@ -626,6 +624,13 @@ function additional_defines_calculation()
             # If the $NDDSHOME points to a staging directory, then the security
             # libraries will be in a folder specific to the crypto library, we should
             # have calculated this in advance.
+
+            # At this point RTI_CRYPTOHOME must be set. ndds_security_cryto_lib_folder
+            # will be set only if the $NDDSHOME points to a staging directory.
+            # In a staging directory, ndds_security_cryto_lib_folder is where
+            # the security libraries are (a folder specific to the crypto library). In a normal
+            # installation, the security libraries are in
+            # "${NDDSHOME}/lib/${platform}/", which is already in the path.
             if [ -d "${ndds_security_cryto_lib_folder}" ]; then
                 additional_lib_paths="${ndds_security_cryto_lib_folder} ${additional_lib_paths}"
             fi
