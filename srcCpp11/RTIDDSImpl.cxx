@@ -427,6 +427,15 @@ std::string RTIDDSImpl<T>::print_configuration()
         stringStream << "\tAutoThrottle: Enabled\n";
     }
 
+    stringStream << "\tCRC Enabled: "
+                 << (_PM->get<bool>("crc") ? "Yes" : "No")
+                 << " (computed_crc_kind = " << _PM->get<std::string>("crckind") << ")"
+                 << std::endl;
+
+    stringStream << "\tMessage Length Header Extension Enabled: "
+                 << (_PM->get<bool>("enable-header-extension") ? "Yes" : "No")
+                 << std::endl;
+
     // XML File
     stringStream << "\tXML File: ";
     if (_PM->get<bool>("noXmlQos")) {
@@ -450,6 +459,8 @@ std::string RTIDDSImpl<T>::print_configuration()
             }
         }
     }
+
+
 
    #ifdef RTI_SECURE_PERFTEST
     if (_PM->group_is_used(SECURE)) {
@@ -1668,6 +1679,28 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
 
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
+
+    if (_PM->get<bool>("crc") || _PM->is_set("crckind")) {
+        _PM->set<bool>("crc", true);
+
+        WireProtocol qos_wire_protocol = qos.policy<WireProtocol>(); //get all the Discovery
+        qos_wire_protocol.compute_crc(true);
+
+        if (_PM->get<std::string>("crckind") != "CRC_32_LEGACY") {
+            properties["dds.participant.wire_protocol.computed_crc_kind"] = "crckind";
+        }
+    }
+
+    if (_PM->get<bool>("enable-header-extension")) {
+
+        properties["dds.participant.wire_protocol.enable_message_length_header_extension"] = "true";
+
+        // If you enable header extensions and you are going to use security,
+        // you are forced to enable AAD.
+        if (_PM->group_is_used(SECURE)) {
+            _PM->set("secureEnableAAD", true);
+        }
+    }
 
   #ifdef RTI_SECURE_PERFTEST
     if (_PM->group_is_used(SECURE)) {
