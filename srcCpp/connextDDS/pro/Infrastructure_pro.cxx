@@ -1113,12 +1113,12 @@ bool PerftestConfigureSecurity(
                 return false;
             }
         } else {
-            // We will fail, but ONLY if this is not Lightweight security.
-        #ifndef RTI_LW_SECURE_PERFTEST
+          // We will fail, but ONLY if this is not Lightweight security.
+          #ifndef RTI_LW_SECURE_PERFTEST
             fprintf(stderr, "%s SecureGovernanceFile cannot be empty when using security.\n",
                     classLoggingString.c_str());
             return false;
-        #endif
+          #endif
         }
 
         // Permissions file
@@ -1187,7 +1187,7 @@ bool PerftestConfigureSecurity(
         }
     }
 
-  #endif //!defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
     if (_PM->is_set("securePSK")) {
         if (!addPropertyToParticipantQos(

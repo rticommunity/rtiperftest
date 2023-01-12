@@ -44,6 +44,9 @@ const std::string RTIDDSImpl<T>::SECURE_PERMISION_FILE_SUB =
         "./resource/secure/signed_PerftestPermissionsSub.xml";
 template <typename T>
 const std::string RTIDDSImpl<T>::SECURE_LIBRARY_NAME = "nddssecurity";
+template <typename T>
+const std::string RTIDDSImpl<T>::LW_SECURE_LIBRARY_NAME = "nddslightweightsecurity";
+
 #endif
 
 /*
@@ -350,20 +353,6 @@ bool RTIDDSImpl<T>::validate_input()
         }
     }
 
-    // Manage parameter -secureGovernanceFile
-    if (_PM->is_set("secureGovernanceFile")) {
-            std::cerr << "[INFO] Authentication, encryption, signing arguments "
-                      << "will be ignored, and the values specified by the "
-                      << "Governance file will be used instead"
-                      << std::endl;
-    }
-
-    // Manage parameter -secureEncryptBoth
-    if (_PM->is_set("secureEncryptBoth")) {
-        _PM->set("secureEncryptData", true);
-        _PM->set("secureEncryptSM", true);
-    }
-
     return true;
 }
 
@@ -428,9 +417,12 @@ std::string RTIDDSImpl<T>::print_configuration()
     }
 
     stringStream << "\tCRC Enabled: "
-                 << (_PM->get<bool>("crc") ? "Yes" : "No")
-                 << " (computed_crc_kind = " << _PM->get<std::string>("crckind") << ")"
-                 << std::endl;
+                 << (_PM->get<bool>("crc") ? "Yes" : "No");
+    if (_PM->get<bool>("crc")) {
+        stringStream << " ( computed_crc_kind = "
+                     << _PM->get<std::string>("crckind") << ")";
+    }
+    stringStream << std::endl;
 
     stringStream << "\tMessage Length Header Extension Enabled: "
                  << (_PM->get<bool>("enable-header-extension") ? "Yes" : "No")
@@ -1441,13 +1433,16 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     dpQosProperties["com.rti.serv.secure.library"]
             = _PM->get<std::string>("secureLibrary");
 
-#else // Static library linking
+  #else // Static library linking
 
     void *pPtr = (void *) RTI_Security_PluginSuite_create;
     dpQosProperties["com.rti.serv.secure.create_function_ptr"] =
             rti::util::ptr_to_str(pPtr);
 
   #endif
+
+  // These options will NOT be available for LWSec + Static 
+  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
     /*
      * Below, we are using com.rti.serv.secure properties in order to be
@@ -1457,35 +1452,61 @@ void RTIDDSImpl<T>::configureSecurePlugin(
      * later versions still support the legacy properties as an alternative.
      */
 
-    // check if governance file provided
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        std::cerr << "[Error] secureGovernanceFile cannot be empty when using security."
-                  << std::endl;
-        return;
-    } else {
-        dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
-                _PM->get<std::string>("secureGovernanceFile");
+    // In the case where we are dynamic, we should not set these properties if
+    // we are using the lightweight security library.
+    if (!_PM->get<bool>("lightWeightSecurity")) {
+        
+        // check if governance file provided
+        if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
+            dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
+                    _PM->get<std::string>("secureGovernanceFile");
+
+        } else {
+          // We will fail, but ONLY if this is not Lightweight security.
+          #ifndef RTI_LW_SECURE_PERFTEST
+            std::cerr << "[Error] secureGovernanceFile cannot be empty when using security."
+                    << std::endl;
+            return;
+          #endif
+        }
+
+        // permissions file
+        dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]
+                = _PM->get<std::string>("securePermissionsFile");
+
+        // permissions authority file
+        dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"]
+                = _PM->get<std::string>("secureCertAuthority");
+
+        // certificate authority
+        dpQosProperties["com.rti.serv.secure.authentication.ca_file"]
+                = _PM->get<std::string>("secureCertAuthority");
+
+        // public key
+        dpQosProperties["com.rti.serv.secure.authentication.certificate_file"]
+                = _PM->get<std::string>("secureCertFile");
+
+        // private key
+        dpQosProperties["com.rti.serv.secure.authentication.private_key_file"]
+                = _PM->get<std::string>("securePrivateKey");
+
+        if (_PM->is_set("secureEncryptionAlgo")) {
+            dpQosProperties["com.rti.serv.secure.cryptography.encryption_algorithm"]
+                    = _PM->get<std::string>("secureEncryptionAlgo");
+        }
+
+        if (_PM->is_set("secureEnableAAD")) {
+            dpQosProperties["com.rti.serv.secure.cryptography.enable_additional_authenticated_data"]
+                    = "1";
+        }
     }
 
-    // permissions file
-    dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]
-            = _PM->get<std::string>("securePermissionsFile");
+  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
-    // permissions authority file
-    dpQosProperties["com.rti.serv.secure.access_control.permissions_authority_file"]
-            = _PM->get<std::string>("secureCertAuthority");
-
-    // certificate authority
-    dpQosProperties["com.rti.serv.secure.authentication.ca_file"]
-            = _PM->get<std::string>("secureCertAuthority");
-
-    // public key
-    dpQosProperties["com.rti.serv.secure.authentication.certificate_file"]
-            = _PM->get<std::string>("secureCertFile");
-
-    // private key
-    dpQosProperties["com.rti.serv.secure.authentication.private_key_file"]
-            = _PM->get<std::string>("securePrivateKey");
+    if (_PM->is_set("securePSK")) {
+        dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
+                    = _PM->get<std::string>("securePSK");
+    }
 
     if (_PM->is_set("secureDebug")) {
         std::ostringstream string_stream_object;
@@ -1494,52 +1515,53 @@ void RTIDDSImpl<T>::configureSecurePlugin(
                 string_stream_object.str();
     }
 
-    if (_PM->is_set("secureEncryptionAlgo")) {
-        dpQosProperties["com.rti.serv.secure.cryptography.encryption_algorithm"]
-                = _PM->get<std::string>("secureEncryptionAlgo");
-    }
-
-    if (_PM->is_set("secureEnableAAD")) {
-        dpQosProperties["com.rti.serv.secure.cryptography.enable_additional_authenticated_data"]
-                = "1";
-    }
 }
 
 template <typename T>
 void RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
-        if (_PM->get<std::string>("securePrivateKey").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
-            } else {
-                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+      // These options will NOT be available for LWSec + Static 
+      #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+        if (!_PM->get<bool>("lightWeightSecurity")) {
+            if (_PM->get<std::string>("securePrivateKey").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
+                } else {
+                    _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+                }
+            }
+
+            if (_PM->get<std::string>("secureCertFile").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
+                } else {
+                    _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
+                }
+            }
+
+            if (_PM->get<std::string>("secureCertAuthority").empty()) {
+                _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
+            }
+
+            if (_PM->get<std::string>("securePermissionsFile").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
+                } else {
+                    _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
+                }
             }
         }
-
-        if (_PM->get<std::string>("secureCertFile").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
-            } else {
-                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
-            }
-        }
-
-        if (_PM->get<std::string>("secureCertAuthority").empty()) {
-            _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
-        }
-
-        if (_PM->get<std::string>("securePermissionsFile").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
-            } else {
-                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
-            }
-        }
+      #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
         if (_PM->get<std::string>("secureLibrary").empty()) {
-            _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
+            if (_PM->is_set("lightWeightSecurity")) {
+                _PM->set("secureLibrary", LW_SECURE_LIBRARY_NAME);
+            } else {
+                _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
+            }
         }
       #endif
     }
@@ -1551,65 +1573,81 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";
 
-    stringStream << "\tGovernance file: ";
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        stringStream << "Not Specified\n";
+  // These options will NOT be available for LWSec + Static 
+  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+    if (!_PM->get<bool>("lightWeightSecurity")) {
+
+        stringStream << "\tGovernance file: ";
+        if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureGovernanceFile")
+                        << "\n";
+        }
+
+        stringStream << "\tPermissions file: ";
+        if (_PM->get<std::string>("securePermissionsFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("securePermissionsFile")
+                        << "\n";
+        }
+
+        stringStream << "\tPrivate key file: ";
+        if (_PM->get<std::string>("securePrivateKey").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("securePrivateKey") << "\n";
+        }
+
+        stringStream << "\tCertificate file: ";
+        if (_PM->get<std::string>("secureCertFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureCertFile") << "\n";
+        }
+
+        stringStream << "\tCertificate authority file: ";
+        if (_PM->get<std::string>("secureCertAuthority").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureCertAuthority") << "\n";
+        }
+
+        if (_PM->is_set("secureEncryptionAlgo")) {
+            stringStream << "\tEncryption Algorithm: "
+                        << _PM->get<std::string>("secureEncryptionAlgo")
+                        << "\n";
+        }
+
+        stringStream << "\tAdditional Authenticated Data: "
+                        << _PM->is_set("secureEnableAAD")
+                        << "\n";
+    }
+  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+    stringStream << "\tPSK: ";
+    if (_PM->get<std::string>("securePSK").empty()) {
+        stringStream << "Not Used\n";
     } else {
-        stringStream << _PM->get<std::string>("secureGovernanceFile")
-                     << "\n";
+        stringStream << _PM->get<std::string>("securePSK") << "\n";
     }
 
-    stringStream << "\tPermissions file: ";
-    if (_PM->get<std::string>("securePermissionsFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("securePermissionsFile")
-                     << "\n";
-    }
-
-    stringStream << "\tPrivate key file: ";
-    if (_PM->get<std::string>("securePrivateKey").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("securePrivateKey") << "\n";
-    }
-
-    stringStream << "\tCertificate file: ";
-    if (_PM->get<std::string>("secureCertFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureCertFile") << "\n";
-    }
-
-    stringStream << "\tCertificate authority file: ";
-    if (_PM->get<std::string>("secureCertAuthority").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureCertAuthority") << "\n";
-    }
-
-    stringStream << "\tPlugin library: ";
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+    stringStream << "\tSecurity library: ";
     if (_PM->get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _PM->get<std::string>("secureLibrary") << "\n";
     }
+  #endif
 
     if (_PM->is_set("secureDebug")) {
         stringStream << "\tDebug level: "
                      << _PM->get<int>("secureDebug")
                      << "\n";
     }
-
-    if (_PM->is_set("secureEncryptionAlgo")) {
-        stringStream << "\tEncryption Algorithm: "
-                     << _PM->get<std::string>("secureEncryptionAlgo")
-                     << "\n";
-    }
-
-    stringStream << "\tAdditional Authenticated Data: "
-                    << _PM->is_set("secureEnableAAD")
-                    << "\n";
 
     return stringStream.str();
 }
