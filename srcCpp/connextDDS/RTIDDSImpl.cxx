@@ -543,9 +543,12 @@ std::string RTIDDSImpl<T>::print_configuration()
   #endif
 
     stringStream << "\tCRC Enabled: "
-                 << (_PM->get<bool>("crc") ? "Yes" : "No")
-                 << " ( computed_crc_kind = " << _PM->get<std::string>("crckind") << ")"
-                 << std::endl;
+                 << (_PM->get<bool>("crc") ? "Yes" : "No");
+    if (_PM->get<bool>("crc")) {
+        stringStream << " ( computed_crc_kind = "
+                     << _PM->get<std::string>("crckind") << ")";
+    }
+    stringStream << std::endl;
 
 
     stringStream << "\tMessage Length Header Extension Enabled: "
