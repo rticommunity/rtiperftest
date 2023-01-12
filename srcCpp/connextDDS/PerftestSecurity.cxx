@@ -32,6 +32,7 @@ const std::string SECURE_PERMISION_FILE_PUB =
 const std::string SECURE_PERMISION_FILE_SUB =
         prefix + "./resource/secure/signed_PerftestPermissionsSub.xml";
 const std::string SECURE_LIBRARY_NAME = "nddssecurity";
+const std::string LW_SECURE_LIBRARY_NAME = "nddslightweightsecurity";
 
 /******************************************************************************/
 /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -52,19 +53,8 @@ bool PerftestSecurity::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
 
-        // Manage parameter -secureGovernanceFile
-        if (_PM->is_set("secureGovernanceFile")) {
-            fprintf(stderr,
-                "Warning -- authentication, encryption, signing arguments "
-                "will be ignored, and the values specified by the Governance "
-                "file will be used instead\n");
-        }
-
-        // Manage parameter -secureEncryptBoth
-        if (_PM->is_set("secureEncryptBoth")) {
-            _PM->set("secureEncryptData", true);
-            _PM->set("secureEncryptSM", true);
-        }
+      // These options will NOT be available for LWSec + Static 
+      #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
         if (_PM->get<std::string>("securePrivateKey").empty()) {
             if (_PM->get<bool>("pub")) {
@@ -93,10 +83,15 @@ bool PerftestSecurity::validateSecureArgs()
                 _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
             }
         }
+      #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
         if (_PM->get<std::string>("secureLibrary").empty()) {
-            _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
+            if (_PM->is_set("lightWeightSecurity")) {
+                _PM->set("secureLibrary", LW_SECURE_LIBRARY_NAME);
+            } else {
+                _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
+            }
         }
       #endif
 
@@ -110,6 +105,9 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";
 
+
+  // These options will NOT be available for LWSec + Static 
+  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
     stringStream << "\tGovernance file: ";
     if (_PM->get<std::string>("secureGovernanceFile").empty()) {
         stringStream << "Not Specified\n";
@@ -150,20 +148,6 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
                      << "\n";
     }
 
-    stringStream << "\tPlugin library: ";
-    if (_PM->get<std::string>("secureLibrary").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureLibrary")
-                     << "\n";
-    }
-
-    if (_PM->is_set("secureDebug")) {
-        stringStream << "\tDebug level: "
-                     << _PM->get<int>("secureDebug")
-                     << "\n";
-    }
-
     if (_PM->is_set("secureEncryptionAlgo")) {
         stringStream << "\tEncryption Algorithm: "
                      << _PM->get<std::string>("secureEncryptionAlgo")
@@ -173,6 +157,31 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
     stringStream << "\tAdditional Authenticated Data: "
                     << _PM->is_set("secureEnableAAD")
                     << "\n";
+
+  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+    stringStream << "\tPSK: ";
+    if (_PM->get<std::string>("securePSK").empty()) {
+        stringStream << "Not Used\n";
+    } else {
+        stringStream << _PM->get<std::string>("securePSK") << "\n";
+    }
+
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+    stringStream << "\tSecurity library: ";
+    if (_PM->get<std::string>("secureLibrary").empty()) {
+        stringStream << "Not Specified\n";
+    } else {
+        stringStream << _PM->get<std::string>("secureLibrary")
+                     << "\n";
+    }
+  #endif
+
+    if (_PM->is_set("secureDebug")) {
+        stringStream << "\tDebug level: "
+                     << _PM->get<int>("secureDebug")
+                     << "\n";
+    }
 
     return stringStream.str();
 }

@@ -479,29 +479,22 @@ bool PerftestConfigureSecurity(
     }
 
     // check if governance file provided
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+    if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
+        retval = qos.property.value.assert_property(
+                        "dds.sec.access.governance",
+                        _PM->get<std::string>("secureGovernanceFile").c_str(),
+                        false);
+
+    } else {
         fprintf(stderr,
                 "%s SecureGovernanceFile cannot be empty when using security.\n",
                 classLoggingString.c_str());
         return false;
-    } else {
-        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
-        retval = qos.property.value.assert_property(
-                        "dds.sec.access.governance",
-                        governanceFilePath.c_str(),
-                        false);
     }
     if (!retval) {
-        printf("Failed to add property "
-                "dds.sec.access.governance\n");
+        printf("Failed to add property dds.sec.access.governance\n");
         return false;
     }
-
-    /*
-     * Save the local variable governanceFilePath into
-     * the parameter "secureGovernanceFile"
-     */
-    _PM->set("secureGovernanceFile", governanceFilePath);
 
     // permissions file
     if (!qos.property.value.assert_property(

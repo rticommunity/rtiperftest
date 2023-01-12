@@ -1050,8 +1050,6 @@ bool PerftestConfigureSecurity(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
-    // configure use of security plugins, based on provided arguments
-    std::string governanceFilePath;
 
     if (!addPropertyToParticipantQos(
             qos,
@@ -1090,6 +1088,10 @@ bool PerftestConfigureSecurity(
 
   #endif
 
+
+  // These options will NOT be available for LWSec + Static 
+  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
     /*
      * Below, we are using com.rti.serv.secure properties in order to be
      * backward compatible with RTI Connext DDS 5.3.0 and below. Later versions
@@ -1099,26 +1101,22 @@ bool PerftestConfigureSecurity(
      */
 
     // check if governance file provided
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+    if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.access_control.governance_file",
+                _PM->get<std::string>("secureGovernanceFile"))) {
+            return false;
+        }
+    } else {
+        // We will fail, but ONLY if this is not Lightweight security.
+      #ifndef RTI_LW_SECURE_PERFTEST
         fprintf(stderr,
                 "%s SecureGovernanceFile cannot be empty when using security.\n",
                 classLoggingString.c_str());
         return false;
-    } else {
-        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
-        if (!addPropertyToParticipantQos(
-                qos,
-                "com.rti.serv.secure.access_control.governance_file",
-                governanceFilePath)) {
-            return false;
-        }
+      #endif
     }
-
-    /*
-     * Save the local variable governanceFilePath into
-     * the parameter "secureGovernanceFile"
-     */
-    _PM->set("secureGovernanceFile", governanceFilePath);
 
     // Permissions file
     if (!addPropertyToParticipantQos(
@@ -1167,16 +1165,6 @@ bool PerftestConfigureSecurity(
         return false;
     }
 
-    if (_PM->is_set("secureDebug")) {
-        // private key
-        if (!addPropertyToParticipantQos(
-                qos,
-                "com.rti.serv.secure.logging.log_level",
-                perftest::to_string(_PM->get<int>("secureDebug")))) {
-            return false;
-        }
-    }
-
     if (_PM->is_set("secureEncryptionAlgo")) {
         if (!addPropertyToParticipantQos(
                 qos,
@@ -1191,6 +1179,27 @@ bool PerftestConfigureSecurity(
                 qos,
                 "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
                 "1")) {
+            return false;
+        }
+    }
+
+  #endif //!defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+    if (_PM->is_set("securePSK")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                _PM->get<std::string>("securePSK").c_str())) {
+            return false;
+        }
+    }
+
+    if (_PM->is_set("secureDebug")) {
+        // private key
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.logging.log_level",
+                perftest::to_string(_PM->get<int>("secureDebug")))) {
             return false;
         }
     }
