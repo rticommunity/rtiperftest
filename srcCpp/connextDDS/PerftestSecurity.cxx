@@ -56,31 +56,33 @@ bool PerftestSecurity::validateSecureArgs()
       // These options will NOT be available for LWSec + Static 
       #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
-        if (_PM->get<std::string>("securePrivateKey").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
-            } else {
-                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+        if (!_PM->get<bool>("lightWeightSecurity")) {
+            if (_PM->get<std::string>("securePrivateKey").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
+                } else {
+                    _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+                }
             }
-        }
 
-        if (_PM->get<std::string>("secureCertFile").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
-            } else {
-                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
+            if (_PM->get<std::string>("secureCertFile").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
+                } else {
+                    _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
+                }
             }
-        }
 
-        if (_PM->get<std::string>("secureCertAuthority").empty()) {
-            _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
-        }
+            if (_PM->get<std::string>("secureCertAuthority").empty()) {
+                _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
+            }
 
-        if (_PM->get<std::string>("securePermissionsFile").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
-            } else {
-                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
+            if (_PM->get<std::string>("securePermissionsFile").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
+                } else {
+                    _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
+                }
             }
         }
       #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
@@ -108,56 +110,59 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
 
   // These options will NOT be available for LWSec + Static 
   #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
-    stringStream << "\tGovernance file: ";
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureGovernanceFile")
-                     << "\n";
+
+    if (!_PM->get<bool>("lightWeightSecurity")) {
+
+        stringStream << "\tGovernance file: ";
+        if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureGovernanceFile")
+                        << "\n";
+        }
+
+        stringStream << "\tPermissions file: ";
+        if (_PM->get<std::string>("securePermissionsFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("securePermissionsFile")
+                        << "\n";
+        }
+
+        stringStream << "\tPrivate key file: ";
+        if (_PM->get<std::string>("securePrivateKey").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("securePrivateKey")
+                        << "\n";
+        }
+
+        stringStream << "\tCertificate file: ";
+        if (_PM->get<std::string>("secureCertFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureCertFile")
+                        << "\n";
+        }
+
+        stringStream << "\tCertificate authority file: ";
+        if (_PM->get<std::string>("secureCertAuthority").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureCertAuthority")
+                        << "\n";
+        }
+
+        if (_PM->is_set("secureEncryptionAlgo")) {
+            stringStream << "\tEncryption Algorithm: "
+                        << _PM->get<std::string>("secureEncryptionAlgo")
+                        << "\n";
+        }
+
+        stringStream << "\tAdditional Authenticated Data: "
+                        << _PM->is_set("secureEnableAAD")
+                        << "\n";
     }
-
-    stringStream << "\tPermissions file: ";
-    if (_PM->get<std::string>("securePermissionsFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("securePermissionsFile")
-                     << "\n";
-    }
-
-    stringStream << "\tPrivate key file: ";
-    if (_PM->get<std::string>("securePrivateKey").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("securePrivateKey")
-                     << "\n";
-    }
-
-    stringStream << "\tCertificate file: ";
-    if (_PM->get<std::string>("secureCertFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureCertFile")
-                     << "\n";
-    }
-
-    stringStream << "\tCertificate authority file: ";
-    if (_PM->get<std::string>("secureCertAuthority").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureCertAuthority")
-                     << "\n";
-    }
-
-    if (_PM->is_set("secureEncryptionAlgo")) {
-        stringStream << "\tEncryption Algorithm: "
-                     << _PM->get<std::string>("secureEncryptionAlgo")
-                     << "\n";
-    }
-
-    stringStream << "\tAdditional Authenticated Data: "
-                    << _PM->is_set("secureEnableAAD")
-                    << "\n";
-
   #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
 
     stringStream << "\tPSK: ";

@@ -1366,6 +1366,9 @@ void ParameterManager::initialize()
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
 
+    // These options will NOT be available for LWSec + Static 
+    #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
     Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>();
     secureGovernanceFile->set_command_line_argument(
             "-secureGovernanceFile", "<file>");
@@ -1433,19 +1436,6 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("securePrivateKey", securePrivateKey);
 
-    Parameter<std::string> *secureLibrary = new Parameter<std::string>();
-    secureLibrary->set_command_line_argument("-secureLibrary", "<file>");
-    secureLibrary->set_description(
-            "Private key file <optional>.\n"
-            "Default: \"./resource/secure/subkey.pem\"");
-    secureLibrary->set_type(T_STR);
-    secureLibrary->set_extra_argument(YES);
-    secureLibrary->set_group(SECURE);
-    secureLibrary->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureLibrary", secureLibrary);
-
     Parameter<std::string> *secureEncryptionAlgo = new Parameter<std::string>();
     secureEncryptionAlgo->set_command_line_argument("-secureEncryptionAlgorithm", "<value>");
     secureEncryptionAlgo->set_description(
@@ -1459,6 +1449,59 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("secureEncryptionAlgo", secureEncryptionAlgo);
 
+    Parameter<bool> *secureEnableAAD = new Parameter<bool>(false);
+    secureEnableAAD->set_command_line_argument("-secureEnableAAD", "");
+    secureEnableAAD->set_description("Enable AAD. Default: Not enabled.");
+    secureEnableAAD->set_type(T_BOOL);
+    secureEnableAAD->set_extra_argument(NO);
+    secureEnableAAD->set_group(SECURE);
+    secureEnableAAD->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureEnableAAD", secureEnableAAD);
+
+  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+    Parameter<std::string> *secureLibrary = new Parameter<std::string>();
+    secureLibrary->set_command_line_argument("-secureLibrary", "<file>");
+    secureLibrary->set_description(
+            "Security Library that will be loaded dynamically.\n"
+            "Default: Not used, empty value");
+    secureLibrary->set_type(T_STR);
+    secureLibrary->set_extra_argument(YES);
+    secureLibrary->set_group(SECURE);
+    secureLibrary->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureLibrary", secureLibrary);
+
+    Parameter<bool> *lightWeightSecurity = new Parameter<bool>(false);
+    lightWeightSecurity->set_command_line_argument("-lightWeightSecurity", "");
+    lightWeightSecurity->set_description(
+            "Use the Lightweight security Library.\n"
+            "Default: Not enabled.");
+    lightWeightSecurity->set_type(T_BOOL);
+    lightWeightSecurity->set_extra_argument(NO);
+    lightWeightSecurity->set_group(SECURE);
+    lightWeightSecurity->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("lightWeightSecurity", lightWeightSecurity);
+
+  #endif
+
+    // This one will be used both in Static and Dynamic. In static will be yet
+    // another security option. In dynamic this will actually enable LightWeight
+    // Security.
+    Parameter<std::string> *securePSK = new Parameter<std::string>();
+    securePSK->set_command_line_argument("-securePSK", "<password>");
+    securePSK->set_description("Enable PSK security. Default: Not enabled.");
+    securePSK->set_type(T_STR);
+    securePSK->set_extra_argument(YES);
+    securePSK->set_group(SECURE);
+    securePSK->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("securePSK", securePSK);
+
     Parameter<int> *secureDebug = new Parameter<int>(1);
     secureDebug->set_command_line_argument("-secureDebug", "<level>");
     secureDebug->set_type(T_NUMERIC_D);
@@ -1471,19 +1514,8 @@ void ParameterManager::initialize()
     secureDebug->set_internal(true);
     create("secureDebug", secureDebug);
 
-    Parameter<bool> *secureEnableAAD = new Parameter<bool>(false);
-    secureEnableAAD->set_command_line_argument("-secureEnableAAD", "");
-    secureEnableAAD->set_description("Enable AAD. Default: Not enabled.");
-    secureEnableAAD->set_type(T_BOOL);
-    secureEnableAAD->set_extra_argument(NO);
-    secureEnableAAD->set_group(SECURE);
-    secureEnableAAD->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEnableAAD", secureEnableAAD);
-
 #endif
-}
+} // End of the initialize.
 
 // Parse the command line parameters and set the value
 bool ParameterManager::parse(int argc, char *argv[])
