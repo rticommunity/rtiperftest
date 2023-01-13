@@ -1129,7 +1129,7 @@ bool PerftestConfigureSecurity(
             return false;
         }
 
-        // permissions authority file
+        // permissions authority file (legacy property, it should be permissions_file)
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.access_control.permissions_authority_file",

@@ -460,7 +460,6 @@ bool PerftestConfigureSecurity(
     SECCORE_SecurePluginFactoryProperty sec_plugin_prop;
 
     DDS_Boolean retval;
-    std::string governanceFilePath;
 
     // register plugin factory with registry
     if (!SECCORE_SecurePluginFactory::register_suite(
@@ -507,7 +506,7 @@ bool PerftestConfigureSecurity(
         return false;
     }
 
-    // permissions authority file
+    // permissions authority file (legacy property, it should be permissions_file)
     if (!qos.property.value.assert_property(
                 "dds.sec.access.permissions_ca",
                 _PM->get<std::string>("secureCertAuthority").c_str(),
