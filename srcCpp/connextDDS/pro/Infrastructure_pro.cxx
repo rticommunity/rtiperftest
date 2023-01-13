@@ -1175,15 +1175,6 @@ bool PerftestConfigureSecurity(
                 return false;
             }
         }
-
-        if (_PM->is_set("secureEnableAAD")) {
-            if (!addPropertyToParticipantQos(
-                    qos,
-                    "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
-                    "1")) {
-                return false;
-            }
-        }
     }
 
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
@@ -1193,6 +1184,15 @@ bool PerftestConfigureSecurity(
                 qos,
                 "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
                 _PM->get<std::string>("securePSK").c_str())) {
+            return false;
+        }
+    }
+
+    if (_PM->is_set("secureEnableAAD")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+                "1")) {
             return false;
         }
     }

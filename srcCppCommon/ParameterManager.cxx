@@ -1451,6 +1451,8 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("secureEncryptionAlgo", secureEncryptionAlgo);
 
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
+
     Parameter<bool> *secureEnableAAD = new Parameter<bool>(false);
     secureEnableAAD->set_command_line_argument("-secureEnableAAD", "");
     secureEnableAAD->set_description("Enable AAD. Default: Not enabled.");
@@ -1461,8 +1463,6 @@ void ParameterManager::initialize()
             Middleware::RTIDDSPRO
             | Middleware::RTIDDSMICRO);
     create("secureEnableAAD", secureEnableAAD);
-
-  #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
   #ifdef RTI_PERFTEST_DYNAMIC_LINKING
 

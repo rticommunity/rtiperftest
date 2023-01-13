@@ -1494,10 +1494,6 @@ void RTIDDSImpl<T>::configureSecurePlugin(
                     = _PM->get<std::string>("secureEncryptionAlgo");
         }
 
-        if (_PM->is_set("secureEnableAAD")) {
-            dpQosProperties["com.rti.serv.secure.cryptography.enable_additional_authenticated_data"]
-                    = "1";
-        }
     }
 
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
@@ -1505,6 +1501,11 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     if (_PM->is_set("securePSK")) {
         dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
                     = _PM->get<std::string>("securePSK");
+    }
+
+    if (_PM->is_set("secureEnableAAD")) {
+        dpQosProperties["com.rti.serv.secure.cryptography.enable_additional_authenticated_data"]
+                = "1";
     }
 
     if (_PM->is_set("secureDebug")) {
@@ -1625,11 +1626,8 @@ std::string RTIDDSImpl<T>::printSecureArgs()
                         << "\n";
         }
 
-        stringStream << "\tAdditional Authenticated Data: "
-                        << _PM->is_set("secureEnableAAD")
-                        << "\n";
     }
-  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     stringStream << "\tPSK: ";
     if (_PM->get<std::string>("securePSK").empty()) {
@@ -1637,6 +1635,10 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     } else {
         stringStream << _PM->get<std::string>("securePSK") << "\n";
     }
+
+    stringStream << "\tAdditional Authenticated Data: "
+                    << _PM->is_set("secureEnableAAD")
+                    << "\n";
 
   #ifdef RTI_PERFTEST_DYNAMIC_LINKING
     stringStream << "\tSecurity library: ";

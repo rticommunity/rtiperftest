@@ -163,9 +163,6 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
                         << "\n";
         }
 
-        stringStream << "\tAdditional Authenticated Data: "
-                        << _PM->is_set("secureEnableAAD")
-                        << "\n";
     }
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
@@ -175,6 +172,10 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
     } else {
         stringStream << _PM->get<std::string>("securePSK") << "\n";
     }
+
+    stringStream << "\tAdditional Authenticated Data: "
+                    << _PM->is_set("secureEnableAAD")
+                    << "\n";
 
   #ifdef RTI_PERFTEST_DYNAMIC_LINKING
     stringStream << "\tSecurity library: ";
