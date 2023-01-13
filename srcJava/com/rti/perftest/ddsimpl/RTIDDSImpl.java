@@ -97,7 +97,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _isReliable = true;
     private boolean _AutoThrottle = false;
     private boolean _crc = false;
-    private Sring _crckind = null;
+    private String _crcKind = null;
     private boolean _headerExtension = false;
     private boolean _TurboMode = false;
     private int     _instanceCount = 1;
@@ -846,7 +846,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             secure_arguments_string += "\t Additional Authenticated Data: " + _secureEnableAAD + "\n";
         }
 
-        stringStream << "\tPSK: ";
         secure_arguments_string += "\tPSK: ";
 
         if (_securePSK != null) {
@@ -1292,8 +1291,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         sb.append("\tCRC Enabled: ");
-        sb.append(_crc.toString());
-        if ()
+        sb.append(_crc);
+        if (_crcKind != null) {
             sb.append(" (");
             sb.append(_crcKind);
             sb.append(")");
@@ -1301,7 +1300,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         sb.append("\n");
 
         sb.append("\ttMessage Length Header Extension Enabled: ");
-        sb.append(_headerExtension.toString());
+        sb.append(_headerExtension);
         sb.append("\n");
 
         // XML File
@@ -1670,7 +1669,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 _crc = true;
-                _crckind  = argv[i];
+                _crcKind  = argv[i];
             } else if ("-enable-header-extension".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _headerExtension = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
