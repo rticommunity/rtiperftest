@@ -842,8 +842,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
             if (_secureEncryptionAlgo != null) {
                 secure_arguments_string += "\t Encryption Algorithm: " + _secureEncryptionAlgo + "\n";
             }
-
-            secure_arguments_string += "\t Additional Authenticated Data: " + _secureEnableAAD + "\n";
         }
 
         secure_arguments_string += "\tPSK: ";
@@ -853,6 +851,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
         } else {
             secure_arguments_string += _securePSK + "\n";
         }
+
+        secure_arguments_string += "\t Additional Authenticated Data: " + _secureEnableAAD + "\n";
 
         if (_secureLibrary != null) {
             secure_arguments_string += "\t Security Library: " + _secureLibrary + "\n";
@@ -945,14 +945,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     "com.rti.serv.secure.authentication.private_key_file",
                     _securePrivateKeyFile,
                     false);
-            
-            if (_secureEnableAAD) {
-                PropertyQosPolicyHelper.add_property(
-                    dpQos.property,
-                    "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
-                    "1",
-                    false);
-            }
 
             if (_secureEncryptionAlgo != null) {
                 PropertyQosPolicyHelper.add_property(
@@ -961,6 +953,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     _secureEncryptionAlgo,
                     false);
             }
+        }
+
+        if (_secureEnableAAD) {
+            PropertyQosPolicyHelper.add_property(
+                dpQos.property,
+                "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+                "1",
+                false);
         }
 
         if (_securePSK != null) {
