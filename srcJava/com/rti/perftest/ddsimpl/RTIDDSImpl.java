@@ -288,6 +288,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                throughput DataWriter (pub)\n" +
             "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
             "\t                                throughput DataWriter (pub)\n" +
+            "\t-crc                          - Enable CRC. Default: Not set.\n" +
+            "\t-crc-kind                     - Modify the default value to compute the CRC.\n" +
+            "\t                                Options: CRC_32_CUSTOM | CRC_32_LEGACY\n" +
+            "\t                                Default: CRC_32_CUSTOM.\n" +
+            "\t-enable-header-extension      - Enable enable_message_length_header_extension.\n" +
+            "\t                                Default: Disabled.\n" +
             "\t-asynchronous                 - Use asynchronous writer\n" +
             "\t                                Default: Not set\n" +
             "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
