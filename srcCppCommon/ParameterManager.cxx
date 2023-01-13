@@ -541,6 +541,18 @@ void ParameterManager::initialize()
     create("compressionThreshold", compressionThreshold);
   #endif //defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
 
+
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_710)
+    Parameter<bool> *enableInstallStateRecovery = new Parameter<bool>(false);
+    enableInstallStateRecovery->set_command_line_argument("-enableInstallStateRecovery","");
+    enableInstallStateRecovery->set_description("");
+    enableInstallStateRecovery->set_type(T_BOOL);
+    enableInstallStateRecovery->set_extra_argument(NO);
+    enableInstallStateRecovery->set_group(GENERAL);
+    enableInstallStateRecovery->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("enableInstallStateRecovery", enableInstallStateRecovery);
+  #endif // defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_710)
+
   #ifdef RTI_PERF_TSS
     Parameter<bool> *loaningSendReceive = new Parameter<bool>(false);
     loaningSendReceive->set_command_line_argument("-loaningSendReceive", "");
