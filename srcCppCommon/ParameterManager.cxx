@@ -1366,8 +1366,10 @@ void ParameterManager::initialize()
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
 
-    // These options will NOT be available for LWSec + Static 
-    #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
 
     Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>();
     secureGovernanceFile->set_command_line_argument(
@@ -1460,7 +1462,7 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("secureEnableAAD", secureEnableAAD);
 
-  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
   #ifdef RTI_PERFTEST_DYNAMIC_LINKING
 

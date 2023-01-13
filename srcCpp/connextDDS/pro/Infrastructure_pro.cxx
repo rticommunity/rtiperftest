@@ -1089,8 +1089,10 @@ bool PerftestConfigureSecurity(
   #endif
 
 
-  // These options will NOT be available for LWSec + Static 
-  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
 
     /*
      * Below, we are using com.rti.serv.secure properties in order to be
@@ -1113,12 +1115,9 @@ bool PerftestConfigureSecurity(
                 return false;
             }
         } else {
-          // We will fail, but ONLY if this is not Lightweight security.
-          #ifndef RTI_LW_SECURE_PERFTEST
             fprintf(stderr, "%s SecureGovernanceFile cannot be empty when using security.\n",
                     classLoggingString.c_str());
             return false;
-          #endif
         }
 
         // Permissions file
@@ -1187,7 +1186,7 @@ bool PerftestConfigureSecurity(
         }
     }
 
-  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     if (_PM->is_set("securePSK")) {
         if (!addPropertyToParticipantQos(

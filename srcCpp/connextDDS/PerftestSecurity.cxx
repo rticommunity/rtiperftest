@@ -53,9 +53,11 @@ bool PerftestSecurity::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
 
-      // These options will NOT be available for LWSec + Static 
-      #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+      // These options only make sense when not using LW security, this will
+      // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+      // dynamic if the command line option -lightWeightSecurity was not passed.
 
+      #ifndef RTI_LW_SECURE_PERFTEST
         if (!_PM->get<bool>("lightWeightSecurity")) {
             if (_PM->get<std::string>("securePrivateKey").empty()) {
                 if (_PM->get<bool>("pub")) {
@@ -85,7 +87,7 @@ bool PerftestSecurity::validateSecureArgs()
                 }
             }
         }
-      #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+      #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
         if (_PM->get<std::string>("secureLibrary").empty()) {
@@ -108,8 +110,10 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
     stringStream << "Secure Configuration:\n";
 
 
-  // These options will NOT be available for LWSec + Static 
-  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
 
     if (!_PM->get<bool>("lightWeightSecurity")) {
 
@@ -163,7 +167,7 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
                         << _PM->is_set("secureEnableAAD")
                         << "\n";
     }
-  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     stringStream << "\tPSK: ";
     if (_PM->get<std::string>("securePSK").empty()) {

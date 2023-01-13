@@ -1441,8 +1441,10 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 
   #endif
 
-  // These options will NOT be available for LWSec + Static 
-  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
 
     /*
      * Below, we are using com.rti.serv.secure properties in order to be
@@ -1462,12 +1464,9 @@ void RTIDDSImpl<T>::configureSecurePlugin(
                     _PM->get<std::string>("secureGovernanceFile");
 
         } else {
-          // We will fail, but ONLY if this is not Lightweight security.
-          #ifndef RTI_LW_SECURE_PERFTEST
             std::cerr << "[Error] secureGovernanceFile cannot be empty when using security."
                     << std::endl;
             return;
-          #endif
         }
 
         // permissions file
@@ -1501,7 +1500,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         }
     }
 
-  #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     if (_PM->is_set("securePSK")) {
         dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
@@ -1521,8 +1520,11 @@ template <typename T>
 void RTIDDSImpl<T>::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
-      // These options will NOT be available for LWSec + Static 
-      #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+
+      // These options only make sense when not using LW security, this will
+      // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+      // dynamic if the command line option -lightWeightSecurity was not passed.
+      #ifndef RTI_LW_SECURE_PERFTEST
 
         if (!_PM->get<bool>("lightWeightSecurity")) {
             if (_PM->get<std::string>("securePrivateKey").empty()) {
@@ -1553,7 +1555,7 @@ void RTIDDSImpl<T>::validateSecureArgs()
                 }
             }
         }
-      #endif // !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+      #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
         if (_PM->get<std::string>("secureLibrary").empty()) {
@@ -1573,8 +1575,10 @@ std::string RTIDDSImpl<T>::printSecureArgs()
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";
 
-  // These options will NOT be available for LWSec + Static 
-  #if !defined(RTI_LW_SECURE_PERFTEST) || defined(RTI_PERFTEST_DYNAMIC_LINKING)
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
 
     if (!_PM->get<bool>("lightWeightSecurity")) {
 
