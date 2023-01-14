@@ -428,7 +428,7 @@ void ParameterManager::initialize()
     create("crc", crc);
 
     Parameter<std::string> *crcKind = new Parameter<std::string>("CRC_32_CUSTOM");
-    crcKind->set_command_line_argument("-crc-kind", "<value>");
+    crcKind->set_command_line_argument("-crcKind", "<value>");
     crcKind->set_description(
             "Modify the default value to compute the CRC.\n"
             "Options: CRC_32_CUSTOM | CRC_32_LEGACY\n"
@@ -437,7 +437,7 @@ void ParameterManager::initialize()
     crcKind->set_extra_argument(YES);
     crcKind->set_group(GENERAL);
     crcKind->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("crc-kind", crcKind);
+    create("crcKind", crcKind);
 
 
     Parameter<bool> *headerExtension = new Parameter<bool>(false);

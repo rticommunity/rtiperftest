@@ -29,7 +29,6 @@ namespace PerformanceTest
         private string configureTransportCertAuthority;
         private int verbosity;
         private bool latencyTest;
-        private bool secureEncryptBoth;
         public bool CftSet { get; set; }
         public bool PubRateSet { get; set; }
         public bool InstancesSet { get; set; }
@@ -106,8 +105,8 @@ namespace PerformanceTest
         public bool BestEffort { get; set; }
         public int BatchSize
         {
-                get => batchSize;
-                set { batchSize = value; BatchSizeSet = true; }
+            get => batchSize;
+            set { batchSize = value; BatchSizeSet = true; }
         }
         public bool NoPositiveAcks { get; set; }
         public long KeepDurationUsec { get; set; }
@@ -118,12 +117,19 @@ namespace PerformanceTest
         public ulong WaitsetEventCount { get; set; }
         public bool EnableAutoThrottle { get; set; }
         public bool EnableTurboMode { get; set; }
+        public bool Crc { get; set; }
+        public string CrcKind
+        {
+            get => CrcKind;
+            set { CrcKind = value; Crc = true; }
+        }
+        public bool HeaderExtension { get; set; }
         public bool Asynchronous { get; set; }
         public string FlowController { get; set; }
         public string Peer
         {
-                get => peer;
-                set { peer = value; PeerSet = true; }
+            get => peer;
+            set { peer = value; PeerSet = true; }
         }
         public bool Unbounded { get; set; }
         public ulong UnboundedSize
@@ -134,8 +140,8 @@ namespace PerformanceTest
         public int Domain { get; set; }
         public string Transport
         {
-                get => transport;
-                set { transport = value; TransportSet = true; }
+            get => transport;
+            set { transport = value; TransportSet = true; }
         }
         public int InstanceHashBuckets
         {
@@ -148,8 +154,10 @@ namespace PerformanceTest
         public string SecureCertFile { get; set; }
         public string SecurePrivateKey { get; set; }
         public string SecureLibrary { get; set; }
+        public bool LightWeightSecurity { get; set; }
         public string SecureEncryptionAlgo { get; set; }
         public bool SecureEnableAAD{ get; set; }
+        public bool SecurePSK{ get; set; }
         public int SecureDebug { get; set; }
         // Transport arguments
         public bool EnableTCP { get; set; }

@@ -1079,7 +1079,7 @@ Test Parameters to Control Connext DDS Secure Options
   | **Default for Publisher:** ``./resource/secure/pubkey.pem`` 
   | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
--  ``-secureEncryptionAlgorithm <file>``
+-  ``-secureEncryptionAlgorithm <Algorithm>``
 
    Set the Security Encryption Algorithm.
 
@@ -1448,6 +1448,12 @@ The following parameters are not available when using *Perftest* with *TSS*:
 
 -  ``-cft``
 
+-  ``-crc``
+
+-  ``-crcKind``
+
+-  ``-enable-header-extension``
+
 -  ``-checkConsistency``
 
 -  ``-secureGovernanceFile <file>``
@@ -1463,6 +1469,10 @@ The following parameters are not available when using *Perftest* with *TSS*:
 -  ``-secureEncryptionAlgorithm``
 
 -  ``-secureEnableAAD``
+
+-  ``-securePSK``
+
+-  ``-lightWeightSecurity``
 
 -  ``-rawTransport``
 

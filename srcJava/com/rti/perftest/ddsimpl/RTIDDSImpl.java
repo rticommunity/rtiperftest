@@ -289,7 +289,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
             "\t                                throughput DataWriter (pub)\n" +
             "\t-crc                          - Enable CRC. Default: Not set.\n" +
-            "\t-crc-kind                     - Modify the default value to compute the CRC.\n" +
+            "\t-crcKind                      - Modify the default value to compute the CRC.\n" +
             "\t                                Options: CRC_32_CUSTOM | CRC_32_LEGACY\n" +
             "\t                                Default: CRC_32_CUSTOM.\n" +
             "\t-enable-header-extension      - Enable enable_message_length_header_extension.\n" +
@@ -1669,9 +1669,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _AutoThrottle = true;
             } else if ("-crc".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _crc = true;
-            } else if ("-crc-kind".toLowerCase().startsWith(argv[i].toLowerCase())) {
+            } else if ("-crcKind".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <value> after -crc-kind\n");
+                    System.err.print("Missing <value> after -crcKind\n");
                     return false;
                 }
                 _crc = true;
