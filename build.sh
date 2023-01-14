@@ -593,7 +593,6 @@ function additional_defines_calculation()
 
         if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
             LWS_TAG="Lightweight "
-            additional_defines="${additional_defines} DRTI_LW_SECURE_PERFTEST"
         fi
 
         echo -e "\n${INFO_TAG} Using RTI ${LW_TAG}Security Libraries"
@@ -605,6 +604,11 @@ function additional_defines_calculation()
             echo -e "${INFO_TAG} Linking Dynamically."
 
         else # Linking Statically.
+
+            if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
+                LWS_TAG="Lightweight "
+                additional_defines="${additional_defines} DRTI_LW_SECURE_PERFTEST"
+            fi
 
             # If we have provided the SSL Version (Hence the RTI_CRYPTOHOME will
             # be empty, no need to check)
