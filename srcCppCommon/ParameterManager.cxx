@@ -1504,6 +1504,19 @@ void ParameterManager::initialize()
     securePSK->set_supported_middleware(Middleware::RTIDDSPRO);
     create("securePSK", securePSK);
 
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<std::string> *secureRtpsHmacOnly = new Parameter<std::string>();
+    secureRtpsHmacOnly->set_command_line_argument("-secureRtpsHmacOnly", "<password>");
+    secureRtpsHmacOnly->set_description("Enable HMAC Only security. Default: Not enabled.");
+    secureRtpsHmacOnly->set_type(T_STR);
+    secureRtpsHmacOnly->set_extra_argument(YES);
+    secureRtpsHmacOnly->set_group(SECURE);
+    secureRtpsHmacOnly->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("secureRtpsHmacOnly", secureRtpsHmacOnly);
+  #endif
+
+
     Parameter<int> *secureDebug = new Parameter<int>(1);
     secureDebug->set_command_line_argument("-secureDebug", "<level>");
     secureDebug->set_type(T_NUMERIC_D);

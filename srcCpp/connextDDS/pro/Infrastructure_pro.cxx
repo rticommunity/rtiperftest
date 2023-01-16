@@ -1188,6 +1188,21 @@ bool PerftestConfigureSecurity(
         }
     }
 
+    if (_PM->is_set("secureRtpsHmacOnly")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.hmac_only.enabled",
+                "1")) {
+            return false;
+        }
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.hmac_only.cryptography.key",
+                _PM->get<std::string>("secureRtpsHmacOnly").c_str())) {
+            return false;
+        }
+    }
+
     if (_PM->is_set("secureEnableAAD")) {
         if (!addPropertyToParticipantQos(
                 qos,

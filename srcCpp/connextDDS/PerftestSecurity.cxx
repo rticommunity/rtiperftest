@@ -86,6 +86,14 @@ bool PerftestSecurity::validateSecureArgs()
                     _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
                 }
             }
+        } else {
+
+            if (_PM->is_set("secureRtpsHmacOnly")) {
+                fprintf(stderr,
+                        "validateSecureArgs: secureRtpsHmacOnly cannot be used "
+                        "with lightWeightSecurity")
+                return false;
+            }
         }
       #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
@@ -115,7 +123,8 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
   // dynamic if the command line option -lightWeightSecurity was not passed.
   #ifndef RTI_LW_SECURE_PERFTEST
 
-    if (!_PM->get<bool>("lightWeightSecurity")) {
+    if (!_PM->get<bool>("lightWeightSecurity") 
+            && !_PM->is_set("secureRtpsHmacOnly") ) {
 
         stringStream << "\tGovernance file: ";
         if (_PM->get<std::string>("secureGovernanceFile").empty()) {
@@ -171,6 +180,11 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
         stringStream << "Not Used\n";
     } else {
         stringStream << _PM->get<std::string>("securePSK") << "\n";
+    }
+
+    if (!_PM->get<std::string>("secureRtpsHmacOnly").empty()) {
+        stringStream << "\tUsing HMAC Only Mode. Password: "
+                     << _PM->get<std::string>("secureRtpsHmacOnly") << "\n";
     }
 
     stringStream << "\tAdditional Authenticated Data: "
