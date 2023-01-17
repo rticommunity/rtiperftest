@@ -143,6 +143,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _secureLibrary = null;
     private String _secureEncryptionAlgo = null;
     private String _securePSK = null;
+    private String _securePSKAlgorithm = null;
     private int _secureDebugLevel = -1;
     private boolean _secureEnableAAD = false;
 
@@ -851,11 +852,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         secure_arguments_string += "\tPSK: ";
-
         if (_securePSK != null) {
-            secure_arguments_string += "Not Used\n";
+            secure_arguments_string += "In Use. Key: \""
+                    + _securePSK
+                    + "\", Algorithm = "
+                    + _securePSKAlgorithm
+                    + "\n";
         } else {
-            secure_arguments_string += _securePSK + "\n";
+            secure_arguments_string += "Not Used\n";
         }
 
         secure_arguments_string += "\t Additional Authenticated Data: " + _secureEnableAAD + "\n";
@@ -945,6 +949,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     _secureCertificateFile,
                     false);
 
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+                    "4",
+                    false);
+
             // private key
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
@@ -969,11 +979,25 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 false);
         }
 
-        if (_securePSK != null) {
+        if (_securePSK != null || _securePSKAlgorithm != null) {
+
+            if (_securePSK == null) {
+                _securePSK = "DefaultValue";
+            }
+
+            if (_securePSKAlgorithm == null) {
+                _securePSKAlgorithm = "AES256+GCM";
+            }
+
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
                     "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
                     _securePSK,
+                    false);
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    _securePSKAlgorithm,
                     false);
         }
 
@@ -1738,6 +1762,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 _secureUseSecure = true;
                 _securePSK = argv[i];
+            } else if ("-securePSKAlgorithm".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <value> after -securePSK\n");
+                    return false;
+                }
+                _secureUseSecure = true;
+                _securePSKAlgorithm = argv[i];
             } else if ("-secureDebug".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <level> after -secureDebug\n");

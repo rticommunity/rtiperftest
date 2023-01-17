@@ -1485,6 +1485,9 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         dpQosProperties["com.rti.serv.secure.authentication.certificate_file"]
                 = _PM->get<std::string>("secureCertFile");
 
+        dpQosProperties["com.rti.serv.secure.cryptography.max_receiver_specific_macs"]
+                = "4";
+        
         // private key
         dpQosProperties["com.rti.serv.secure.authentication.private_key_file"]
                 = _PM->get<std::string>("securePrivateKey");
@@ -1501,6 +1504,16 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     if (_PM->is_set("securePSK")) {
         dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
                     = _PM->get<std::string>("securePSK");
+    }
+
+    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+        if (!_PM->is_set("securePSK")) {
+            _PM->set("securePSK", "DefaultValue");
+        }
+        dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
+                    = _PM->get<std::string>("securePSK");
+        dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm"]
+                    = _PM->get<std::string>("securePSKAlgorithm");
     }
 
     if (_PM->is_set("secureEnableAAD")) {
@@ -1630,10 +1643,14 @@ std::string RTIDDSImpl<T>::printSecureArgs()
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     stringStream << "\tPSK: ";
-    if (_PM->get<std::string>("securePSK").empty()) {
-        stringStream << "Not Used\n";
+    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+        stringStream << "In Use. Key: \"" 
+                     << _PM->get<std::string>("securePSK")
+                     << "\", Algorithm = "
+                     << _PM->get<std::string>("securePSKAlgorithm")
+                     << "\n";
     } else {
-        stringStream << _PM->get<std::string>("securePSK") << "\n";
+        stringStream << "Not Used\n";
     }
 
     stringStream << "\tAdditional Authenticated Data: "

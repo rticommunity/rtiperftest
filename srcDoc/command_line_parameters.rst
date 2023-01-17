@@ -1472,6 +1472,8 @@ The following parameters are not available when using *Perftest* with *TSS*:
 
 -  ``-securePSK``
 
+-  ``-securePSKAlgorithm``
+
 -  ``-lightWeightSecurity``
 
 -  ``-rawTransport``

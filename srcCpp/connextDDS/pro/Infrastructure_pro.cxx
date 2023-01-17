@@ -1104,8 +1104,8 @@ bool PerftestConfigureSecurity(
 
     // In the case where we are dynamic, we should not set these properties if
     // we are using the lightweight security library.
-    if (!_PM->get<bool>("lightWeightSecurity")) {
-
+    if (!_PM->is_set("lightWeightSecurity")
+            && !_PM->is_set("secureRtpsHmacOnly")) {
         // check if governance file provided
         if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
             if (!addPropertyToParticipantQos(
@@ -1115,7 +1115,7 @@ bool PerftestConfigureSecurity(
                 return false;
             }
         } else {
-            fprintf(stderr, "%s SecureGovernanceFile cannot be empty when using security.\n",
+            fprintf(stderr, "%s SecureGovernanceFile cannot be empty when using regular security.\n",
                     classLoggingString.c_str());
             return false;
         }
@@ -1179,13 +1179,26 @@ bool PerftestConfigureSecurity(
 
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
-    if (_PM->is_set("securePSK")) {
+    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+
+        if (!_PM->is_set("securePSK")) {
+            _PM->set("securePSK", "DefaultValue");
+        }
+
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
                 _PM->get<std::string>("securePSK").c_str())) {
             return false;
         }
+
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                _PM->get<std::string>("securePSKAlgorithm").c_str())) {
+            return false;
+        }
+
     }
 
     if (_PM->is_set("secureRtpsHmacOnly")) {

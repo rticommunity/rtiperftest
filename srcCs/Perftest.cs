@@ -400,9 +400,12 @@ namespace PerformanceTest
                     new string[] { "--secureEnableAAD", "-secureEnableAAD" },
                     getDefaultValue: () => false,
                     description: "Enable AAD when using security."),
-                new System.CommandLine.Option<bool>(
+                new System.CommandLine.Option<string>(
                     new string[] { "--securePSK", "-securePSK" },
-                    description: "Enables PSK. [Default: Not Used]" ),
+                    description: "Enables PSK with the argument's password. [Default: Not Used]"),
+                new System.CommandLine.Option<string>(
+                    new string[] { "--securePSKAlgorithm", "-securePSKAlgorithm" },
+                    description: "Enables PSK with the argument's password. [Default: Not Used]"),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--enableTCP", "-enableTCP" },
                     description: "Enables TCP" ),

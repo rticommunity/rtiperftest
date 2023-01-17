@@ -58,7 +58,8 @@ bool PerftestSecurity::validateSecureArgs()
       // dynamic if the command line option -lightWeightSecurity was not passed.
 
       #ifndef RTI_LW_SECURE_PERFTEST
-        if (!_PM->get<bool>("lightWeightSecurity")) {
+        if (!_PM->get<bool>("lightWeightSecurity")
+                && !_PM->is_set("secureRtpsHmacOnly")) {
             if (_PM->get<std::string>("securePrivateKey").empty()) {
                 if (_PM->get<bool>("pub")) {
                     _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
@@ -86,18 +87,19 @@ bool PerftestSecurity::validateSecureArgs()
                     _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
                 }
             }
-        } else {
-
-            if (_PM->is_set("secureRtpsHmacOnly")) {
-                fprintf(stderr,
-                        "validateSecureArgs: secureRtpsHmacOnly cannot be used "
-                        "with lightWeightSecurity");
-                return false;
-            }
         }
       #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+        if (_PM->get<bool>("lightWeightSecurity")
+                && _PM->is_set("secureRtpsHmacOnly")) {
+            fprintf(stderr,
+                    "validateSecureArgs: secureRtpsHmacOnly cannot be used "
+                    "with lightWeightSecurity");
+            return false;
+        }
+
         if (_PM->get<std::string>("secureLibrary").empty()) {
             if (_PM->is_set("lightWeightSecurity")) {
                 _PM->set("secureLibrary", LW_SECURE_LIBRARY_NAME);
@@ -176,10 +178,14 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     stringStream << "\tPSK: ";
-    if (_PM->get<std::string>("securePSK").empty()) {
-        stringStream << "Not Used\n";
+    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+        stringStream << "In Use. Key: \"" 
+                     << _PM->get<std::string>("securePSK")
+                     << "\", Algorithm = "
+                     << _PM->get<std::string>("securePSKAlgorithm")
+                     << "\n";
     } else {
-        stringStream << _PM->get<std::string>("securePSK") << "\n";
+        stringStream << "Not Used\n";
     }
 
     if (!_PM->get<std::string>("secureRtpsHmacOnly").empty()) {

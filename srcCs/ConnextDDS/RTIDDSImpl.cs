@@ -724,9 +724,13 @@ namespace PerformanceTest
             secureArgumentsString += "\tPSK: ";
             if (args.SecurePSK != null)
             {
-                secureArgumentsString += "Not Used\n";
+                secureArgumentsString += "In Use. Key: \""
+                    + args.SecurePSK
+                    + "\", Algorithm = "
+                    + args.SecurePSKAlgorithm
+                    + "\n";
             } else {
-                secureArgumentsString += args.SecurePSK + "\n";
+                secureArgumentsString += "Not Used\n";
             }
 
             secureArgumentsString += "\t Additional Authenticated Data: " + parameters.SecureEnableAAD + "\n";
@@ -807,6 +811,11 @@ namespace PerformanceTest
                     policy.Add("com.rti.serv.secure.authentication.certificate_file",
                     parameters.SecureCertFile));
 
+
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+                    "4"));
+
                 // private key
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.authentication.private_key_file",
@@ -828,11 +837,25 @@ namespace PerformanceTest
                     "1"));
             }
 
-            if (parameters.SecurePSK != null)
+            if (parameters.SecurePSK != null || parameters.SecurePSKAlgorithm != null)
             {
+                if (parameters.SecurePSK == null)
+                {
+                    parameters.SecurePSK = "DefaultValue";
+                }
+
+                if (parameters.SecurePSKAlgorithm == null)
+                {
+                    parameters.SecurePSKAlgorithm = "AES256+GCM";
+                }
+
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
                     parameters.SecurePSK));
+
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    parameters.SecurePSKAlgorithm));
             }
 
             if (parameters.SecureDebug != -1)

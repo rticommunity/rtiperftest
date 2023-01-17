@@ -158,6 +158,7 @@ namespace PerformanceTest
         public string SecureEncryptionAlgo { get; set; }
         public bool SecureEnableAAD{ get; set; }
         public bool SecurePSK{ get; set; }
+        public bool SecurePSKAlgorithm{ get; set; }
         public int SecureDebug { get; set; }
         // Transport arguments
         public bool EnableTCP { get; set; }

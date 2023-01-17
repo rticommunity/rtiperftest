@@ -1516,6 +1516,18 @@ void ParameterManager::initialize()
     securePSK->set_supported_middleware(Middleware::RTIDDSPRO);
     create("securePSK", securePSK);
 
+    // This one will be used both in Static and Dynamic. In static will be yet
+    // another security option. In dynamic this will actually enable LightWeight
+    // Security.
+    Parameter<std::string> *securePSKAlgorithm = new Parameter<std::string>("AES256+GCM");
+    securePSKAlgorithm->set_command_line_argument("-securePSKAlgorithm", "<password>");
+    securePSKAlgorithm->set_description("PSK Algoritm to use. Default: AES256+GCM.");
+    securePSKAlgorithm->set_type(T_STR);
+    securePSKAlgorithm->set_extra_argument(YES);
+    securePSKAlgorithm->set_group(SECURE);
+    securePSKAlgorithm->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("securePSKAlgorithm", securePSKAlgorithm);
+
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<std::string> *secureRtpsHmacOnly = new Parameter<std::string>();
