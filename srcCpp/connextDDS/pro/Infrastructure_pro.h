@@ -21,13 +21,16 @@
  */
 
 #if RTI_DDS_VERSION_MAJOR >= 6 && RTI_DDS_VERSION_MINOR >= 1
-    #define PERFTEST_CONNEXT_PRO_610
+  #define PERFTEST_CONNEXT_PRO_610
 #endif
 
-#if RTI_DDS_VERSION_MAJOR >= 7 && RTI_DDS_VERSION_MINOR >= 0
-    #define PERFTEST_CONNEXT_PRO_700
-    // 6.1.X features are also in 7.0.0
-    #define PERFTEST_CONNEXT_PRO_610
+#if RTI_DDS_VERSION_MAJOR >= 7
+  // 6.1.X features are also in 7.0.0
+  #define PERFTEST_CONNEXT_PRO_610
+  #define PERFTEST_CONNEXT_PRO_700
+  #if RTI_DDS_VERSION_MINOR >= 1
+    #define PERFTEST_CONNEXT_PRO_710
+  #endif
 #endif
 
 #include "PerftestTransport.h"
