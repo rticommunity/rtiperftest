@@ -91,7 +91,7 @@ bool PerftestSecurity::validateSecureArgs()
             if (_PM->is_set("secureRtpsHmacOnly")) {
                 fprintf(stderr,
                         "validateSecureArgs: secureRtpsHmacOnly cannot be used "
-                        "with lightWeightSecurity")
+                        "with lightWeightSecurity");
                 return false;
             }
         }
