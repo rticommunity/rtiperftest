@@ -602,67 +602,65 @@ namespace PerformanceTest
 
         private bool ValidateSecureArgs()
         {
-            if (SecureUseSecure)
+            if (!parameters.LightWeightSecurity)
             {
-                if (!parameters.LightWeightSecurity)
+                if (parameters.SecurePrivateKey == null)
                 {
-                    if (parameters.SecurePrivateKey == null)
+                    if (parameters.Pub)
                     {
-                        if (parameters.Pub)
-                        {
-                            parameters.SecurePrivateKey = SecurePrivatePubKeyFile;
-                        }
-                        else
-                        {
-                            parameters.SecurePrivateKey = SecurePrivateKeyFileSub;
-                        }
-                    }
-
-                    if (parameters.SecureCertFile == null)
-                    {
-                        if (parameters.Pub)
-                        {
-                            parameters.SecureCertFile = SecureCertificateFilePub;
-                        }
-                        else
-                        {
-                            parameters.SecureCertFile = SecureCertificateFileSub;
-                        }
-                    }
-
-                    if (parameters.SecureCertAuthority == null)
-                    {
-                        parameters.SecureCertAuthority = SecureAuthorityFile;
-                    }
-
-                    if (parameters.SecurePermissionsFile == null)
-                    {
-                        if (parameters.Pub)
-                        {
-                            parameters.SecurePermissionsFile = SecurePermissionFilePub;
-                        }
-                        else
-                        {
-                            parameters.SecurePermissionsFile = SecurePermissionFileSub;
-                        }
-                    }
-                }
-
-                if (parameters.SecureLibrary == null)
-                {
-                    if (!parameters.LightWeightSecurity)
-                    {
-                        parameters.SecureLibrary = SecureLibraryName;
+                        parameters.SecurePrivateKey = SecurePrivatePubKeyFile;
                     }
                     else
                     {
-                        parameters.SecureLibrary = LWSecureLibraryName;
+                        parameters.SecurePrivateKey = SecurePrivateKeyFileSub;
                     }
+                }
+
+                if (parameters.SecureCertFile == null)
+                {
+                    if (parameters.Pub)
+                    {
+                        parameters.SecureCertFile = SecureCertificateFilePub;
+                    }
+                    else
+                    {
+                        parameters.SecureCertFile = SecureCertificateFileSub;
+                    }
+                }
+
+                if (parameters.SecureCertAuthority == null)
+                {
+                    parameters.SecureCertAuthority = SecureAuthorityFile;
+                }
+
+                if (parameters.SecurePermissionsFile == null)
+                {
+                    if (parameters.Pub)
+                    {
+                        parameters.SecurePermissionsFile = SecurePermissionFilePub;
+                    }
+                    else
+                    {
+                        parameters.SecurePermissionsFile = SecurePermissionFileSub;
+                    }
+                }
+            }
+
+            if (parameters.SecureLibrary == null)
+            {
+                if (!parameters.LightWeightSecurity)
+                {
+                    parameters.SecureLibrary = SecureLibraryName;
+                }
+                else
+                {
+                    parameters.SecureLibrary = LWSecureLibraryName;
                 }
             }
 
             return true;
         }
+
         private string PrintSecureArgs()
         {
             string secureArgumentsString = "Secure Arguments:\n";
