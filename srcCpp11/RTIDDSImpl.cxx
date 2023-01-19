@@ -425,7 +425,7 @@ std::string RTIDDSImpl<T>::print_configuration()
     stringStream << std::endl;
 
     stringStream << "\tMessage Length Header Extension Enabled: "
-                 << (_PM->get<bool>("enable-header-extension") ? "Yes" : "No")
+                 << (_PM->get<bool>("enable-message-length") ? "Yes" : "No")
                  << std::endl;
 
     // XML File
@@ -1752,15 +1752,8 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         }
     }
 
-    if (_PM->get<bool>("enable-header-extension")) {
-
+    if (_PM->get<bool>("enable-message-length")) {
         properties["dds.participant.wire_protocol.enable_message_length_header_extension"] = "true";
-
-        // If you enable header extensions and you are going to use security,
-        // you are forced to enable AAD.
-        if (_PM->group_is_used(SECURE)) {
-            _PM->set("secureEnableAAD", true);
-        }
     }
 
   #ifdef RTI_SECURE_PERFTEST

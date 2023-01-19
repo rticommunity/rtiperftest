@@ -98,7 +98,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _AutoThrottle = false;
     private boolean _crc = false;
     private String _crcKind = null;
-    private boolean _headerExtension = false;
+    private boolean _messageLength = false;
     private boolean _TurboMode = false;
     private int     _instanceCount = 1;
     private int     _instanceMaxCountReader = -1;
@@ -293,7 +293,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t-crcKind                      - Modify the default value to compute the CRC.\n" +
             "\t                                Options: CRC_32_CUSTOM | CRC_32_LEGACY\n" +
             "\t                                Default: CRC_32_CUSTOM.\n" +
-            "\t-enable-header-extension      - Enable enable_message_length_header_extension.\n" +
+            "\t-enable-message-length      - Enable enable_message_length_header_extension.\n" +
             "\t                                Default: Disabled.\n" +
             "\t-asynchronous                 - Use asynchronous writer\n" +
             "\t                                Default: Not set\n" +
@@ -325,7 +325,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                Default: \"./resource/secure/sub.pem\"\n" +
             "\t-securePrivateKey <file>      - Private key file <optional>\n" +
             "\t                                Default: \"./resource/secure/subkey.pem\"\n" +
-            "\t-secureEncryptionAlgorithm a  - Set the value for the Encryption Algorithm\n" +
+            "\t-secureEncryptionAlgorithm <a>- Set the value for the Encryption Algorithm\n" +
             "\t                                Default: \"aes-128-gcm\"\n" +
             "\t-secureEnableAAD              - Enable AAD.\n" +
             "\t                                Default: Not Enabled\n";
@@ -508,18 +508,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 false);
         }
 
-        if (_headerExtension) {
+        if (_messageLength) {
             PropertyQosPolicyHelper.add_property(
                 qos.property,
                 "dds.participant.wire_protocol.enable_message_length_header_extension",
                 "true",
                 false);
-            
-            // If you enable header extensions and you are going to use security,
-            // you are forced to enable AAD.
-            if (_secureUseSecure) {
-                _secureEnableAAD = true;
-            }
         }
 
         // Creates the participant
@@ -1330,7 +1324,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         sb.append("\n");
 
         sb.append("\ttMessage Length Header Extension Enabled: ");
-        sb.append(_headerExtension);
+        sb.append(_messageLength);
         sb.append("\n");
 
         // XML File
@@ -1700,8 +1694,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
                 _crc = true;
                 _crcKind  = argv[i];
-            } else if ("-enable-header-extension".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _headerExtension = true;
+            } else if ("-enable-message-length".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _messageLength = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _TurboMode = true;
             } else if ("-secureGovernanceFile".toLowerCase().startsWith(argv[i].toLowerCase())) {

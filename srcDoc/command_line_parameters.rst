@@ -1452,7 +1452,7 @@ The following parameters are not available when using *Perftest* with *TSS*:
 
 -  ``-crcKind``
 
--  ``-enable-header-extension``
+-  ``-enable-message-length``
 
 -  ``-checkConsistency``
 

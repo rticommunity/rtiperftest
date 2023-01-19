@@ -440,15 +440,15 @@ void ParameterManager::initialize()
     create("crcKind", crcKind);
 
 
-    Parameter<bool> *headerExtension = new Parameter<bool>(false);
-    headerExtension->set_command_line_argument("-enable-header-extension", "");
-    headerExtension->set_description(
+    Parameter<bool> *msgLengthHeaderExtension = new Parameter<bool>(false);
+    msgLengthHeaderExtension->set_command_line_argument("-enable-message-length", "");
+    msgLengthHeaderExtension->set_description(
             "Enable enable_message_length_header_extension. Default: Disabled");
-    crc->set_type(T_BOOL);
-    crc->set_extra_argument(NO);
-    crc->set_group(GENERAL);
-    crc->set_supported_middleware(Middleware::RTIDDSPRO);
-    create("enable-header-extension", headerExtension);
+    msgLengthHeaderExtension->set_type(T_BOOL);
+    msgLengthHeaderExtension->set_extra_argument(NO);
+    msgLengthHeaderExtension->set_group(GENERAL);
+    msgLengthHeaderExtension->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("enable-message-length", msgLengthHeaderExtension);
 
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");

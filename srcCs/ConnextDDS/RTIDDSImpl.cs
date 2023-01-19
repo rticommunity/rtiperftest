@@ -307,7 +307,7 @@ namespace PerformanceTest
             sb.Append('\n');
 
             sb.Append("\ttMessage Length Header Extension Enabled: ");
-            sb.Append(parameters.HeaderExtension);
+            sb.Append(parameters.MessageLength);
             sb.Append('\n');
 
             // XML File
@@ -1052,18 +1052,11 @@ namespace PerformanceTest
                             parameters.CrcKind));
             }
 
-            if (parameters.HeaderExtension)
+            if (parameters.MessageLength)
             {
                 participantQos = participantQos.WithProperty(policy =>
                     policy.Add("dds.participant.wire_protocol.enable_message_length_header_extension",
                         "true"));
-                
-                // If you enable header extensions and you are going to use security,
-                // you are forced to enable AAD.
-                if (SecureUseSecure)
-                {
-                    parameters.SecureEnableAAD = true;
-                }
             }
 
             return participantQos;

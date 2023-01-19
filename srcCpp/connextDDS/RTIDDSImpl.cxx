@@ -552,7 +552,7 @@ std::string RTIDDSImpl<T>::print_configuration()
 
 
     stringStream << "\tMessage Length Header Extension Enabled: "
-                 << (_PM->get<bool>("enable-header-extension") ? "Yes" : "No")
+                 << (_PM->get<bool>("enable-message-length") ? "Yes" : "No")
                  << std::endl;
 
   #ifdef RTI_FLATDATA_AVAILABLE
@@ -2551,17 +2551,11 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
         }
     }
 
-    if (_PM->get<bool>("enable-header-extension")) {
+    if (_PM->get<bool>("enable-message-length")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
             "dds.participant.wire_protocol.enable_message_length_header_extension",
             "true",
             false);
-        
-        // If you enable header extensions and you are going to use security,
-        // you are forced to enable AAD.
-        if (_PM->group_is_used(SECURE)) {
-            _PM->set("secureEnableAAD", true);
-        }
     }
 
   #else // if defined PERFTEST_RTI_MICRO

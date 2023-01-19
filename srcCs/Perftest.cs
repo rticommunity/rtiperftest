@@ -339,7 +339,7 @@ namespace PerformanceTest
                                  + "Options: CRC_32_CUSTOM | CRC_32_LEGACY\n"
                                  + "[Default: CRC_32_CUSTOM]")
                 new System.CommandLine.Option<bool>(
-                    new string[] { "--enable-header-extension", "-enable-header-extension" },
+                    new string[] { "--enable-message-length", "-enable-message-length" },
                     description: "Enable enable_message_length_header_extension. [default: Not set]"),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--asynchronous", "-asynchronous" },

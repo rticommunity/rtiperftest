@@ -123,7 +123,7 @@ namespace PerformanceTest
             get => CrcKind;
             set { CrcKind = value; Crc = true; }
         }
-        public bool HeaderExtension { get; set; }
+        public bool MessageLength { get; set; }
         public bool Asynchronous { get; set; }
         public string FlowController { get; set; }
         public string Peer
