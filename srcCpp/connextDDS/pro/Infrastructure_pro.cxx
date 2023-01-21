@@ -1050,8 +1050,6 @@ bool PerftestConfigureSecurity(
         DDS_DomainParticipantQos &qos,
         ParameterManager *_PM)
 {
-    // configure use of security plugins, based on provided arguments
-    std::string governanceFilePath;
 
     if (!addPropertyToParticipantQos(
             qos,
@@ -1090,6 +1088,12 @@ bool PerftestConfigureSecurity(
 
   #endif
 
+
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
+
     /*
      * Below, we are using com.rti.serv.secure properties in order to be
      * backward compatible with RTI Connext DDS 5.3.0 and below. Later versions
@@ -1098,90 +1102,116 @@ bool PerftestConfigureSecurity(
      * later versions still support the legacy properties as an alternative.
      */
 
-    // check if governance file provided
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        fprintf(stderr,
-                "%s SecureGovernanceFile cannot be empty when using security.\n",
-                classLoggingString.c_str());
-        return false;
-    } else {
-        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
-        if (!addPropertyToParticipantQos(
-                qos,
-                "com.rti.serv.secure.access_control.governance_file",
-                governanceFilePath)) {
+    // In the case where we are dynamic, we should not set these properties if
+    // we are using the lightweight security library.
+    if (!_PM->is_set("lightWeightSecurity")
+            && !_PM->is_set("secureRtpsHmacOnly")) {
+        // check if governance file provided
+        if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
+            if (!addPropertyToParticipantQos(
+                    qos,
+                    "com.rti.serv.secure.access_control.governance_file",
+                    _PM->get<std::string>("secureGovernanceFile"))) {
+                return false;
+            }
+        } else {
+            fprintf(stderr, "%s SecureGovernanceFile cannot be empty when using regular security.\n",
+                    classLoggingString.c_str());
             return false;
         }
-    }
 
-    /*
-     * Save the local variable governanceFilePath into
-     * the parameter "secureGovernanceFile"
-     */
-    _PM->set("secureGovernanceFile", governanceFilePath);
+        // Permissions file
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.access_control.permissions_file",
+                _PM->get<std::string>("securePermissionsFile"))) {
+            return false;
+        }
 
-    // Permissions file
-    if (!addPropertyToParticipantQos(
-            qos,
-            "com.rti.serv.secure.access_control.permissions_file",
-            _PM->get<std::string>("securePermissionsFile"))) {
-        return false;
-    }
+        // permissions authority file (legacy property, it should be permissions_file)
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.access_control.permissions_authority_file",
+                _PM->get<std::string>("secureCertAuthority"))) {
+            return false;
+        }
 
-    // permissions authority file
-    if (!addPropertyToParticipantQos(
-            qos,
-            "com.rti.serv.secure.access_control.permissions_authority_file",
-            _PM->get<std::string>("secureCertAuthority"))) {
-        return false;
-    }
+        // certificate authority
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.authentication.ca_file",
+                _PM->get<std::string>("secureCertAuthority"))) {
+            return false;
+        }
 
-    // certificate authority
-    if (!addPropertyToParticipantQos(
-            qos,
-            "com.rti.serv.secure.authentication.ca_file",
-            _PM->get<std::string>("secureCertAuthority"))) {
-        return false;
-    }
+        // public key
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.authentication.certificate_file",
+                _PM->get<std::string>("secureCertFile"))) {
+            return false;
+        }
 
-    // public key
-    if (!addPropertyToParticipantQos(
-            qos,
-            "com.rti.serv.secure.authentication.certificate_file",
-            _PM->get<std::string>("secureCertFile"))) {
-        return false;
-    }
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+                "4")) {
+            return false;
+        }
 
-    if (!addPropertyToParticipantQos(
-            qos,
-            "com.rti.serv.secure.cryptography.max_receiver_specific_macs",
-            "4")) {
-        return false;
-    }
-
-    // private key
-    if (!addPropertyToParticipantQos(
-            qos,
-            "com.rti.serv.secure.authentication.private_key_file",
-            _PM->get<std::string>("securePrivateKey"))) {
-        return false;
-    }
-
-    if (_PM->is_set("secureDebug")) {
         // private key
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.logging.log_level",
-                perftest::to_string(_PM->get<int>("secureDebug")))) {
+                "com.rti.serv.secure.authentication.private_key_file",
+                _PM->get<std::string>("securePrivateKey"))) {
             return false;
+        }
+
+        if (_PM->is_set("secureEncryptionAlgo")) {
+            if (!addPropertyToParticipantQos(
+                    qos,
+                    "com.rti.serv.secure.cryptography.encryption_algorithm",
+                    _PM->get<std::string>("secureEncryptionAlgo"))) {
+                return false;
+            }
         }
     }
 
-    if (_PM->is_set("secureEncryptionAlgo")) {
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
+
+    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+
+        if (!_PM->is_set("securePSK")) {
+            _PM->set("securePSK", "DefaultValue");
+        }
+
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.cryptography.encryption_algorithm",
-                _PM->get<std::string>("secureEncryptionAlgo"))) {
+                "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                _PM->get<std::string>("securePSK").c_str())) {
+            return false;
+        }
+
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                _PM->get<std::string>("securePSKAlgorithm").c_str())) {
+            return false;
+        }
+
+    }
+
+    if (_PM->is_set("secureRtpsHmacOnly")) {
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.hmac_only.enabled",
+                "1")) {
+            return false;
+        }
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.hmac_only.cryptography.key",
+                _PM->get<std::string>("secureRtpsHmacOnly").c_str())) {
             return false;
         }
     }
@@ -1191,6 +1221,16 @@ bool PerftestConfigureSecurity(
                 qos,
                 "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
                 "1")) {
+            return false;
+        }
+    }
+
+    if (_PM->is_set("secureDebug")) {
+        // private key
+        if (!addPropertyToParticipantQos(
+                qos,
+                "com.rti.serv.secure.logging.log_level",
+                perftest::to_string(_PM->get<int>("secureDebug")))) {
             return false;
         }
     }

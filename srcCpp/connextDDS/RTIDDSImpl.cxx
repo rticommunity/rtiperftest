@@ -542,6 +542,19 @@ std::string RTIDDSImpl<T>::print_configuration()
                  << std::endl;
   #endif
 
+    stringStream << "\tCRC Enabled: "
+                 << (_PM->get<bool>("crc") ? "Yes" : "No");
+    if (_PM->get<bool>("crc")) {
+        stringStream << " ( computed_crc_kind = "
+                     << _PM->get<std::string>("crckind") << ")";
+    }
+    stringStream << std::endl;
+
+
+    stringStream << "\tMessage Length Header Extension Enabled: "
+                 << (_PM->get<bool>("enable-message-length") ? "Yes" : "No")
+                 << std::endl;
+
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
     stringStream << "\tFlatData: "
@@ -2526,6 +2539,25 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
                 false);
     }
 
+    if (_PM->get<bool>("crc") || _PM->is_set("crckind")) {
+        _PM->set<bool>("crc", true);
+        qos.wire_protocol.compute_crc = RTI_TRUE;
+
+        if (_PM->get<std::string>("crckind") != "CRC_32_LEGACY") {
+            DDSPropertyQosPolicyHelper::add_property(qos.property,
+                "dds.participant.wire_protocol.computed_crc_kind",
+                _PM->get<std::string>("crckind").c_str(),
+                false);
+        }
+    }
+
+    if (_PM->get<bool>("enable-message-length")) {
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+            "dds.participant.wire_protocol.enable_message_length_header_extension",
+            "true",
+            false);
+    }
+
   #else // if defined PERFTEST_RTI_MICRO
 
     RTRegistry *registry = _factory->get_registry();
@@ -3243,7 +3275,14 @@ bool RTIDDSImpl<T>::configure_writer_qos(
 
     dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
 
-  #endif
+  #ifdef PERFTEST_CONNEXT_PRO_710
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dw_qos.reliability.instance_state_recovery_kind =
+            DDS_RECOVER_INSTANCE_STATE_RECOVERY;
+    }
+  #endif //PERFTEST_CONNEXT_PRO_710
+
+  #endif //PERFTEST_RTI_PRO
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
@@ -3677,7 +3716,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         std::string topic_name)
 {
 
-    #ifndef PERFTEST_RTI_MICRO
+    #ifdef PERFTEST_RTI_PRO
     if (_factory->get_datareader_qos_from_profile(
             dr_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -3691,7 +3730,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                 _PM->get<std::string>("qosFile").c_str());
         return false;
     }
-  #endif
+  #endif //PERFTEST_RTI_PRO
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
@@ -3702,13 +3741,21 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         }
     }
 
-  #ifndef PERFTEST_RTI_MICRO
+  #ifdef PERFTEST_RTI_PRO
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos"
             || qos_profile == "LatencyQos")) {
         dr_qos.protocol.disable_positive_acks = true;
     }
-  #endif
+
+  #ifdef PERFTEST_CONNEXT_PRO_710
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dr_qos.reliability.instance_state_recovery_kind =
+            DDS_RECOVER_INSTANCE_STATE_RECOVERY;
+    }
+  #endif // PERFTEST_CONNEXT_PRO_710
+
+  #endif // PERFTEST_RTI_PRO
 
     // only apply durability on Throughput datareader
     if (qos_profile == "ThroughputQos"

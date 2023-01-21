@@ -58,6 +58,7 @@ JAR_EXE=jar
 RELEASE_DEBUG=release
 STATIC_DYNAMIC=static
 USE_SECURE_LIBS=0
+USE_LW_SECURE_LIBS=0
 LEGACY_DD_IMPL=0
 
 # Variables for customType
@@ -159,7 +160,10 @@ function usage()
     echo "    --dynamic                    Compile against the RTI Connext Dynamic        "
     echo "                                 libraries. Default is against static ones.     "
     echo "                                 (No effect when building for Micro)            "
-    echo "    --secure                     Enable the security options for compilation.   "
+    echo "    --secure / --security        Enable the security options for compilation.   "
+    echo "                                 Default is not enabled.                        "
+    echo "    --lightWeightSecurity        Enable the security options for compilation.   "
+    echo "                                 using the lightweight security library.        "
     echo "                                 Default is not enabled.                        "
     echo "    --openssl-home <path>        Path to the openssl home. This will be used    "
     echo "                                 when compiling statically and using security   "
@@ -584,15 +588,25 @@ function additional_defines_calculation()
     fi
 
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
-        echo -e "\n${INFO_TAG} Using Security Plugins"
 
-        additional_defines=${additional_defines}" DRTI_SECURE_PERFTEST"
+        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
+            LWS_TAG="Lightweight "
+        fi
+
+        echo -e "\n${INFO_TAG} Using RTI ${LW_TAG}Security Libraries"
+
+        additional_defines="${additional_defines} DRTI_SECURE_PERFTEST"
 
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_DYNAMIC_LINKING"
             echo -e "${INFO_TAG} Linking Dynamically."
 
         else # Linking Statically.
+
+            if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
+                LWS_TAG="Lightweight "
+                additional_defines="${additional_defines} DRTI_LW_SECURE_PERFTEST"
+            fi
 
             # If we have provided the SSL Version (Hence the RTI_CRYPTOHOME will
             # be empty, no need to check)
@@ -620,7 +634,12 @@ function additional_defines_calculation()
                 get_rti_security_lib_path_for_cryto_path
             fi
 
-            additional_rti_libs="nddssecurity ${additional_rti_libs}"
+            if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
+                additional_rti_libs="nddslightweightsecurity ${additional_rti_libs}"
+            else
+                additional_rti_libs="nddssecurity ${additional_rti_libs}"
+            fi
+
             # If the $NDDSHOME points to a staging directory, then the security
             # libraries will be in a folder specific to the crypto library, we should
             # have calculated this in advance.
@@ -646,7 +665,7 @@ function additional_defines_calculation()
             # This option would cause issues on certain platforms (like macOS)
             # export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -static"
             rtiddsgen_extra_options="${rtiddsgen_extra_options} -additionalLibraryPaths \"${additional_lib_paths}\""
-            echo -e "${INFO_TAG} Using the Security plugins. Linking Statically."
+            echo -e "${INFO_TAG} Linking Statically."
         fi
     fi
 
@@ -675,9 +694,12 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_LANGUAGE_CPP_MODERN"
     fi
 
-    if [ -x "$(command -v git)" ]; then
-        commit_id="$(git rev-parse --short HEAD)"
-        branch_name="$(git rev-parse --abbrev-ref HEAD)"
+    if [[ ! -z `which git` ]] ; then
+        local folder_before=$PWD
+        cd $script_location
+        commit_id=`git rev-parse --short HEAD`
+        branch_name=`git rev-parse --abbrev-ref HEAD`
+        cd $folder_before
         additional_defines=${additional_defines}" DPERFTEST_COMMIT_ID='\\\"${commit_id}\\\"'"
         additional_defines=${additional_defines}" DPERFTEST_BRANCH_NAME='\\\"${branch_name}\\\"'"
     fi
@@ -1851,6 +1873,17 @@ while [ "$1" != "" ]; do
             ;;
         --secure)
             USE_SECURE_LIBS=1
+            ;;
+        --lightWeightSecure)
+            USE_SECURE_LIBS=1
+            USE_LW_SECURE_LIBS=1
+            ;;
+        --security)
+            USE_SECURE_LIBS=1
+            ;;
+        --lightWeightSecurity)
+            USE_SECURE_LIBS=1
+            USE_LW_SECURE_LIBS=1
             ;;
         --legacy-DynamicData)
             LEGACY_DD_IMPL=1

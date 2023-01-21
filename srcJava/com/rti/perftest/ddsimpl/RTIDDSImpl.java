@@ -82,6 +82,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private static String SECUREPERMISIONFILEPUB = "./resource/secure/signed_PerftestPermissionsPub.xml";
     private static String SECUREPERMISIONFILESUB = "./resource/secure/signed_PerftestPermissionsSub.xml";
     private static String SECURELIBRARYNAME = "nddssecurity";
+    private static String LWSECURELIBRARYNAME = "nddslightweightsecurity";
 
     private static final int RTIPERFTEST_MAX_PEERS = 1024;
 
@@ -95,6 +96,9 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String  _profileFile = "perftest_qos_profiles.xml";
     private boolean _isReliable = true;
     private boolean _AutoThrottle = false;
+    private boolean _crc = false;
+    private String _crcKind = null;
+    private boolean _messageLength = false;
     private boolean _TurboMode = false;
     private int     _instanceCount = 1;
     private int     _instanceMaxCountReader = -1;
@@ -125,6 +129,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
 
     private boolean _secureUseSecure = false;
+    private boolean _secureUseLWSecurity = false;
     private String _secureCertAuthorityFile = null;
     private String _secureCertificateFile = null;
     private String _securePrivateKeyFile = null;
@@ -137,6 +142,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private String _securePermissionsFile = null;
     private String _secureLibrary = null;
     private String _secureEncryptionAlgo = null;
+    private String _securePSK = null;
+    private String _securePSKAlgorithm = null;
     private int _secureDebugLevel = -1;
     private boolean _secureEnableAAD = false;
 
@@ -282,6 +289,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                throughput DataWriter (pub)\n" +
             "\t-enableTurboMode              - Enables the TurboMode feature in the\n" +
             "\t                                throughput DataWriter (pub)\n" +
+            "\t-crc                          - Enable CRC. Default: Not set.\n" +
+            "\t-crcKind                      - Modify the default value to compute the CRC.\n" +
+            "\t                                Options: CRC_32_CUSTOM | CRC_32_LEGACY\n" +
+            "\t                                Default: CRC_32_CUSTOM.\n" +
+            "\t-enable-message-length      - Enable enable_message_length_header_extension.\n" +
+            "\t                                Default: Disabled.\n" +
             "\t-asynchronous                 - Use asynchronous writer\n" +
             "\t                                Default: Not set\n" +
             "\t-flowController <flow>        - In the case asynchronous writer use a specific flow controller.\n" +
@@ -298,6 +311,8 @@ public final class RTIDDSImpl<T> implements IMessaging {
             usage_string += _transport.helpMessageString();
             usage_string += "\n" +
             "\t======================= SECURE Specific Options =======================\n\n" +
+            "\t-lightWeightSecurity          - Use the LightWeight Security Library\n" +
+            "\t                                Default: Not used.\n" +
             "\t-secureGovernanceFile <file>  - Governance file. If specified, the authentication,\n" +
             "\t                                signing, and encryption arguments are ignored. The\n" +
             "\t                                governance document configuration will be used instead\n" +
@@ -310,8 +325,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             "\t                                Default: \"./resource/secure/sub.pem\"\n" +
             "\t-securePrivateKey <file>      - Private key file <optional>\n" +
             "\t                                Default: \"./resource/secure/subkey.pem\"\n" +
-            "\t-secureEncryptionAlgorithm s  - Set the value for the Encryption Algorithm\n" +
-            "\t                                Default: \"aes-128-gcm\"\n";
+            "\t-secureEncryptionAlgorithm <a>- Set the value for the Encryption Algorithm\n" +
+            "\t                                Default: \"aes-128-gcm\"\n" +
+            "\t-secureEnableAAD              - Enable AAD.\n" +
+            "\t                                Default: Not Enabled\n";
 
         System.err.print(usage_string);
     }
@@ -475,6 +492,28 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     "dds.domain_participant.auto_throttle.enable",
                     "true",
                     false);
+        }
+
+        if (_crc) {
+            qos.wire_protocol.compute_crc = true;
+            
+            if (_crcKind == null) {
+                _crcKind = "CRC_32_CUSTOM";
+            }
+
+            PropertyQosPolicyHelper.add_property(
+                qos.property,
+                "dds.participant.wire_protocol.computed_crc_kind",
+                _crcKind,
+                false);
+        }
+
+        if (_messageLength) {
+            PropertyQosPolicyHelper.add_property(
+                qos.property,
+                "dds.participant.wire_protocol.enable_message_length_header_extension",
+                "true",
+                false);
         }
 
         // Creates the participant
@@ -719,36 +758,42 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean validateSecureArgs() {
         if (_secureUseSecure) {
 
-            if (_securePrivateKeyFile == null) {
-                if (_isPublisher) {
-                    _securePrivateKeyFile = SECUREPRIVATEKEYFILEPUB;
-                } else {
-                    _securePrivateKeyFile = SECUREPRIVATEKEYFILESUB;
+            if (!_secureUseLWSecurity) {
+                if (_securePrivateKeyFile == null) {
+                    if (_isPublisher) {
+                        _securePrivateKeyFile = SECUREPRIVATEKEYFILEPUB;
+                    } else {
+                        _securePrivateKeyFile = SECUREPRIVATEKEYFILESUB;
+                    }
                 }
-            }
 
-            if (_secureCertificateFile == null) {
-                if (_isPublisher) {
-                    _secureCertificateFile = SECURECERTIFICATEFILEPUB;
-                } else {
-                    _secureCertificateFile = SECURECERTIFICATEFILESUB;
+                if (_secureCertificateFile == null) {
+                    if (_isPublisher) {
+                        _secureCertificateFile = SECURECERTIFICATEFILEPUB;
+                    } else {
+                        _secureCertificateFile = SECURECERTIFICATEFILESUB;
+                    }
                 }
-            }
 
-            if (_secureCertAuthorityFile == null) {
-                _secureCertAuthorityFile = SECURECERTAUTHORITYFILE;
-            }
+                if (_secureCertAuthorityFile == null) {
+                    _secureCertAuthorityFile = SECURECERTAUTHORITYFILE;
+                }
 
-            if (_securePermissionsFile == null) {
-                if (_isPublisher) {
-                    _securePermissionsFile = SECUREPERMISIONFILEPUB;
-                } else {
-                    _securePermissionsFile = SECUREPERMISIONFILESUB;
+                if (_securePermissionsFile == null) {
+                    if (_isPublisher) {
+                        _securePermissionsFile = SECUREPERMISIONFILEPUB;
+                    } else {
+                        _securePermissionsFile = SECUREPERMISIONFILESUB;
+                    }
                 }
             }
 
             if (_secureLibrary == null) {
-                _secureLibrary = SECURELIBRARYNAME;
+                if (_secureUseLWSecurity) {
+                    _secureLibrary = LWSECURELIBRARYNAME;
+                } else {
+                    _secureLibrary = SECURELIBRARYNAME;
+                }
             }
         }
 
@@ -760,55 +805,68 @@ public final class RTIDDSImpl<T> implements IMessaging {
         String secure_arguments_string =
                 "Secure Arguments:\n";
 
-        if (_governanceFile != null) {
-            secure_arguments_string += "\t governance file: " + _governanceFile
+
+        if (!_secureUseLWSecurity) {
+            if (_governanceFile != null) {
+                secure_arguments_string += "\t governance file: " + _governanceFile
+                        + "\n";
+            }
+
+            if (_securePermissionsFile != null) {
+                secure_arguments_string += "\t permissions file: " + _securePermissionsFile
+                        + "\n";
+            } else {
+                secure_arguments_string += "\t permissions file: Not specified\n";
+            }
+
+            if (_securePrivateKeyFile != null) {
+                secure_arguments_string += "\t private key file: " + _securePrivateKeyFile
+                        + "\n";
+            } else {
+                secure_arguments_string += "\t private key file: Not specified\n";
+            }
+
+            if (_secureCertificateFile != null) {
+                secure_arguments_string += "\t certificate file: " + _secureCertificateFile
+                        + "\n";
+            } else {
+                secure_arguments_string += "\t certificate file: Not specified\n";
+            }
+
+            if (_secureCertAuthorityFile != null) {
+                secure_arguments_string += "\t certificate authority file: "
+                        + _secureCertAuthorityFile + "\n";
+            } else {
+                secure_arguments_string += "\t certificate authority file: Not specified\n";
+            }
+
+            if (_secureEncryptionAlgo != null) {
+                secure_arguments_string += "\t Encryption Algorithm: " + _secureEncryptionAlgo + "\n";
+            }
+        }
+
+        secure_arguments_string += "\tPSK: ";
+        if (_securePSK != null) {
+            secure_arguments_string += "In Use. Key: \""
+                    + _securePSK
+                    + "\", Algorithm = "
+                    + _securePSKAlgorithm
                     + "\n";
-        }
-
-        if (_securePermissionsFile != null) {
-            secure_arguments_string += "\t permissions file: " + _securePermissionsFile
-                    + "\n";
         } else {
-            secure_arguments_string += "\t permissions file: Not specified\n";
-        }
-
-        if (_securePrivateKeyFile != null) {
-            secure_arguments_string += "\t private key file: " + _securePrivateKeyFile
-                    + "\n";
-        } else {
-            secure_arguments_string += "\t private key file: Not specified\n";
-        }
-
-        if (_secureCertificateFile != null) {
-            secure_arguments_string += "\t certificate file: " + _secureCertificateFile
-                    + "\n";
-        } else {
-            secure_arguments_string += "\t certificate file: Not specified\n";
-        }
-
-        if (_secureCertAuthorityFile != null) {
-            secure_arguments_string += "\t certificate authority file: "
-                    + _secureCertAuthorityFile + "\n";
-        } else {
-            secure_arguments_string += "\t certificate authority file: Not specified\n";
-        }
-
-        if (_secureLibrary != null) {
-            secure_arguments_string += "\t plugin library: " + _secureLibrary + "\n";
-        } else {
-            secure_arguments_string += "\t plugin library: Not specified\n";
-        }
-
-
-        if (_secureEncryptionAlgo != null) {
-            secure_arguments_string += "\t Encryption Algorithm: " + _secureEncryptionAlgo + "\n";
-        }
-
-        if( _secureDebugLevel != -1 ){
-            secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
+            secure_arguments_string += "Not Used\n";
         }
 
         secure_arguments_string += "\t Additional Authenticated Data: " + _secureEnableAAD + "\n";
+
+        if (_secureLibrary != null) {
+            secure_arguments_string += "\t Security Library: " + _secureLibrary + "\n";
+        } else {
+            secure_arguments_string += "\t Security Library: Not specified\n";
+        }
+
+        if (_secureDebugLevel != -1) {
+            secure_arguments_string += "\t debug level: " + _secureDebugLevel + "\n";
+        }
 
         return secure_arguments_string;
     }
@@ -835,13 +893,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _secureLibrary,
                 false);
 
-        if (_secureEncryptionAlgo != null) {
-            PropertyQosPolicyHelper.add_property(
-                dpQos.property,
-                "com.rti.serv.secure.cryptography.encryption_algorithm",
-                _secureEncryptionAlgo,
-                false);
-        }
         /*
          * Below, we are using com.rti.serv.secure properties in order to be
          * backward compatible with RTI Connext DDS 5.3.0 and below. Later
@@ -851,59 +902,67 @@ public final class RTIDDSImpl<T> implements IMessaging {
          * as an alternative.
          */
 
-        // check if governance file provided
-        if (_governanceFile == null) {
-            System.err.println("SecureGovernanceFile is required when using security.");
-            return;
-        } else {
+        if (!_secureUseLWSecurity) {
+
+            if (_governanceFile != null) {
+                PropertyQosPolicyHelper.add_property(
+                        dpQos.property,
+                        "com.rti.serv.secure.access_control.governance_file",
+                        _governanceFile,
+                        false);
+            } else {
+                System.err.println("SecureGovernanceFile is required when using security.");
+                return;
+            }
+
+            // permissions file
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
-                    "com.rti.serv.secure.access_control.governance_file",
-                    _governanceFile,
+                    "com.rti.serv.secure.access_control.permissions_file",
+                    _securePermissionsFile,
                     false);
-        }
 
-        // permissions file
-        PropertyQosPolicyHelper.add_property(
-                dpQos.property,
-                "com.rti.serv.secure.access_control.permissions_file",
-                _securePermissionsFile,
-                false);
-
-        // permissions authority file
-        PropertyQosPolicyHelper.add_property(
-                dpQos.property,
-                "com.rti.serv.secure.access_control.permissions_authority_file",
-                _secureCertAuthorityFile,
-                false);
-
-        // certificate authority
-        PropertyQosPolicyHelper.add_property(
-                dpQos.property,
-                "com.rti.serv.secure.authentication.ca_file",
-                _secureCertAuthorityFile,
-                false);
-
-        // public key
-        PropertyQosPolicyHelper.add_property(
-                dpQos.property,
-                "com.rti.serv.secure.authentication.certificate_file",
-                _secureCertificateFile,
-                false);
-
-        // private key
-        PropertyQosPolicyHelper.add_property(
-                dpQos.property,
-                "com.rti.serv.secure.authentication.private_key_file",
-                _securePrivateKeyFile,
-                false);
-
-        if (_secureDebugLevel != -1) {
+            // permissions authority file (legacy property, it should be permissions_file)
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
-                    "com.rti.serv.secure.logging.log_level",
-                    (new Integer(_secureDebugLevel)).toString(),
+                    "com.rti.serv.secure.access_control.permissions_authority_file",
+                    _secureCertAuthorityFile,
                     false);
+
+            // certificate authority
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.authentication.ca_file",
+                    _secureCertAuthorityFile,
+                    false);
+
+            // public key
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.authentication.certificate_file",
+                    _secureCertificateFile,
+                    false);
+
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+                    "4",
+                    false);
+
+            // private key
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.authentication.private_key_file",
+                    _securePrivateKeyFile,
+                    false);
+
+            if (_secureEncryptionAlgo != null) {
+                PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.cryptography.encryption_algorithm",
+                    _secureEncryptionAlgo,
+                    false);
+            }
         }
 
         if (_secureEnableAAD) {
@@ -913,6 +972,37 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 "1",
                 false);
         }
+
+        if (_securePSK != null || _securePSKAlgorithm != null) {
+
+            if (_securePSK == null) {
+                _securePSK = "DefaultValue";
+            }
+
+            if (_securePSKAlgorithm == null) {
+                _securePSKAlgorithm = "AES256+GCM";
+            }
+
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                    _securePSK,
+                    false);
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    _securePSKAlgorithm,
+                    false);
+        }
+
+        if (_secureDebugLevel != -1) {
+            PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.logging.log_level",
+                    (new Integer(_secureDebugLevel)).toString(),
+                    false);
+        }
+
     }
 
     private void configureWriterQos(
@@ -1223,6 +1313,19 @@ public final class RTIDDSImpl<T> implements IMessaging {
         if (_AutoThrottle) {
             sb.append("\tAutoThrottle: Enabled\n");
         }
+
+        sb.append("\tCRC Enabled: ");
+        sb.append(_crc);
+        if (_crcKind != null) {
+            sb.append(" (");
+            sb.append(_crcKind);
+            sb.append(")");
+        }
+        sb.append("\n");
+
+        sb.append("\ttMessage Length Header Extension Enabled: ");
+        sb.append(_messageLength);
+        sb.append("\n");
 
         // XML File
         sb.append("\tXML File: ");
@@ -1582,6 +1685,17 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 }
             } else if ("-enableAutoThrottle".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _AutoThrottle = true;
+            } else if ("-crc".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _crc = true;
+            } else if ("-crcKind".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <value> after -crcKind\n");
+                    return false;
+                }
+                _crc = true;
+                _crcKind  = argv[i];
+            } else if ("-enable-message-length".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _messageLength = true;
             } else if ("-enableTurboMode".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _TurboMode = true;
             } else if ("-secureGovernanceFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
@@ -1590,10 +1704,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 _governanceFile  = argv[i];
-                System.err.println("Warning -- authentication, encryption, signing arguments " +
-                         "will be ignored, and the values specified by the Governance file will " +
-                         "be used instead");
-                 _secureUseSecure = true;
+                _secureUseSecure = true;
             } else if ("-securePermissionsFile".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <file> after -securePermissionsFile\n");
@@ -1628,12 +1739,30 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
                 _secureLibrary = argv[i];
+            } else if ("-lightWeightSecurity".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureUseSecure = true;
+                _secureUseLWSecurity = true;
             } else if ("-secureEncryptionAlgorithm".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
-                    System.err.print("Missing <value> after -secureLibrary\n");
+                    System.err.print("Missing <value> after -secureEncryptionAlgorithm\n");
                     return false;
                 }
+                _secureUseSecure = true;
                 _secureEncryptionAlgo = argv[i];
+            } else if ("-securePSK".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <value> after -securePSK\n");
+                    return false;
+                }
+                _secureUseSecure = true;
+                _securePSK = argv[i];
+            } else if ("-securePSKAlgorithm".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
+                    System.err.print("Missing <value> after -securePSK\n");
+                    return false;
+                }
+                _secureUseSecure = true;
+                _securePSKAlgorithm = argv[i];
             } else if ("-secureDebug".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <level> after -secureDebug\n");
@@ -1646,6 +1775,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     return false;
                 }
             } else if ("-secureEnableAAD".toLowerCase().startsWith(argv[i].toLowerCase())) {
+                _secureUseSecure = true;
                 _secureEnableAAD = true;
             } else if ("-asynchronous".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _IsAsynchronous = true;

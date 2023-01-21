@@ -330,6 +330,18 @@ namespace PerformanceTest
                     description: "Enables the TurboMode feature in the"
                                     + " throughput DataWriter (pub). [default: Not set]"),
                 new System.CommandLine.Option<bool>(
+                    new string[] { "--crc", "-crc" },
+                    description: "Enable CRC [default: Not set]"),
+                new System.CommandLine.Option<string>(
+                    new string[] { "--crcKind", "-crcKind" },
+                    getDefaultValue: () => "CRC_32_CUSTOM",
+                    description: "Modify the default value to compute the CRC.\n"
+                                 + "Options: CRC_32_CUSTOM | CRC_32_LEGACY\n"
+                                 + "[Default: CRC_32_CUSTOM]")
+                new System.CommandLine.Option<bool>(
+                    new string[] { "--enable-message-length", "-enable-message-length" },
+                    description: "Enable enable_message_length_header_extension. [default: Not set]"),
+                new System.CommandLine.Option<bool>(
                     new string[] { "--asynchronous", "-asynchronous" },
                     description: "Use asynchronous writer. [default: Not set]"),
                 new System.CommandLine.Option<string>(
@@ -374,6 +386,9 @@ namespace PerformanceTest
                 new System.CommandLine.Option<string>(
                     new string[] { "--secureLibrary", "-secureLibrary" },
                     description: ""),
+                new System.CommandLine.Option<bool>(
+                    new string[] { "--lightWeightSecurity", "-lightWeightSecurity" },
+                    description: "Use the Lightweight security Library."),
                 new System.CommandLine.Option<string>(
                     new string[] { "--secureEncryptionAlgorithm", "-secureEncryptionAlgo" },
                     description: "Set the value for the Encryption Algorithm"),
@@ -385,6 +400,12 @@ namespace PerformanceTest
                     new string[] { "--secureEnableAAD", "-secureEnableAAD" },
                     getDefaultValue: () => false,
                     description: "Enable AAD when using security."),
+                new System.CommandLine.Option<string>(
+                    new string[] { "--securePSK", "-securePSK" },
+                    description: "Enables PSK with the argument's seed. [Default: Not Used]"),
+                new System.CommandLine.Option<string>(
+                    new string[] { "--securePSKAlgorithm", "-securePSKAlgorithm" },
+                    description: "PSK Algoritm to use. [Default: AES256+GCM]"),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--enableTCP", "-enableTCP" },
                     description: "Enables TCP" ),

@@ -32,6 +32,7 @@ const std::string SECURE_PERMISION_FILE_PUB =
 const std::string SECURE_PERMISION_FILE_SUB =
         prefix + "./resource/secure/signed_PerftestPermissionsSub.xml";
 const std::string SECURE_LIBRARY_NAME = "nddssecurity";
+const std::string LW_SECURE_LIBRARY_NAME = "nddslightweightsecurity";
 
 /******************************************************************************/
 /* CLASS CONSTRUCTOR AND DESTRUCTOR */
@@ -52,51 +53,59 @@ bool PerftestSecurity::validateSecureArgs()
 {
     if (_PM->group_is_used(SECURE)) {
 
-        // Manage parameter -secureGovernanceFile
-        if (_PM->is_set("secureGovernanceFile")) {
-            fprintf(stderr,
-                "Warning -- authentication, encryption, signing arguments "
-                "will be ignored, and the values specified by the Governance "
-                "file will be used instead\n");
-        }
+      // These options only make sense when not using LW security, this will
+      // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+      // dynamic if the command line option -lightWeightSecurity was not passed.
 
-        // Manage parameter -secureEncryptBoth
-        if (_PM->is_set("secureEncryptBoth")) {
-            _PM->set("secureEncryptData", true);
-            _PM->set("secureEncryptSM", true);
-        }
+      #ifndef RTI_LW_SECURE_PERFTEST
+        if (!_PM->get<bool>("lightWeightSecurity")
+                && !_PM->is_set("secureRtpsHmacOnly")) {
+            if (_PM->get<std::string>("securePrivateKey").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
+                } else {
+                    _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+                }
+            }
 
-        if (_PM->get<std::string>("securePrivateKey").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_PUB);
-            } else {
-                _PM->set("securePrivateKey", SECURE_PRIVATEKEY_FILE_SUB);
+            if (_PM->get<std::string>("secureCertFile").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
+                } else {
+                    _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
+                }
+            }
+
+            if (_PM->get<std::string>("secureCertAuthority").empty()) {
+                _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
+            }
+
+            if (_PM->get<std::string>("securePermissionsFile").empty()) {
+                if (_PM->get<bool>("pub")) {
+                    _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
+                } else {
+                    _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
+                }
             }
         }
-
-        if (_PM->get<std::string>("secureCertFile").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_PUB);
-            } else {
-                _PM->set("secureCertFile", SECURE_CERTIFICATE_FILE_SUB);
-            }
-        }
-
-        if (_PM->get<std::string>("secureCertAuthority").empty()) {
-            _PM->set("secureCertAuthority", SECURE_CERTAUTHORITY_FILE);
-        }
-
-        if (_PM->get<std::string>("securePermissionsFile").empty()) {
-            if (_PM->get<bool>("pub")) {
-                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_PUB);
-            } else {
-                _PM->set("securePermissionsFile", SECURE_PERMISION_FILE_SUB);
-            }
-        }
+      #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
       #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+        if (_PM->get<bool>("lightWeightSecurity")
+                && _PM->is_set("secureRtpsHmacOnly")) {
+            fprintf(stderr,
+                    "validateSecureArgs: secureRtpsHmacOnly cannot be used "
+                    "with lightWeightSecurity");
+            return false;
+        }
+
         if (_PM->get<std::string>("secureLibrary").empty()) {
-            _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
+            if (_PM->is_set("lightWeightSecurity")) {
+                _PM->set("secureLibrary", LW_SECURE_LIBRARY_NAME);
+            } else {
+                _PM->set("secureLibrary", SECURE_LIBRARY_NAME);
+            }
         }
       #endif
 
@@ -110,69 +119,99 @@ std::string PerftestSecurity::printSecurityConfigurationSummary()
     std::ostringstream stringStream;
     stringStream << "Secure Configuration:\n";
 
-    stringStream << "\tGovernance file: ";
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureGovernanceFile")
+
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
+
+    if (!_PM->get<bool>("lightWeightSecurity") 
+            && !_PM->is_set("secureRtpsHmacOnly") ) {
+
+        stringStream << "\tGovernance file: ";
+        if (_PM->get<std::string>("secureGovernanceFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureGovernanceFile")
+                        << "\n";
+        }
+
+        stringStream << "\tPermissions file: ";
+        if (_PM->get<std::string>("securePermissionsFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("securePermissionsFile")
+                        << "\n";
+        }
+
+        stringStream << "\tPrivate key file: ";
+        if (_PM->get<std::string>("securePrivateKey").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("securePrivateKey")
+                        << "\n";
+        }
+
+        stringStream << "\tCertificate file: ";
+        if (_PM->get<std::string>("secureCertFile").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureCertFile")
+                        << "\n";
+        }
+
+        stringStream << "\tCertificate authority file: ";
+        if (_PM->get<std::string>("secureCertAuthority").empty()) {
+            stringStream << "Not Specified\n";
+        } else {
+            stringStream << _PM->get<std::string>("secureCertAuthority")
+                        << "\n";
+        }
+
+        if (_PM->is_set("secureEncryptionAlgo")) {
+            stringStream << "\tEncryption Algorithm: "
+                        << _PM->get<std::string>("secureEncryptionAlgo")
+                        << "\n";
+        }
+
+    }
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
+
+    stringStream << "\tPSK: ";
+    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+        stringStream << "In Use. Key: \"" 
+                     << _PM->get<std::string>("securePSK")
+                     << "\", Algorithm = "
+                     << _PM->get<std::string>("securePSKAlgorithm")
                      << "\n";
+    } else {
+        stringStream << "Not Used\n";
     }
 
-    stringStream << "\tPermissions file: ";
-    if (_PM->get<std::string>("securePermissionsFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("securePermissionsFile")
-                     << "\n";
+    if (!_PM->get<std::string>("secureRtpsHmacOnly").empty()) {
+        stringStream << "\tUsing HMAC Only Mode. Password: "
+                     << _PM->get<std::string>("secureRtpsHmacOnly") << "\n";
     }
 
-    stringStream << "\tPrivate key file: ";
-    if (_PM->get<std::string>("securePrivateKey").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("securePrivateKey")
-                     << "\n";
-    }
+    stringStream << "\tAdditional Authenticated Data: "
+                    << _PM->is_set("secureEnableAAD")
+                    << "\n";
 
-    stringStream << "\tCertificate file: ";
-    if (_PM->get<std::string>("secureCertFile").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureCertFile")
-                     << "\n";
-    }
-
-    stringStream << "\tCertificate authority file: ";
-    if (_PM->get<std::string>("secureCertAuthority").empty()) {
-        stringStream << "Not Specified\n";
-    } else {
-        stringStream << _PM->get<std::string>("secureCertAuthority")
-                     << "\n";
-    }
-
-    stringStream << "\tPlugin library: ";
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+    stringStream << "\tSecurity library: ";
     if (_PM->get<std::string>("secureLibrary").empty()) {
         stringStream << "Not Specified\n";
     } else {
         stringStream << _PM->get<std::string>("secureLibrary")
                      << "\n";
     }
+  #endif
 
     if (_PM->is_set("secureDebug")) {
         stringStream << "\tDebug level: "
                      << _PM->get<int>("secureDebug")
                      << "\n";
     }
-
-    if (_PM->is_set("secureEncryptionAlgo")) {
-        stringStream << "\tEncryption Algorithm: "
-                     << _PM->get<std::string>("secureEncryptionAlgo")
-                     << "\n";
-    }
-
-    stringStream << "\tAdditional Authenticated Data: "
-                    << _PM->is_set("secureEnableAAD")
-                    << "\n";
 
     return stringStream.str();
 }
