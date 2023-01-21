@@ -1508,7 +1508,7 @@ void ParameterManager::initialize()
     // another security option. In dynamic this will actually enable LightWeight
     // Security.
     Parameter<std::string> *securePSK = new Parameter<std::string>();
-    securePSK->set_command_line_argument("-securePSK", "<password>");
+    securePSK->set_command_line_argument("-securePSK", "<seed>");
     securePSK->set_description("Enable PSK security. Default: Not enabled.");
     securePSK->set_type(T_STR);
     securePSK->set_extra_argument(YES);
@@ -1520,7 +1520,7 @@ void ParameterManager::initialize()
     // another security option. In dynamic this will actually enable LightWeight
     // Security.
     Parameter<std::string> *securePSKAlgorithm = new Parameter<std::string>("AES256+GCM");
-    securePSKAlgorithm->set_command_line_argument("-securePSKAlgorithm", "<password>");
+    securePSKAlgorithm->set_command_line_argument("-securePSKAlgorithm", "<seed>");
     securePSKAlgorithm->set_description("PSK Algoritm to use. Default: AES256+GCM.");
     securePSKAlgorithm->set_type(T_STR);
     securePSKAlgorithm->set_extra_argument(YES);
@@ -1531,7 +1531,7 @@ void ParameterManager::initialize()
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     Parameter<std::string> *secureRtpsHmacOnly = new Parameter<std::string>();
-    secureRtpsHmacOnly->set_command_line_argument("-secureRtpsHmacOnly", "<password>");
+    secureRtpsHmacOnly->set_command_line_argument("-secureRtpsHmacOnly", "<seed>");
     secureRtpsHmacOnly->set_description("Enable HMAC Only security. Default: Not enabled.");
     secureRtpsHmacOnly->set_type(T_STR);
     secureRtpsHmacOnly->set_extra_argument(YES);

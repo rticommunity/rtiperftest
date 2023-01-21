@@ -402,10 +402,10 @@ namespace PerformanceTest
                     description: "Enable AAD when using security."),
                 new System.CommandLine.Option<string>(
                     new string[] { "--securePSK", "-securePSK" },
-                    description: "Enables PSK with the argument's password. [Default: Not Used]"),
+                    description: "Enables PSK with the argument's seed. [Default: Not Used]"),
                 new System.CommandLine.Option<string>(
                     new string[] { "--securePSKAlgorithm", "-securePSKAlgorithm" },
-                    description: "Enables PSK with the argument's password. [Default: Not Used]"),
+                    description: "PSK Algoritm to use. [Default: AES256+GCM]"),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--enableTCP", "-enableTCP" },
                     description: "Enables TCP" ),
