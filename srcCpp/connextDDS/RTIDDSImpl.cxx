@@ -546,7 +546,7 @@ std::string RTIDDSImpl<T>::print_configuration()
                  << (_PM->get<bool>("crc") ? "Yes" : "No");
     if (_PM->get<bool>("crc")) {
         stringStream << " ( computed_crc_kind = "
-                     << _PM->get<std::string>("crckind") << ")";
+                     << _PM->get<std::string>("crcKind") << ")";
     }
     stringStream << std::endl;
 
@@ -2539,16 +2539,14 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
                 false);
     }
 
-    if (_PM->get<bool>("crc") || _PM->is_set("crckind")) {
+    if (_PM->get<bool>("crc") || _PM->is_set("crcKind")) {
         _PM->set<bool>("crc", true);
         qos.wire_protocol.compute_crc = RTI_TRUE;
 
-        if (_PM->get<std::string>("crckind") != "CRC_32_LEGACY") {
-            DDSPropertyQosPolicyHelper::add_property(qos.property,
-                "dds.participant.wire_protocol.computed_crc_kind",
-                _PM->get<std::string>("crckind").c_str(),
-                false);
-        }
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+            "dds.participant.wire_protocol.computed_crc_kind",
+            _PM->get<std::string>("crcKind").c_str(),
+            false);
     }
 
     if (_PM->get<bool>("enable-message-length")) {

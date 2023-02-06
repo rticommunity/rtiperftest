@@ -420,7 +420,7 @@ std::string RTIDDSImpl<T>::print_configuration()
                  << (_PM->get<bool>("crc") ? "Yes" : "No");
     if (_PM->get<bool>("crc")) {
         stringStream << " ( computed_crc_kind = "
-                     << _PM->get<std::string>("crckind") << ")";
+                     << _PM->get<std::string>("crcKind") << ")";
     }
     stringStream << std::endl;
 
@@ -1741,15 +1741,13 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     std::map<std::string, std::string> properties =
             qos.policy<Property>().get_all();
 
-    if (_PM->get<bool>("crc") || _PM->is_set("crckind")) {
+    if (_PM->get<bool>("crc") || _PM->is_set("crcKind")) {
         _PM->set<bool>("crc", true);
 
         WireProtocol qos_wire_protocol = qos.policy<WireProtocol>(); //get all the Discovery
         qos_wire_protocol.compute_crc(true);
 
-        if (_PM->get<std::string>("crckind") != "CRC_32_LEGACY") {
-            properties["dds.participant.wire_protocol.computed_crc_kind"] = "crckind";
-        }
+        properties["dds.participant.wire_protocol.computed_crc_kind"] = _PM->get<std::string>("crcKind");
     }
 
     if (_PM->get<bool>("enable-message-length")) {
