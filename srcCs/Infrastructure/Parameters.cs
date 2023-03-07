@@ -157,8 +157,8 @@ namespace PerformanceTest
         public bool LightWeightSecurity { get; set; }
         public string SecureEncryptionAlgo { get; set; }
         public bool SecureEnableAAD{ get; set; }
-        public bool SecurePSK{ get; set; }
-        public bool SecurePSKAlgorithm{ get; set; }
+        public string SecurePSK{ get; set; }
+        public string SecurePSKAlgorithm{ get; set; }
         public int SecureDebug { get; set; }
         // Transport arguments
         public bool EnableTCP { get; set; }

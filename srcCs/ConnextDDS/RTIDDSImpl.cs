@@ -720,12 +720,12 @@ namespace PerformanceTest
             }
 
             secureArgumentsString += "\tPSK: ";
-            if (args.SecurePSK != null)
+            if (parameters.SecurePSK != null)
             {
                 secureArgumentsString += "In Use. Key: \""
-                    + args.SecurePSK
+                    + parameters.SecurePSK
                     + "\", Algorithm = "
-                    + args.SecurePSKAlgorithm
+                    + parameters.SecurePSKAlgorithm
                     + "\n";
             } else {
                 secureArgumentsString += "Not Used\n";
@@ -786,7 +786,7 @@ namespace PerformanceTest
                 else
                 {
                     Console.Error.WriteLine("SecureGovernanceFile is required when using security.");
-                    return
+                    return;
                 }
 
                 // permissions file
@@ -1046,7 +1046,7 @@ namespace PerformanceTest
                 }
 
                 participantQos = participantQos.
-                    WithWireProtocol(policy => policy.compute_Crc = true).
+                    WithWireProtocol(policy => policy.ComputeCrc = true).
                     WithProperty(policy =>
                         policy.Add("dds.participant.wire_protocol.computed_Crc_kind",
                             parameters.CrcKind));

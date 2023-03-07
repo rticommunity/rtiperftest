@@ -337,7 +337,7 @@ namespace PerformanceTest
                     getDefaultValue: () => "CRC_32_CUSTOM",
                     description: "Modify the default value to compute the CRC.\n"
                                  + "Options: CRC_32_CUSTOM | CRC_32_LEGACY\n"
-                                 + "[Default: CRC_32_CUSTOM]")
+                                 + "[Default: CRC_32_CUSTOM]"),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--enable-message-length", "-enable-message-length" },
                     description: "Enable enable_message_length_header_extension. [default: Not set]"),
@@ -396,7 +396,7 @@ namespace PerformanceTest
                     new string[] { "--secureDebug", "-secureDebug" },
                     getDefaultValue: () => -1,
                     description: ""),
-                new System.CommandLine.Option<int>(
+                new System.CommandLine.Option<bool>(
                     new string[] { "--secureEnableAAD", "-secureEnableAAD" },
                     getDefaultValue: () => false,
                     description: "Enable AAD when using security."),
