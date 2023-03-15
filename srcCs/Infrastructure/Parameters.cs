@@ -14,6 +14,7 @@ namespace PerformanceTest
         public ulong dataLen;
         private ulong numIter;
         public int batchSize;
+        public string crcKind;
         public string peer;
         private string transport;
         private string allowInterfaces;
@@ -120,8 +121,8 @@ namespace PerformanceTest
         public bool Crc { get; set; }
         public string CrcKind
         {
-            get => CrcKind;
-            set { CrcKind = value; Crc = true; }
+            get => crcKind;
+            set { crcKind = value; Crc = true; }
         }
         public bool MessageLength { get; set; }
         public bool Asynchronous { get; set; }
