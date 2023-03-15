@@ -119,11 +119,7 @@ namespace PerformanceTest
         public bool EnableAutoThrottle { get; set; }
         public bool EnableTurboMode { get; set; }
         public bool Crc { get; set; }
-        public string CrcKind
-        {
-            get => crcKind;
-            set { crcKind = value; Crc = true; }
-        }
+        public string CrcKind { get; set; }
         public bool MessageLength { get; set; }
         public bool Asynchronous { get; set; }
         public string FlowController { get; set; }
