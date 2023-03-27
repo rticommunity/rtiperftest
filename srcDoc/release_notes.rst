@@ -14,20 +14,20 @@ Default value for `openssl` if none is provided |newTag|
 
 In previous releases, when compiling statically against *RTI Connext* with the *Security Libraries*,
 a path to the ssl crypto libraries had to be provided (*openSSL* or *WolfSSL*).
-Starting in this version, if no path is provided, *RTI Perftest* will try to search
+Starting in this release, if no path is provided, *RTI Perftest* will try to search
 in the *RTI Connext* Installation (``$NDDSHOME``), in the default folder where the *OpenSSL Libraries* bundle is installed.
 
 Secure parameters have been simplified |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++
 
 In previous releases, *Perftest* had the option of building the name of the
-security governance file based on several command line options. These options
+security governance file based on several command-line options. These options
 would determine if the governance would be signed, the kind of RTPS protection,
-DATA protection, etc. This resulted in the need of having a governance file
+DATA protection, etc. These options required having a governance file
 for every combination of security options.
 
-Instead we decided to keep a simpler option (also present in previous releases):
-``-secureGovernanceFile`` so *Perftest* can be directly pointed to the file to
+*Perftest* now uses a simpler option (also present in previous releases),
+``-secureGovernanceFile``, so that *Perftest* can be directly pointed to the file to
 use.
 
 Added Command-Line Option to enable AAD |newTag|
@@ -36,11 +36,23 @@ Added Command-Line Option to enable AAD |newTag|
 Starting in this new release, *Perftest* has a new Command-Line Option: ``-secureEnableAAD``
 which sets the right property to enable the "Additional Authenticated Data".
 
-What's fixed in develop
+What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note::
-    Nothing added yet.
+Fixed error in C++11, C#, and Java when using security |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The following error could appear when using the *C++11*, *C#*, or *Java* API
+implementations and enabling the *Security Plugins*:
+
+```
+[CREATE Participant] RTI_Security_Cryptography_register_participant:inconsistent configuration: protection_kind has WITH_ORIGIN_AUTHENTICATION, but cryptography.max_receiver_specific_macs < 2
+[CREATE Participant] DDS_DomainParticipantTrustPlugins_getLocalParticipantSecurityState:!security function register_local_participant returned NULL
+[CREATE Participant] DDS_DomainParticipant_createI:!get local participant security state
+[CREATE Participant] DDS_DomainParticipantFactory_create_participant_disabledI:!create participant
+```
+
+This issue would not happen when using the Traditional *C++* implementation. The issue has been resolved.
 
 Release Notes 4.0
 --------------------
