@@ -593,7 +593,7 @@ function additional_defines_calculation()
             LWS_TAG="Lightweight "
         fi
 
-        echo -e "\n${INFO_TAG} Using RTI ${LW_TAG}Security Libraries"
+        echo -e "\n${INFO_TAG} Using RTI ${LWS_TAG}Security Libraries"
 
         additional_defines="${additional_defines} DRTI_SECURE_PERFTEST"
 
@@ -603,8 +603,7 @@ function additional_defines_calculation()
 
         else # Linking Statically.
 
-            if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
-                LWS_TAG="Lightweight "
+            if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
                 additional_defines="${additional_defines} DRTI_LW_SECURE_PERFTEST"
             fi
 
