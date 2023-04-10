@@ -53,6 +53,25 @@ Added Command-Line Option to enable AAD |newTag|
 Starting in this new release, *Perftest* has a new Command-Line Option: ``-secureEnableAAD``
 which sets the right property to enable the "Additional Authenticated Data".
 
+
+New option to save all latency times into a .csv file |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The *RTI Perftest* publisher side has a new command-line option: ``--latencyFile <file>``.
+This option will, at the end of the test, save all the time values obtained for all the latency
+samples (those samples for which *Perftest* calculates  the Round-Trip Time) into a file.
+
+You should use this option when all the latency time values are required and the final
+summary information is not enough.
+
+Use this option in conjunction with ``--noPrint`` when doing
+a latency test (``--lantecyTest``) or when latency samples are printed very often on the
+publisher side, since the printing operation is more costly and may affect the result of the
+test.
+
+Find more information in the :ref:`Test Parameters only for Publishing Applications` section.
+
+
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -780,6 +780,16 @@ Test Parameters only for Publishing Applications
 
    **Default:** ``false``
 
+-  ``-latencyFile <file>``
+
+   Save all the latency values into a file.
+
+   **Default:** ``Not set``
+
+   .. note::
+
+       Not available in the Java and C# API implementations.
+
 -  ``-lowResolutionClock``
 
    Enables measurement of latency for systems in which the
