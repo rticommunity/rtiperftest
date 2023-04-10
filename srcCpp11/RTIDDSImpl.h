@@ -132,6 +132,7 @@ class RTIDDSImpl : public IMessaging
     static const std::string SECURE_PERMISION_FILE_PUB;
     static const std::string SECURE_PERMISION_FILE_SUB;
     static const std::string SECURE_LIBRARY_NAME;
+    static const std::string LW_SECURE_LIBRARY_NAME;
   #endif
 
     unsigned long int getShmemSHMMAX();

@@ -780,6 +780,24 @@ Test Parameters only for Publishing Applications
 
    **Default:** ``false``
 
+-  ``-latencyFile <file>``
+
+   Save all the latency values into a file.
+
+   You should use this option when all the latency time values are required and the final
+   summary information is not enough.
+
+   Use this option in conjunction with ``--noPrint`` when doing
+   a latency test (``--lantecyTest``) or when latency samples are printed very often on the
+   publisher side, since the printing operation is more costly and may affect the result of the
+   test.
+
+   **Default:** ``Not set``
+
+   .. note::
+
+       Not available in the Java and C# API implementations.
+
 -  ``-lowResolutionClock``
 
    Enables measurement of latency for systems in which the
@@ -1042,30 +1060,6 @@ Test Parameters only for Subscribing Applications
 Test Parameters to Control Connext DDS Secure Options
 -----------------------------------------------------
 
--  ``-secureEncryptDiscovery``
-
-   Encrypt discovery traffic.
-
-   **Default:** Not set
-
--  ``-secureSign``
-
-   Sign discovery and user data packages.
-
-   **Default:** Not set
-
--  ``-secureEncryptData``
-
-   Encrypt at the user data level.
-
-   **Default:** Not set
-
--  ``-secureEncryptSM``
-
-   Encrypt at the RTPS sub-message level.
-
-   **Default:** Not set
-
 -  ``-secureGovernanceFile <file>``
 
    Governance file. If specified, the authentication, signing, and
@@ -1103,12 +1097,27 @@ Test Parameters to Control Connext DDS Secure Options
   | **Default for Publisher:** ``./resource/secure/pubkey.pem`` 
   | **Default for Subscriber:** ``./resource/secure/subkey.pem``
 
--  ``-secureEncryptionAlgorithm <file>``
+-  ``-secureEncryptionAlgorithm <Algorithm>``
 
    Set the Security Encryption Algorithm.
 
   | **Default:** ``aes-128-gcm``
 
+-  ``-secureEnableAAD``
+
+   Enable Additional Authenticated Data when using Security.
+
+  | **Default:** Not Enabled.
+
+-  ``-lightWeightSecurity``
+
+   .. note::
+
+       This option is only present in the Traditional and Modern C++ API implementations using Dynamic Linking.
+
+   Force the use of the LightWeight Security Library instead of the regular one.
+
+  | **Default:** Not Enabled.
 
 Raw Transport Options
 ---------------------
@@ -1466,15 +1475,13 @@ The following parameters are not available when using *Perftest* with *TSS*:
 
 -  ``-cft``
 
+-  ``-crc``
+
+-  ``-crcKind``
+
+-  ``-enable-message-length``
+
 -  ``-checkConsistency``
-
--  ``-secureEncryptDiscovery``
-
--  ``-secureSign``
-
--  ``-secureEncryptData``
-
--  ``-secureEncryptSM``
 
 -  ``-secureGovernanceFile <file>``
 
@@ -1487,6 +1494,14 @@ The following parameters are not available when using *Perftest* with *TSS*:
 -  ``-securePrivateKey``
 
 -  ``-secureEncryptionAlgorithm``
+
+-  ``-secureEnableAAD``
+
+-  ``-securePSK``
+
+-  ``-securePSKAlgorithm``
+
+-  ``-lightWeightSecurity``
 
 -  ``-rawTransport``
 

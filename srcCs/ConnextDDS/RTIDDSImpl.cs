@@ -44,6 +44,7 @@ namespace PerformanceTest
         private const string SecurePermissionFilePub = "./resource/secure/signed_PerftestPermissionsPub.xml";
         private const string SecurePermissionFileSub = "./resource/secure/signed_PerftestPermissionsSub.xml";
         private const string SecureLibraryName = "nddssecurity";
+        private const string LWSecureLibraryName = "nddslightweightsecurity";
 
         public DomainParticipant participant;
         private Subscriber subscriber;
@@ -295,6 +296,20 @@ namespace PerformanceTest
                 sb.Append("\tAutoThrottle: Enabled\n");
             }
 
+            sb.Append("\tCRC: ");
+            sb.Append(parameters.Crc);
+            if (parameters.Crc)
+            {
+                sb.Append(" (");
+                sb.Append(parameters.CrcKind);
+                sb.Append(")");
+            }
+            sb.Append('\n');
+
+            sb.Append("\ttMessage Length Header Extension Enabled: ");
+            sb.Append(parameters.MessageLength);
+            sb.Append('\n');
+
             // XML File
             sb.Append("\tXML File: ");
             sb.Append(parameters.QosFile);
@@ -510,17 +525,7 @@ namespace PerformanceTest
                 }
             }
 
-            // Parsing of security parameters
-            if (!string.IsNullOrEmpty(parameters.SecureGovernanceFile))
-            {
-                Console.Error.Write("Warning -- authentication, encryption, signing arguments " +
-                        "will be ignored, and the values specified by the Governance file will " +
-                        "be used instead\n");
-            }
-
-            if (parameters.SecureSign || parameters.SecureEncryptData
-                || parameters.SecureEncryptSM || parameters.SecureEncryptDiscovery
-                || !string.IsNullOrEmpty(parameters.SecureGovernanceFile)
+            if (!string.IsNullOrEmpty(parameters.SecureGovernanceFile)
                 || !string.IsNullOrEmpty(parameters.SecurePermissionsFile)
                 || !string.IsNullOrEmpty(parameters.SecureCertAuthority)
                 || !string.IsNullOrEmpty(parameters.SecureCertFile)
@@ -597,7 +602,7 @@ namespace PerformanceTest
 
         private bool ValidateSecureArgs()
         {
-            if (SecureUseSecure)
+            if (!parameters.LightWeightSecurity)
             {
                 if (parameters.SecurePrivateKey == null)
                 {
@@ -639,91 +644,107 @@ namespace PerformanceTest
                         parameters.SecurePermissionsFile = SecurePermissionFileSub;
                     }
                 }
+            }
 
-                if (parameters.SecureLibrary == null)
+            if (parameters.SecureLibrary == null)
+            {
+                if (!parameters.LightWeightSecurity)
                 {
                     parameters.SecureLibrary = SecureLibraryName;
+                }
+                else
+                {
+                    parameters.SecureLibrary = LWSecureLibraryName;
                 }
             }
 
             return true;
         }
+
         private string PrintSecureArgs()
         {
             string secureArgumentsString = "Secure Arguments:\n";
 
-            if (!string.IsNullOrEmpty(parameters.SecureGovernanceFile))
+            if (!parameters.LightWeightSecurity)
             {
-                secureArgumentsString +=
-                        "\t encrypt discovery: " + parameters.SecureEncryptDiscovery + "\n" +
-                        "\t encrypt topic (user) data: " + parameters.SecureEncryptData + "\n" +
-                        "\t encrypt submessage: " + parameters.SecureEncryptSM + "\n" +
-                        "\t sign data: " + parameters.SecureSign + "\n" +
-                        "\t governance file: Not specified\n";
-            }
-            else
-            {
-                secureArgumentsString += "\t governance file: " + parameters.SecureGovernanceFile
-                        + "\n";
+                if (!string.IsNullOrEmpty(parameters.SecureGovernanceFile))
+                {
+                    secureArgumentsString += "\t governance file: " + parameters.SecureGovernanceFile
+                            + "\n";
+                }
+
+                if (parameters.SecurePermissionsFile != null)
+                {
+                    secureArgumentsString += "\t permissions file: " + parameters.SecurePermissionsFile
+                            + "\n";
+                }
+                else
+                {
+                    secureArgumentsString += "\t permissions file: Not specified\n";
+                }
+
+                if (parameters.SecurePrivateKey != null)
+                {
+                    secureArgumentsString += "\t private key file: " + parameters.SecurePrivateKey
+                            + "\n";
+                }
+                else
+                {
+                    secureArgumentsString += "\t private key file: Not specified\n";
+                }
+
+                if (parameters.SecureCertFile != null)
+                {
+                    secureArgumentsString += "\t certificate file: " + parameters.SecureCertFile
+                            + "\n";
+                }
+                else
+                {
+                    secureArgumentsString += "\t certificate file: Not specified\n";
+                }
+
+                if (parameters.SecureCertAuthority != null)
+                {
+                    secureArgumentsString += "\t certificate authority file: "
+                            + parameters.SecureCertAuthority + "\n";
+                }
+                else
+                {
+                    secureArgumentsString += "\t certificate authority file: Not specified\n";
+                }
+
+                if (parameters.SecureEncryptionAlgo != null)
+                {
+                    secureArgumentsString += "\t Encryption Algorithm: " + parameters.SecureEncryptionAlgo + "\n";
+                }
             }
 
-            if (parameters.SecurePermissionsFile != null)
+            secureArgumentsString += "\tPSK: ";
+            if (parameters.SecurePSK != null)
             {
-                secureArgumentsString += "\t permissions file: " + parameters.SecurePermissionsFile
-                        + "\n";
-            }
-            else
-            {
-                secureArgumentsString += "\t permissions file: Not specified\n";
-            }
-
-            if (parameters.SecurePrivateKey != null)
-            {
-                secureArgumentsString += "\t private key file: " + parameters.SecurePrivateKey
-                        + "\n";
-            }
-            else
-            {
-                secureArgumentsString += "\t private key file: Not specified\n";
+                secureArgumentsString += "In Use. Key: \""
+                    + parameters.SecurePSK
+                    + "\", Algorithm = "
+                    + parameters.SecurePSKAlgorithm
+                    + "\n";
+            } else {
+                secureArgumentsString += "Not Used\n";
             }
 
-            if (parameters.SecureCertFile != null)
-            {
-                secureArgumentsString += "\t certificate file: " + parameters.SecureCertFile
-                        + "\n";
-            }
-            else
-            {
-                secureArgumentsString += "\t certificate file: Not specified\n";
-            }
-
-            if (parameters.SecureCertAuthority != null)
-            {
-                secureArgumentsString += "\t certificate authority file: "
-                        + parameters.SecureCertAuthority + "\n";
-            }
-            else
-            {
-                secureArgumentsString += "\t certificate authority file: Not specified\n";
-            }
+            secureArgumentsString += "\t Additional Authenticated Data: " + parameters.SecureEnableAAD + "\n";
 
             if (parameters.SecureLibrary != null)
             {
-                secureArgumentsString += "\t plugin library: " + parameters.SecureLibrary + "\n";
+                secureArgumentsString += "\t Security Library: " + parameters.SecureLibrary + "\n";
             }
             else
             {
-                secureArgumentsString += "\t plugin library: Not specified\n";
+                secureArgumentsString += "\t Security Library: Not specified\n";
             }
 
             if (parameters.SecureDebug != -1)
             {
                 secureArgumentsString += "\t debug level: " + parameters.SecureDebug + "\n";
-            }
-
-            if (parameters.SecureEncryptionAlgo != null)
-            {
-                secureArgumentsString += "\t Encryption Algorithm: " + parameters.SecureEncryptionAlgo + "\n";
             }
 
             return secureArgumentsString;
@@ -753,85 +774,93 @@ namespace PerformanceTest
             //  Getting Started Guide). However, later versions still support
             //  the legacy properties as an alternative.
 
-            // check if governance file provided
-            if (parameters.SecureGovernanceFile == null)
+            if (!parameters.LightWeightSecurity)
             {
-                // choose a pre-built governance file
-                parameters.SecureGovernanceFile = "resource/secure/signed_PerftestGovernance_";
-
-                if (parameters.SecureEncryptDiscovery)
+                // check if governance file provided
+                if (parameters.SecureGovernanceFile != null)
                 {
-                    parameters.SecureGovernanceFile += "Discovery";
+                    dpQos = dpQos.WithProperty(policy =>
+                        policy.Add("com.rti.serv.secure.access_control.governance_file",
+                        parameters.SecureGovernanceFile));
+                }
+                else
+                {
+                    Console.Error.WriteLine("SecureGovernanceFile is required when using security.");
+                    return;
                 }
 
-                if (parameters.SecureSign)
-                {
-                    parameters.SecureGovernanceFile += "Sign";
-                }
+                // permissions file
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.access_control.permissions_file",
+                    parameters.SecurePermissionsFile));
 
-                if (parameters.SecureEncryptData && parameters.SecureEncryptSM)
-                {
-                    parameters.SecureGovernanceFile += "EncryptBoth";
-                }
-                else if (parameters.SecureEncryptData)
-                {
-                    parameters.SecureGovernanceFile += "EncryptData";
-                }
-                else if (parameters.SecureEncryptSM)
-                {
-                    parameters.SecureGovernanceFile += "EncryptSubmessage";
-                }
+                // permissions authority file (legacy property, it should be permissions_file)
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.access_control.permissions_authority_file",
+                    parameters.SecureCertAuthority));
 
-                parameters.SecureGovernanceFile += ".xml";
+                // certificate authority
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.authentication.ca_file",
+                    parameters.SecureCertAuthority));
+
+                // public key
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.authentication.certificate_file",
+                    parameters.SecureCertFile));
+
 
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.access_control.governance_file",
-                    parameters.SecureGovernanceFile));
+                    policy.Add("com.rti.serv.secure.cryptography.max_receiver_specific_macs",
+                    "4"));
+
+                // private key
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.authentication.private_key_file",
+                    parameters.SecurePrivateKey));
+
+
+                if (parameters.SecureEncryptionAlgo != null)
+                {
+                    dpQos = dpQos.WithProperty(policy =>
+                        policy.Add("com.rti.serv.secure.cryptography.encryption_algorithm",
+                        parameters.SecureEncryptionAlgo));
+                }
             }
-            else
+
+            if (parameters.SecureEnableAAD)
             {
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.access_control.governance_file",
-                    parameters.SecureGovernanceFile));
+                    policy.Add("com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+                    "1"));
             }
 
-            // permissions file
-            dpQos = dpQos.WithProperty(policy =>
-                policy.Add("com.rti.serv.secure.access_control.permissions_file",
-                parameters.SecurePermissionsFile));
+            if (parameters.SecurePSK != null || parameters.SecurePSKAlgorithm != null)
+            {
+                if (parameters.SecurePSK == null)
+                {
+                    parameters.SecurePSK = "DefaultValue";
+                }
 
-            // permissions authority file
-            dpQos = dpQos.WithProperty(policy =>
-                policy.Add("com.rti.serv.secure.access_control.permissions_authority_file",
-                parameters.SecureCertAuthority));
+                if (parameters.SecurePSKAlgorithm == null)
+                {
+                    parameters.SecurePSKAlgorithm = "AES256+GCM";
+                }
 
-            // certificate authority
-            dpQos = dpQos.WithProperty(policy =>
-                policy.Add("com.rti.serv.secure.authentication.ca_file",
-                parameters.SecureCertAuthority));
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                    parameters.SecurePSK));
 
-            // public key
-            dpQos = dpQos.WithProperty(policy =>
-                policy.Add("com.rti.serv.secure.authentication.certificate_file",
-                parameters.SecureCertFile));
-
-            // private key
-            dpQos = dpQos.WithProperty(policy =>
-                policy.Add("com.rti.serv.secure.authentication.private_key_file",
-                parameters.SecurePrivateKey));
+                dpQos = dpQos.WithProperty(policy =>
+                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    parameters.SecurePSKAlgorithm));
+            }
 
             if (parameters.SecureDebug != -1)
             {
                 dpQos = dpQos.WithProperty(policy =>
                     policy.Add("com.rti.serv.secure.logging.log_level",
                     parameters.SecureDebug.ToString()));
-            }
-
-            if (parameters.SecureEncryptionAlgo != null)
-            {
-                dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.cryptography.encryption_algorithm",
-                    parameters.SecureEncryptionAlgo));
             }
         }
 
@@ -1007,6 +1036,27 @@ namespace PerformanceTest
             {
                 participantQos = participantQos.WithProperty(policy =>
                     policy.Add("dds.domain_participant.auto_throttle.enable", "true"));
+            }
+
+            if (parameters.Crc)
+            {
+                if (parameters.CrcKind == null)
+                {
+                    parameters.CrcKind = "CRC_32_CUSTOM";
+                }
+
+                participantQos = participantQos.
+                    WithWireProtocol(policy => policy.ComputeCrc = true).
+                    WithProperty(policy =>
+                        policy.Add("dds.participant.wire_protocol.computed_Crc_kind",
+                            parameters.CrcKind));
+            }
+
+            if (parameters.MessageLength)
+            {
+                participantQos = participantQos.WithProperty(policy =>
+                    policy.Add("dds.participant.wire_protocol.enable_message_length_header_extension",
+                        "true"));
             }
 
             return participantQos;

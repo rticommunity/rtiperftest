@@ -460,7 +460,6 @@ bool PerftestConfigureSecurity(
     SECCORE_SecurePluginFactoryProperty sec_plugin_prop;
 
     DDS_Boolean retval;
-    std::string governanceFilePath;
 
     // register plugin factory with registry
     if (!SECCORE_SecurePluginFactory::register_suite(
@@ -479,48 +478,22 @@ bool PerftestConfigureSecurity(
     }
 
     // check if governance file provided
-    if (_PM->get<std::string>("secureGovernanceFile").empty()) {
-        // choose a pre-built governance file
-        governanceFilePath = "file:./resource/secure/signed_PerftestGovernance_";
-        if (_PM->get<bool>("secureEncryptDiscovery")) {
-            governanceFilePath += "Discovery";
-        }
-        if (_PM->get<bool>("secureSign")) {
-            governanceFilePath += "Sign";
-        }
-        if (_PM->get<bool>("secureEncryptData")
-                && _PM->get<bool>("secureEncryptSM")) {
-            governanceFilePath += "EncryptBoth";
-        } else if (_PM->get<bool>("secureEncryptData")) {
-            governanceFilePath += "EncryptData";
-        } else if (_PM->get<bool>("secureEncryptSM")) {
-            governanceFilePath += "EncryptSubmessage";
-        }
-
-        governanceFilePath += ".xml";
-
+    if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
         retval = qos.property.value.assert_property(
                         "dds.sec.access.governance",
-                        governanceFilePath.c_str(),
+                        _PM->get<std::string>("secureGovernanceFile").c_str(),
                         false);
+
     } else {
-        governanceFilePath = _PM->get<std::string>("secureGovernanceFile");
-        retval = qos.property.value.assert_property(
-                        "dds.sec.access.governance",
-                        governanceFilePath.c_str(),
-                        false);
-    }
-    if (!retval) {
-        printf("Failed to add property "
-                "dds.sec.access.governance\n");
+        fprintf(stderr,
+                "%s SecureGovernanceFile cannot be empty when using security.\n",
+                classLoggingString.c_str());
         return false;
     }
-
-    /*
-     * Save the local variable governanceFilePath into
-     * the parameter "secureGovernanceFile"
-     */
-    _PM->set("secureGovernanceFile", governanceFilePath);
+    if (!retval) {
+        printf("Failed to add property dds.sec.access.governance\n");
+        return false;
+    }
 
     // permissions file
     if (!qos.property.value.assert_property(
@@ -533,7 +506,7 @@ bool PerftestConfigureSecurity(
         return false;
     }
 
-    // permissions authority file
+    // permissions authority file (legacy property, it should be permissions_file)
     if (!qos.property.value.assert_property(
                 "dds.sec.access.permissions_ca",
                 _PM->get<std::string>("secureCertAuthority").c_str(),
@@ -585,6 +558,17 @@ bool PerftestConfigureSecurity(
         {
             printf("Failed to add property "
                     "logging.log_level\n");
+            return false;
+        }
+    }
+
+    if (_PM->is_set("secureEnableAAD")) {
+        if (!qos.property.value.assert_property(
+            "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
+            "1",
+            false))
+        {
+            printf("Failed to add property enable_additional_authenticated_data\n");
             return false;
         }
     }

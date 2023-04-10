@@ -9,6 +9,93 @@ Release Notes Master
 What's New in Master
 ~~~~~~~~~~~~~~~~~~~~~
 
+Support for the LightWeight Security library |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In this release we added support for the *RTI Connext LightWeight Security Library*.
+
+If *RTI Perftest* is compiled dynamically (``--dynamically`` in the build scripts ``build.sh`` / ``.bat``),
+then no new parameters are needed. However, when compiling statically, a new command line
+option has been added to the build scripts (``--lightWeightSecurity``) to force the linking
+against that library instead of the regular (Full) *RTI Connext Secure* library.
+
+Default value for `openssl` if none is provided |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, when compiling statically against *RTI Connext* with the *Security Libraries*,
+a path to the ssl crypto libraries had to be provided (*openSSL* or *WolfSSL*).
+Starting in this release, if no path is provided, *RTI Perftest* will try to search
+in the *RTI Connext* Installation (``$NDDSHOME``), in the default folder where the *OpenSSL Libraries* bundle is installed.
+
+Provide `ssl` version |newTag|
+++++++++++++++++++++++++++++++
+
+If more than one set of cryptography libraries or versions (`openSSL` or `wolfSSL`) are found
+in the *RTI Connext DDS* Middleware installation, by using the the `--openssl-version`
+parameter, you can select the desired one.
+
+Secure parameters have been simplified |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, *Perftest* had the option of building the name of the
+security governance file based on several command-line options. These options
+would determine if the governance would be signed, the kind of RTPS protection,
+DATA protection, etc. These options required having a governance file
+for every combination of security options.
+
+*Perftest* now uses a simpler option (also present in previous releases),
+``-secureGovernanceFile``, so that *Perftest* can be directly pointed to the file to
+use.
+
+Added Command-Line Option to enable AAD |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+Starting in this new release, *Perftest* has a new Command-Line Option: ``-secureEnableAAD``
+which sets the right property to enable the "Additional Authenticated Data".
+
+
+New option to save all latency times into a .csv file |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The *RTI Perftest* publisher side has a new command-line option: ``--latencyFile <file>``.
+This option will, at the end of the test, save all the time values obtained for all the latency
+samples (those samples for which *Perftest* calculates  the Round-Trip Time) into a file.
+
+You should use this option when all the latency time values are required and the final
+summary information is not enough.
+
+Use this option in conjunction with ``--noPrint`` when doing
+a latency test (``--lantecyTest``) or when latency samples are printed very often on the
+publisher side, since the printing operation is more costly and may affect the result of the
+test.
+
+Find more information in the :ref:`Test Parameters only for Publishing Applications` section.
+
+
+What's Fixed in Master
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Fixed error in C++11, C#, and Java when using security |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The following error could appear when using the *C++11*, *C#*, or *Java* API
+implementations and enabling the *Security Plugins*:
+
+```
+[CREATE Participant] RTI_Security_Cryptography_register_participant:inconsistent configuration: protection_kind has WITH_ORIGIN_AUTHENTICATION, but cryptography.max_receiver_specific_macs < 2
+[CREATE Participant] DDS_DomainParticipantTrustPlugins_getLocalParticipantSecurityState:!security function register_local_participant returned NULL
+[CREATE Participant] DDS_DomainParticipant_createI:!get local participant security state
+[CREATE Participant] DDS_DomainParticipantFactory_create_participant_disabledI:!create participant
+```
+
+This issue would not happen when using the Traditional *C++* implementation. The issue has been resolved.
+
+Release Notes 4.0
+--------------------
+
+What's New in 4.0
+~~~~~~~~~~~~~~~~~~~~
+
 Support for **RTI Connext TSS 3.1.2** |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -73,7 +160,7 @@ value.
 In addition, a new parameter (``-secureEncryptionAlgorithm``) has been added to support
 manually setting the desired value.
 
-What's Fixed in Master
+What's Fixed in 4.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Unclear table output headers |enhancedTag|
@@ -145,7 +232,7 @@ seen in operating systems (such as VxWorks) with low-resolution clocks.
 
 This problem has been resolved.
 
-Deprecations in Master
+Deprecations in 4.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 ``-scan`` option will be removed in future versions of *RTI Perftest*

@@ -417,6 +417,38 @@ void ParameterManager::initialize()
     outputFile->set_supported_middleware(Middleware::ALL);
     create("outputFile", outputFile);
 
+    Parameter<bool> *crc = new Parameter<bool>(false);
+    crc->set_command_line_argument("-crc", "");
+    crc->set_description(
+            "Enable CRC checking. Default: Disabled");
+    crc->set_type(T_BOOL);
+    crc->set_extra_argument(NO);
+    crc->set_group(GENERAL);
+    crc->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("crc", crc);
+
+    Parameter<std::string> *crcKind = new Parameter<std::string>("CRC_32_CUSTOM");
+    crcKind->set_command_line_argument("-crcKind", "<value>");
+    crcKind->set_description(
+            "Modify the default value to compute the CRC.\n"
+            "Options: CRC_32_CUSTOM | CRC_32_LEGACY\n"
+            "Default: CRC_32_CUSTOM");
+    crcKind->set_type(T_STR);
+    crcKind->set_extra_argument(YES);
+    crcKind->set_group(GENERAL);
+    crcKind->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("crcKind", crcKind);
+
+
+    Parameter<bool> *msgLengthHeaderExtension = new Parameter<bool>(false);
+    msgLengthHeaderExtension->set_command_line_argument("-enable-message-length", "");
+    msgLengthHeaderExtension->set_description(
+            "Enable enable_message_length_header_extension. Default: Disabled");
+    msgLengthHeaderExtension->set_type(T_BOOL);
+    msgLengthHeaderExtension->set_extra_argument(NO);
+    msgLengthHeaderExtension->set_group(GENERAL);
+    msgLengthHeaderExtension->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("enable-message-length", msgLengthHeaderExtension);
 
   Parameter<bool> *preallocateFragmentation = new Parameter<bool>(false);
     preallocateFragmentation->set_command_line_argument("-preallocateFragmentedSamples", "");
@@ -540,6 +572,18 @@ void ParameterManager::initialize()
     compressionThreshold->set_supported_middleware(Middleware::RTIDDSPRO);
     create("compressionThreshold", compressionThreshold);
   #endif //defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)
+
+
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_710)
+    Parameter<bool> *enableInstanceStateRecovery = new Parameter<bool>(false);
+    enableInstanceStateRecovery->set_command_line_argument("-enableInstanceStateRecovery","");
+    enableInstanceStateRecovery->set_description("");
+    enableInstanceStateRecovery->set_type(T_BOOL);
+    enableInstanceStateRecovery->set_extra_argument(NO);
+    enableInstanceStateRecovery->set_group(GENERAL);
+    enableInstanceStateRecovery->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("enableInstanceStateRecovery", enableInstanceStateRecovery);
+  #endif // defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_710)
 
   #ifdef RTI_PERF_TSS
     Parameter<bool> *loaningSendReceive = new Parameter<bool>(false);
@@ -723,6 +767,17 @@ void ParameterManager::initialize()
     pubRate->add_valid_str_value("sleep");
     pubRate->add_valid_str_value("spin");
     create("pubRate", pubRate);
+
+    Parameter<std::string> *latencyFile = new Parameter<std::string>("latency_samples.csv");
+    latencyFile->set_command_line_argument("-latencyFile", "<filename>");
+    latencyFile->set_description(
+            "Save all the latency samples as a .csv file at the end of the test.\n"
+            "Default method: do not save");
+    latencyFile->set_type(T_STR);
+    latencyFile->set_extra_argument(YES);
+    latencyFile->set_group(PUB);
+    latencyFile->set_supported_middleware(Middleware::ALL);
+    create("latencyFile", latencyFile);
 
 #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
     ParameterPair<unsigned long long, std::string> *pubRatebps =
@@ -1333,71 +1388,17 @@ void ParameterManager::initialize()
     ////////////////////////////////////////////////////////////////////////////
     // SECURE PARAMETER:
   #ifdef RTI_SECURE_PERFTEST
-    Parameter<bool> *secureEncryptDiscovery = new Parameter<bool>(false);
-    secureEncryptDiscovery->set_command_line_argument(
-            "-secureEncryptDiscovery", "");
-    secureEncryptDiscovery->set_description("Encrypt discovery traffic");
-    secureEncryptDiscovery->set_type(T_BOOL);
-    secureEncryptDiscovery->set_extra_argument(NO);
-    secureEncryptDiscovery->set_group(SECURE);
-    secureEncryptDiscovery->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptDiscovery",  secureEncryptDiscovery);
 
-    Parameter<bool> *secureSign = new Parameter<bool>(false);
-    secureSign->set_command_line_argument("-secureSign", "");
-    secureSign->set_description("Sign (HMAC) discovery and user data");
-    secureSign->set_type(T_BOOL);
-    secureSign->set_extra_argument(NO);
-    secureSign->set_group(SECURE);
-    secureSign->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureSign", secureSign);
-
-    Parameter<bool> *secureEncryptBoth = new Parameter<bool>(false);
-    secureEncryptBoth->set_command_line_argument("-secureEncryptBoth", "");
-    secureEncryptBoth->set_description("Sign (HMAC) discovery and user data");
-    secureEncryptBoth->set_type(T_BOOL);
-    secureEncryptBoth->set_extra_argument(NO);
-    secureEncryptBoth->set_group(SECURE);
-    secureEncryptBoth->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptBoth", secureEncryptBoth);
-
-    Parameter<bool> *secureEncryptData = new Parameter<bool>(false);
-    secureEncryptData->set_command_line_argument("-secureEncryptData", "");
-    secureEncryptData->set_description("Encrypt topic (user) data");
-    secureEncryptData->set_type(T_BOOL);
-    secureEncryptData->set_extra_argument(NO);
-    secureEncryptData->set_group(SECURE);
-    secureEncryptData->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptData", secureEncryptData);
-
-    Parameter<bool> *secureEncryptSM = new Parameter<bool>(false);
-    secureEncryptSM->set_command_line_argument("-secureEncryptSM", "");
-    secureEncryptSM->set_description("Encrypt RTPS submessages");
-    secureEncryptSM->set_type(T_BOOL);
-    secureEncryptSM->set_extra_argument(NO);
-    secureEncryptSM->set_group(SECURE);
-    secureEncryptSM->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureEncryptSM", secureEncryptSM);
+  // These options only make sense when not using LW security, this will
+  // happen in Static if we have not defined RTI_LW_SECURE_PERFTEST, and in
+  // dynamic if the command line option -lightWeightSecurity was not passed.
+  #ifndef RTI_LW_SECURE_PERFTEST
 
     Parameter<std::string> *secureGovernanceFile = new Parameter<std::string>();
     secureGovernanceFile->set_command_line_argument(
             "-secureGovernanceFile", "<file>");
     secureGovernanceFile->set_description(
-            "Governance file. If specified, the authentication,\n"
-            "signing, and encryption arguments are ignored. The\n"
-            "governance document configuration will be used instead.\n"
-            "Default: Perftest will choose the right governance file\n"
-            "given the rest of the security command line options provided");
+            "Governance file to use.");
     secureGovernanceFile->set_type(T_STR);
     secureGovernanceFile->set_extra_argument(YES);
     secureGovernanceFile->set_group(SECURE);
@@ -1460,19 +1461,6 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("securePrivateKey", securePrivateKey);
 
-    Parameter<std::string> *secureLibrary = new Parameter<std::string>();
-    secureLibrary->set_command_line_argument("-secureLibrary", "<file>");
-    secureLibrary->set_description(
-            "Private key file <optional>.\n"
-            "Default: \"./resource/secure/subkey.pem\"");
-    secureLibrary->set_type(T_STR);
-    secureLibrary->set_extra_argument(YES);
-    secureLibrary->set_group(SECURE);
-    secureLibrary->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RTIDDSMICRO);
-    create("secureLibrary", secureLibrary);
-
     Parameter<std::string> *secureEncryptionAlgo = new Parameter<std::string>();
     secureEncryptionAlgo->set_command_line_argument("-secureEncryptionAlgorithm", "<value>");
     secureEncryptionAlgo->set_description(
@@ -1486,6 +1474,84 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     create("secureEncryptionAlgo", secureEncryptionAlgo);
 
+  #endif // !defined(RTI_LW_SECURE_PERFTEST)
+
+    Parameter<bool> *secureEnableAAD = new Parameter<bool>(false);
+    secureEnableAAD->set_command_line_argument("-secureEnableAAD", "");
+    secureEnableAAD->set_description("Enable AAD. Default: Not enabled.");
+    secureEnableAAD->set_type(T_BOOL);
+    secureEnableAAD->set_extra_argument(NO);
+    secureEnableAAD->set_group(SECURE);
+    secureEnableAAD->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureEnableAAD", secureEnableAAD);
+
+  #ifdef RTI_PERFTEST_DYNAMIC_LINKING
+
+    Parameter<std::string> *secureLibrary = new Parameter<std::string>();
+    secureLibrary->set_command_line_argument("-secureLibrary", "<file>");
+    secureLibrary->set_description(
+            "Security Library that will be loaded dynamically.\n"
+            "Default: Not used, empty value");
+    secureLibrary->set_type(T_STR);
+    secureLibrary->set_extra_argument(YES);
+    secureLibrary->set_group(SECURE);
+    secureLibrary->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
+    create("secureLibrary", secureLibrary);
+
+    Parameter<bool> *lightWeightSecurity = new Parameter<bool>(false);
+    lightWeightSecurity->set_command_line_argument("-lightWeightSecurity", "");
+    lightWeightSecurity->set_description(
+            "Use the Lightweight security Library.\n"
+            "Default: Not enabled.");
+    lightWeightSecurity->set_type(T_BOOL);
+    lightWeightSecurity->set_extra_argument(NO);
+    lightWeightSecurity->set_group(SECURE);
+    lightWeightSecurity->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("lightWeightSecurity", lightWeightSecurity);
+
+  #endif
+
+    // This one will be used both in Static and Dynamic. In static will be yet
+    // another security option. In dynamic this will actually enable LightWeight
+    // Security.
+    Parameter<std::string> *securePSK = new Parameter<std::string>();
+    securePSK->set_command_line_argument("-securePSK", "<seed>");
+    securePSK->set_description("Enable PSK security. Default: Not enabled.");
+    securePSK->set_type(T_STR);
+    securePSK->set_extra_argument(YES);
+    securePSK->set_group(SECURE);
+    securePSK->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("securePSK", securePSK);
+
+    // This one will be used both in Static and Dynamic. In static will be yet
+    // another security option. In dynamic this will actually enable LightWeight
+    // Security.
+    Parameter<std::string> *securePSKAlgorithm = new Parameter<std::string>("AES256+GCM");
+    securePSKAlgorithm->set_command_line_argument("-securePSKAlgorithm", "<seed>");
+    securePSKAlgorithm->set_description("PSK Algoritm to use. Default: AES256+GCM.");
+    securePSKAlgorithm->set_type(T_STR);
+    securePSKAlgorithm->set_extra_argument(YES);
+    securePSKAlgorithm->set_group(SECURE);
+    securePSKAlgorithm->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("securePSKAlgorithm", securePSKAlgorithm);
+
+
+  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
+    Parameter<std::string> *secureRtpsHmacOnly = new Parameter<std::string>();
+    secureRtpsHmacOnly->set_command_line_argument("-secureRtpsHmacOnly", "<seed>");
+    secureRtpsHmacOnly->set_description("Enable HMAC Only security. Default: Not enabled.");
+    secureRtpsHmacOnly->set_type(T_STR);
+    secureRtpsHmacOnly->set_extra_argument(YES);
+    secureRtpsHmacOnly->set_group(SECURE);
+    secureRtpsHmacOnly->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("secureRtpsHmacOnly", secureRtpsHmacOnly);
+  #endif
+
+
     Parameter<int> *secureDebug = new Parameter<int>(1);
     secureDebug->set_command_line_argument("-secureDebug", "<level>");
     secureDebug->set_type(T_NUMERIC_D);
@@ -1497,8 +1563,9 @@ void ParameterManager::initialize()
             | Middleware::RTIDDSMICRO);
     secureDebug->set_internal(true);
     create("secureDebug", secureDebug);
+
 #endif
-}
+} // End of the initialize.
 
 // Parse the command line parameters and set the value
 bool ParameterManager::parse(int argc, char *argv[])

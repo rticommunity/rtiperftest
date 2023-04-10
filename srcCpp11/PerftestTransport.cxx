@@ -855,7 +855,7 @@ void PerftestTransport::populateSecurityFiles() {
 std::string PerftestTransport::printTransportConfigurationSummary()
 {
     std::ostringstream stringStream;
-    stringStream << "Transport Configuration:\n";
+    stringStream << "\nTransport Configuration:\n";
     stringStream << "\tKind: " << transportConfig.nameString;
     if (transportConfig.takenFromQoS) {
         stringStream << " (taken from QoS XML file)";

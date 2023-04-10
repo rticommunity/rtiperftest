@@ -542,6 +542,19 @@ std::string RTIDDSImpl<T>::print_configuration()
                  << std::endl;
   #endif
 
+    stringStream << "\tCRC Enabled: "
+                 << (_PM->get<bool>("crc") ? "Yes" : "No");
+    if (_PM->get<bool>("crc")) {
+        stringStream << " ( computed_crc_kind = "
+                     << _PM->get<std::string>("crcKind") << ")";
+    }
+    stringStream << std::endl;
+
+
+    stringStream << "\tMessage Length Header Extension Enabled: "
+                 << (_PM->get<bool>("enable-message-length") ? "Yes" : "No")
+                 << std::endl;
+
   #ifdef RTI_FLATDATA_AVAILABLE
     // FlatData
     stringStream << "\tFlatData: "
@@ -1344,7 +1357,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
             if (retcode != DDS_RETCODE_OK) {
                 shutdown();
                 char errorMessage[21 + 21]; // enough to hold all numbers
-                sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
+                snprintf(errorMessage, 21 + 21, "set_octet_array(key) failed: %d", retcode);
                 throw std::runtime_error(errorMessage);
             }
 
@@ -1368,7 +1381,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         if (retcode != DDS_RETCODE_OK) {
             shutdown();
             char errorMessage[21 + 21]; // enough to hold all numbers
-            sprintf(errorMessage, "set_octet_array(key) failed: %d", retcode);
+            snprintf(errorMessage, 21 + 21, "set_octet_array(key) failed: %d", retcode);
             throw std::runtime_error(errorMessage);
         }
 
@@ -2526,6 +2539,23 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
                 false);
     }
 
+    if (_PM->get<bool>("crc") || _PM->is_set("crcKind")) {
+        _PM->set<bool>("crc", true);
+        qos.wire_protocol.compute_crc = RTI_TRUE;
+
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+            "dds.participant.wire_protocol.computed_crc_kind",
+            _PM->get<std::string>("crcKind").c_str(),
+            false);
+    }
+
+    if (_PM->get<bool>("enable-message-length")) {
+        DDSPropertyQosPolicyHelper::add_property(qos.property,
+            "dds.participant.wire_protocol.enable_message_length_header_extension",
+            "true",
+            false);
+    }
+
   #else // if defined PERFTEST_RTI_MICRO
 
     RTRegistry *registry = _factory->get_registry();
@@ -3243,7 +3273,14 @@ bool RTIDDSImpl<T>::configure_writer_qos(
 
     dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
 
-  #endif
+  #ifdef PERFTEST_CONNEXT_PRO_710
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dw_qos.reliability.instance_state_recovery_kind =
+            DDS_RECOVER_INSTANCE_STATE_RECOVERY;
+    }
+  #endif //PERFTEST_CONNEXT_PRO_710
+
+  #endif //PERFTEST_RTI_PRO
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
@@ -3413,7 +3450,7 @@ bool RTIDDSImpl<T>::configure_writer_qos(
     // If is LargeData
     if (_PM->get<int>("unbounded") != 0) {
         char buf[10];
-        sprintf(buf, "%d", (_isFlatData
+        snprintf(buf, 10, "%d", (_isFlatData
                 ? DDS_LENGTH_UNLIMITED // No dynamic alloc of serialize buffer
                 : _PM->get<int>("unbounded")));
         DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
@@ -3677,7 +3714,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         std::string topic_name)
 {
 
-    #ifndef PERFTEST_RTI_MICRO
+    #ifdef PERFTEST_RTI_PRO
     if (_factory->get_datareader_qos_from_profile(
             dr_qos,
             _PM->get<std::string>("qosLibrary").c_str(),
@@ -3691,7 +3728,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
                 _PM->get<std::string>("qosFile").c_str());
         return false;
     }
-  #endif
+  #endif //PERFTEST_RTI_PRO
 
     // Only force reliability on throughput/latency topics
     if (strcmp(topic_name.c_str(), ANNOUNCEMENT_TOPIC_NAME) != 0) {
@@ -3702,13 +3739,21 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         }
     }
 
-  #ifndef PERFTEST_RTI_MICRO
+  #ifdef PERFTEST_RTI_PRO
     if (_PM->get<bool>("noPositiveAcks")
             && (qos_profile == "ThroughputQos"
             || qos_profile == "LatencyQos")) {
         dr_qos.protocol.disable_positive_acks = true;
     }
-  #endif
+
+  #ifdef PERFTEST_CONNEXT_PRO_710
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dr_qos.reliability.instance_state_recovery_kind =
+            DDS_RECOVER_INSTANCE_STATE_RECOVERY;
+    }
+  #endif // PERFTEST_CONNEXT_PRO_710
+
+  #endif // PERFTEST_RTI_PRO
 
     // only apply durability on Throughput datareader
     if (qos_profile == "ThroughputQos"
@@ -3836,7 +3881,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
     #ifdef RTI_FLATDATA_AVAILABLE
     if (_isFlatData) {
         char buf[10];
-        sprintf(buf, "%d", DDS_LENGTH_UNLIMITED);
+        snprintf(buf, 10, "%d", DDS_LENGTH_UNLIMITED);
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
@@ -3905,7 +3950,7 @@ bool RTIDDSImpl<T>::configure_reader_qos(
     if (_PM->get<int>("unbounded") != 0 && !_isFlatData) {
       #ifdef PERFTEST_RTI_PRO
         char buf[10];
-        sprintf(buf, "%d", _PM->get<int>("unbounded"));
+        snprintf(buf, 10, "%d", _PM->get<int>("unbounded"));
         DDSPropertyQosPolicyHelper::add_property(dr_qos.property,
                 "dds.data_reader.history.memory_manager.fast_pool.pool_buffer_max_size",
                 buf, false);
@@ -4192,7 +4237,7 @@ DDSTopicDescription *RTIDDSImpl<T>::create_cft(
         printf("CFT enabled for instance: '%llu' \n", cftRange[0]);
 
         for (int i = 0; i < KEY_SIZE ; i++) {
-            sprintf(cft_param[i], "%d", (unsigned char)(cftRange[0] >> i * 8));
+            snprintf(cft_param[i], sizeof(cft_param)/sizeof(cft_param[0]), "%d", (unsigned char)(cftRange[0] >> i * 8));
         }
 
         parameters.from_array(param_list, KEY_SIZE);
@@ -4205,7 +4250,7 @@ DDSTopicDescription *RTIDDSImpl<T>::create_cft(
                 cftRange[1]);
 
         for (unsigned int i = 0; i < 2 * KEY_SIZE ; i++ ) {
-            sprintf(cft_param[i], "%d", (unsigned char)
+            snprintf(cft_param[i], 128, "%d", (unsigned char)
                     (cftRange[ i < KEY_SIZE? 0 : 1] >> (i % KEY_SIZE) * 8));
         }
 
