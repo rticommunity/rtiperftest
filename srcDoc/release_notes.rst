@@ -3,10 +3,10 @@
 Release Notes
 =============
 
-Release Notes develop
+Release Notes 4.1
 ---------------------
 
-What's New in develop
+What's New in 4.1
 ~~~~~~~~~~~~~~~~~~~~~
 
 Support for the LightWeight Security library |newTag|
@@ -72,7 +72,7 @@ test.
 Find more information in the :ref:`Test Parameters only for Publishing Applications` section.
 
 
-What's Fixed in develop
+What's Fixed in 4.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Fixed error in C++11, C#, and Java when using security |fixedTag|
