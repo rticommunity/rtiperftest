@@ -771,7 +771,7 @@ void ParameterManager::initialize()
     Parameter<std::string> *latencyFile = new Parameter<std::string>("latency_samples.csv");
     latencyFile->set_command_line_argument("-latencyFile", "<filename>");
     latencyFile->set_description(
-            "Save at the end of the test all the latency samples as a csv file.\n"
+            "Save all the latency samples as a .csv file at the end of the test.\n"
             "Default method: do not save");
     latencyFile->set_type(T_STR);
     latencyFile->set_extra_argument(YES);

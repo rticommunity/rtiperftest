@@ -1512,7 +1512,7 @@ class LatencyListener : public IMessagingCB
             if (output_file == NULL) {
                 fprintf(stderr,
                         "[Error]: print_summary_latency error opening "
-                        "file to save latency Samples");
+                        "file to save latency samples");
             } else {
                 std::cerr << "[Info] Saving latency information in \""
                           << file_name << "\"."

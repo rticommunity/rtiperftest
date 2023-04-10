@@ -1582,7 +1582,7 @@ public:
             if (output_file == NULL) {
                 fprintf(stderr,
                         "[Error]: print_summary_latency error opening "
-                        "file to save latency Samples");
+                        "file to save latency samples");
             } else {
                 fprintf(stderr,
                         "Saving latency information in \"%s\".\n",

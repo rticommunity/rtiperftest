@@ -784,6 +784,14 @@ Test Parameters only for Publishing Applications
 
    Save all the latency values into a file.
 
+   You should use this option when all the latency time values are required and the final
+   summary information is not enough.
+
+   Use this option in conjunction with ``--noPrint`` when doing
+   a latency test (``--lantecyTest``) or when latency samples are printed very often on the
+   publisher side, since the printing operation is more costly and may affect the result of the
+   test.
+
    **Default:** ``Not set``
 
    .. note::
