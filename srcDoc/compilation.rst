@@ -204,6 +204,17 @@ The ``build.sh`` script accepts the following list of parameters:
       - Enable the compilation of the Perfest code specific for security and adds the
         *RTI Connext DDS Security Plugins* Libraries in the linking step (if compiling
         statically). Default: Not set.
+    * - ``--security``
+      - Optional
+      - Same as ``--secure``.
+    * - ``--lightWeightSecure``
+      - Optional
+      - Enable the compilation of the Perfest code specific for security and adds the
+        *RTI Connext DDS LightWeight Security Plugins* Libraries in the linking step (if compiling
+        statically). Default: Not set.
+    * - ``--lightWeightSecurity``
+      - Optional
+      - Same as ``--lightWeightSecure``.
     * - ``--openssl-home``
       - Optional
       - Path to the OpenSSL home directory. Needed when compiling using the
@@ -212,6 +223,20 @@ The ``build.sh`` script accepts the following list of parameters:
       - Optional
       - Path to the wolfSSL home directory. Needed when compiling using the
         ``--secure`` option and statically.
+    * - ``--ssl-home``
+      - Optional
+      - Path to the SSL home directory. Needed when compiling using the
+        ``--secure`` option and statically.
+    * - ``--ssl-version``
+      - Optional
+      - Provide a partial name to the *openSSL* or *WolfSSL* version you want to
+        use. E.g. ``--ssl-version openssl-1.1``. Default: Not set.
+    * - ``--openssl-version``
+      - Optional
+      - Same as ``--ssl-version``.
+    * - ``--wolfssl-version``
+      - Optional
+      - Same as ``--ssl-version``.
     * - ``--make``
       - Optional
       - Path to the ``GNU make``executable. If this parameter is not present, the
@@ -473,127 +498,144 @@ Windows Parameters
 
 The ``build.bat`` script accepts the following list of parameters:
 
-+------------------------+-----------+-----------------------------------+
-| Parameter              | Required  | Description                       |
-+========================+===========+===================================+
-| ``--platform``         | Required  | Architecture/platform for which   |
-|                        |           | ``build.bat`` is going to compile |
-|                        |           | *RTI Perftest*.                   |
-+------------------------+-----------+-----------------------------------+
-| ``--nddshome``         | Optional  | Path to the *Connext DDS*         |
-|                        |           | installation. If this parameter   |
-|                        |           | is not present, the               |
-|                        |           | ``%NDDSHOME%`` variable should    |
-|                        |           | be set.                           |
-+------------------------+-----------+-----------------------------------+
-| ``--rtimehome``        | Optional  | Path to the *Connext DDS          |
-|                        |           | Micro* installation. If this      |
-|                        |           | is not present, the               |
-|                        |           | ``%RTIMEHOME%`` variable should   |
-|                        |           | be set.                           |
-+------------------------+-----------+-----------------------------------+
-| ``--skip-java-build``  | Optional  | Avoid ``Java ByteCode``           |
-|                        |           | generation and ``.jar`` creation. |
-+------------------------+-----------+-----------------------------------+
-| ``--skip-cpp-build``   | Optional  | Avoid C++ code generation and     |
-|                        |           | compilation.                      |
-+------------------------+-----------+-----------------------------------+
-|``--skip-cpp11-build``  | Optional  | Avoid C++ New PSM code generation |
-|                        |           | and compilation.                  |
-+------------------------+-----------+-----------------------------------+
-| ``--skip-cs-build``    | Optional  | Avoid C# code generation and      |
-|                        |           | compilation.                      |
-+------------------------+-----------+-----------------------------------+
-| ``--java-build``       | Optional  | Only ``Java ByteCode``            |
-|                        |           | generation and ``.jar`` creation. |
-+------------------------+-----------+-----------------------------------+
-| ``--cpp-build``        | Optional  | Only C++ code generation and      |
-|                        |           | compilation.                      |
-+------------------------+-----------+-----------------------------------+
-| ``--cpp11-build``      | Optional  | Only C++ New PSM code generation  |
-|                        |           | and compilation.                  |
-+------------------------+-----------+-----------------------------------+
-| ``--cs-build``         | Optional  | Only C# code generation and       |
-|                        |           | compilation.                      |
-+------------------------+-----------+-----------------------------------+
-| ``--tss``              | Optional  | Compile for *RTI Connext TSS*     |
-+------------------------+-----------+-----------------------------------+
-| ``--dynamic``          | Optional  | Compile using the *Connext DDS*   |
-|                        |           | dynamic libraries. Default:       |
-|                        |           | static libraries.                 |
-+------------------------+-----------+-----------------------------------+
-| ``--debug``            | Optional  | Compile using the *Connext DDS*   |
-|                        |           | debug libraries. Default: release |
-|                        |           | libraries.                        |
-+------------------------+-----------+-----------------------------------+
-| ``--customType``       | Optional  | Use the Custom type feature       |
-|                        |           | with your type. See details       |
-|                        |           | and examples of use in the        |
-|                        |           | documentation.                    |
-+------------------------+-----------+-----------------------------------+
-|``--customTypeFlatData``| Optional  | Use the Custom type feature       |
-|                        |           | with your FlatData type. See      |
-|                        |           | details and examples of use in    |
-|                        |           | the documentation.                |
-+------------------------+-----------+-----------------------------------+
-| ``--flatData-max-size  | Optional  | Specify the maximum size in bytes |
-| <size>``               |           | of the sample to be sent when     |
-|                        |           | using FlatData language binding.  |
-|                        |           | Default: 10485760                 |
-+------------------------+-----------+-----------------------------------+
-| ``--secure``           | Optional  | Enable the compilation of the     |
-|                        |           | *Perfest* code specific for       |
-|                        |           | security and add the *Connext DDS |
-|                        |           | Security Plugins* libraries in    |
-|                        |           | the linking step (if compiling    |
-|                        |           | statically). Default: Not set     |
-+------------------------+-----------+-----------------------------------+
-| ``--openssl-home``     | Optional  | Path to the OpenSSL home          |
-|                        |           | directory. Needed when compiling  |
-|                        |           | using the ``--secure`` option and |
-|                        |           | wen compiling statically.         |
-|                        |           | Note: For *Connext DDS Micro*,    |
-|                        |           | provide this path                 |
-|                        |           | with '/' instead of '\'. This is  |
-|                        |           | required by ``cmake``.            |
-+------------------------+-----------+-----------------------------------+
-| ``--cmake``            | Optional  | Path to the ``cmake``             |
-|                        |           | executable. If this parameter is  |
-|                        |           | not present, the ``cmake``        |
-|                        |           | variable should be available from |
-|                        |           | your ``$PATH`` variable.          |
-+------------------------+-----------+-----------------------------------+
-| ``--add-cmake-args``   | Optional  | Additional arguments that will be |
-|                        |           | passed directly to the ``cmake``  |
-|                        |           | executable.                       |
-+------------------------+-----------+-----------------------------------+
-| ``--cmake-generator``  | Optional  | ``cmake`` generator to be used    |
-|                        |           | By default, NMake makefiles will  |
-|                        |           | be generated.                     |
-+------------------------+-----------+-----------------------------------+
-| ``--msbuild``          | Optional  | Path to the ``msbuild.exe``       |
-|                        |           | executable. If this parameter is  |
-|                        |           | not present, the ``msbuild``      |
-|                        |           | variable should be available from |
-|                        |           | your ``%PATH%`` variable.         |
-+------------------------+-----------+-----------------------------------+
-| ``--java-home``        | Optional  | Path to the Java ``JDK`` home     |
-|                        |           | folder. If this parameter is not  |
-|                        |           | present, ``javac``, ``jar``, and  |
-|                        |           | ``java`` executables should be    |
-|                        |           | available from your ``%PATH%``    |
-|                        |           | variable.                         |
-+------------------------+-----------+-----------------------------------+
-| ``--clean``            | Optional  | If this option is present, the    |
-|                        |           | ``build.bat`` script will clean   |
-|                        |           | all the generated code and        |
-|                        |           | binaries from previous            |
-|                        |           | executions.                       |
-+------------------------+-----------+-----------------------------------+
-| ``--help -h``          | Optional  | If this option is present, the    |
-|                        |           | ``build.bat`` script will display |
-|                        |           | a help description and exit.      |
-+------------------------+-----------+-----------------------------------+
+
+.. list-table:: Build Script Parameters
+    :name: TableBuildLinuxParameters
+    :widths: 10 30 60
+    :header-rows: 1
+
+    * - Parameter
+      - Required
+      - Description
+    * - ``--platform``
+      - Required
+      - Architecture/platform for which ``build.bat`` is going to compile
+        *RTI Perftest*
+    * - ``--micro``
+      - Optional
+      - Compile *RTI Perftest* against *RTI Connext DDS Micro*
+    * - ``--micro-24x-compatibility``
+      - Optional
+      - Compile *RTI Perftest* against *RTI Connext DDS Micro* 2.4.11 and above.
+    * - ``--tss``
+      - Optional
+      - Compile *RTI Perftest* against *RTI Connext TSS 3.1.2* over *RTI Connext
+        Pro 6.1.1.4* or *RTI Connext Micro 2.4.13.4*.
+    * - ``--nddshome``
+      - Optional
+      - Path to the *RTI Connext DDS Professional* installation. If this parameter
+        is not present, the ``%NDDSHOME%`` variable should be.
+    * - ``--rtimehome``
+      - Optional
+      - Path to the *RTI Connext DDS Micro* installation. If this is not present,
+        the ``$RTIMEHOME`` variable should be set.
+    * - ``--skip-java-build``
+      - Optional
+      - Avoid ``Java ByteCode`` generation and ``.jar`` creation. Not available
+        when compiling for *RTI Connext DDS Micro*.
+    * - ``--skip-cpp-build``
+      - Optional
+      - Avoid C++ code generation and compilation.
+    * - ``--skip-cpp11-build``
+      - Optional
+      - Avoid C++ New PSM code generation and compilation. Not available when
+        compiling for *RTI Connext DDS Micro*.
+    * - ``--java-build``
+      - Optional
+      - Only ``Java ByteCode`` generation and ``.jar`` creation. Not available
+        when compiling for *RTI Connext DDS Micro*
+    * - ``--cpp-build``
+      - Optional
+      - Only C++ code generation and compilation
+    * - ``--cpp11-build``
+      - Optional
+      - Only C++ New PSM code generation and compilation. Not available when compiling
+        for *RTI Connext DDS Micro*.
+    * - ``--cs-build``
+      - Optional
+      - Only C# code generation and compilation. Not available when compiling for
+        *RTI Connext DDS Micro*.
+    * - ``--dynamic``
+      - Optional
+      - Compile using the RTI Connext DDS dynamic libraries. Default: Static Libraries.
+        Not available when compiling for *RTI Connext DDS Micro*.
+    * - ``--debug``
+      - Optional
+      - Compile using the RTI Connext DDS debug libraries. Default: Release Libraries.
+    * - ``--customType``
+      - Optional
+      - Use the Custom type feature with your type. See details and examples of use in
+        :ref:`section-using_custom_types`.
+    * - ``--customTypeFlatData``
+      - Optional
+      - Use the Custom type feature with your FlatData type. See details and
+        examples of use in :ref:`section-using_custom_types`.
+    * - ``--flatData-max-size <size>``
+      - Optional
+      - Specify the maximum size in bytes of the sample to be sent when using FlatData
+        language binding. Default: 10485760
+    * - ``--no-zeroCopy``
+      - Optional
+      - Avoid adding the libraries and flags for Zero-Copy. This might be needed
+        if the compilation fails due to missing libraries (`nddsmetpz`).
+        Default: Not enabled.
+    * - ``--secure``
+      - Optional
+      - Enable the compilation of the Perfest code specific for security and adds the
+        *RTI Connext DDS Security Plugins* Libraries in the linking step (if compiling
+        statically). Default: Not set.
+    * - ``--security``
+      - Optional
+      - Same as ``--secure``.
+    * - ``--lightWeightSecure``
+      - Optional
+      - Enable the compilation of the Perfest code specific for security and adds the
+        *RTI Connext DDS LightWeight Security Plugins* Libraries in the linking step (if compiling
+        statically). Default: Not set.
+    * - ``--lightWeightSecurity``
+      - Optional
+      - Same as ``--lightWeightSecure``.
+    * - ``--openssl-home``
+      - Optional
+      - Path to the OpenSSL home directory. Needed when compiling using the
+        ``--secure`` option and statically.
+    * - ``--openssl-version``
+      - Optional
+      - Same as ``--ssl-version``.
+    * - ``--make``
+      - Optional
+      - Path to the ``GNU make``executable. If this parameter is not present, the
+        ``GNU make`` variable should be available from your ``$PATH`` variable.
+    * - ``--cmake``
+      - Optional
+      - Path to the ``cmake`` executable. If this parameter is not present, the
+        ``cmake`` variable should be available from your ``$PATH`` variable.
+    * - ``--add-cmake-args``
+      - Optional
+      - Additional arguments that will be passed directly to the ``cmake`` executable.
+    * - ``--perl``
+      - Optional
+      - Path to ``PERL`` executable. If this parameter is not present,
+        not present, the path to PERL should be available from your
+        ``$PATH`` variable.
+    * - ``--java-home``
+      - Optional
+      - Path to the Java ``JDK`` home folder. If this parameter is not
+        present, ``javac``, ``jar`` and ``java`` executables should be
+        available from your ``$PATH`` variable.
+    * - ``--clean``
+      - Optional
+      - If this option is present, the ``build.bat`` script will clean
+        all the generated code and binaries from previous executions.
+    * - ``--build-doc``
+      - Optional
+      - Generate the HTML and PDF documentation. This parameter is only available
+        on ``build.sh``.
+    * - ``--help -h``
+      - Optional
+      - If this option is present, the ``build.bat`` script will display
+        a help description and exit
+
 
 Examples running build script on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

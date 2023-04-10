@@ -9,6 +9,16 @@ Release Notes develop
 What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
 
+Support for the LightWeight Security library |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In this release we added support for the *RTI Connext LightWeight Security Library*.
+
+If *RTI Perftest* is compiled dynamically (``--dynamically`` in the build scripts ``build.sh`` / ``.bat``),
+then no new parameters are needed. However, when compiling statically, a new command line
+option has been added to the build scripts (``--lightWeightSecurity``) to force the linking
+against that library instead of the regular (Full) *RTI Connext Secure* library.
+
 Default value for `openssl` if none is provided |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -16,6 +26,13 @@ In previous releases, when compiling statically against *RTI Connext* with the *
 a path to the ssl crypto libraries had to be provided (*openSSL* or *WolfSSL*).
 Starting in this release, if no path is provided, *RTI Perftest* will try to search
 in the *RTI Connext* Installation (``$NDDSHOME``), in the default folder where the *OpenSSL Libraries* bundle is installed.
+
+Provide `ssl` version |newTag|
+++++++++++++++++++++++++++++++
+
+If more than one set of cryptography libraries or versions (`openSSL` or `wolfSSL`) are found
+in the *RTI Connext DDS* Middleware installation, by using the the `--openssl-version`
+parameter, you can select the desired one.
 
 Secure parameters have been simplified |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++

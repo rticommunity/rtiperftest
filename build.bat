@@ -45,13 +45,14 @@ set PERL_EXEC=perl
 set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
 set USE_SECURE_LIBS=0
+set USE_LW_SECURE_LIBS=0
 set LEGACY_DD_IMPL=0
 
 @REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
 set rtiddsgen_version_number_new_solution_name=2.3.6
 
 @REM # Needed when compiling statically using security
-set RTI_OPENSSLHOME=""
+set RTI_OPENSSLHOME=
 
 set "classic_cpp_lang_string=C++"
 set "modern_cpp_lang_string=C++11"
@@ -148,6 +149,14 @@ if NOT "%1"=="" (
 				SET LEGACY_DD_IMPL=1
 		) ELSE if "%1"=="--secure" (
 				SET USE_SECURE_LIBS=1
+		) ELSE if "%1"=="--lightWeightSecure" (
+				SET USE_SECURE_LIBS=1
+				SET USE_LW_SECURE_LIBS=1
+		) ELSE if "%1"=="--security" (
+				SET USE_SECURE_LIBS=1
+		) ELSE if "%1"=="--lightWeightSecurity" (
+				SET USE_SECURE_LIBS=1
+				SET USE_LW_SECURE_LIBS=1
 		) ELSE if "%1"=="--msbuild" (
 				SET MSBUILD_EXE=%2
 				SHIFT
@@ -164,6 +173,13 @@ if NOT "%1"=="" (
 				SHIFT
 		) ELSE if "%1"=="--openssl-home" (
 				SET "RTI_OPENSSLHOME=%2"
+				SHIFT
+		) ELSE if "%1"=="--openssl-version" (
+				if not "%RTI_OPENSSLHOME%x"=="x" (
+					echo [WARNING]: --openssl-version will be ignored, as --openssl-home was provided already.
+				) else (
+					set "SSL_VERSION=%2"
+				)
 				SHIFT
 		) ELSE if "%1"=="--nddshome" (
 				SET "NDDSHOME=%2"
@@ -390,15 +406,48 @@ if !BUILD_CPP! == 1 (
 	set "ADDITIONAL_DEFINES=PERFTEST_RTI_PRO RTI_LANGUAGE_CPP_TRADITIONAL"
 
 	if !USE_SECURE_LIBS! == 1 (
+
+		if !USE_LW_SECURE_LIBS! == 1 (
+			set "LWS_TAG=Lightweight "
+		)
+
+		echo [INFO_TAG] Using RTI !LWS_TAG!Security Libraries
+
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
+
 		if "x!STATIC_DYNAMIC!" == "xdynamic" (
+
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_PERFTEST_DYNAMIC_LINKING"
+			echo [INFO] Linking Dynamically.
+
+		REM Linking Statically
 		) else (
-			if "x!RTI_OPENSSLHOME!" == "x" (
-				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
-				exit /b 1
+		
+			if !USE_LW_SECURE_LIBS! == 1 (
+				set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LW_SECURE_PERFTEST"
 			)
-			set additional_rti_libs=nddssecurity !additional_rti_libs!
+
+			if not "x!SSL_VERSION!"=="x" (
+				call :find_ssl_libraries "%SSL_VERSION%"
+				if "!RTI_OPENSSLHOME!"=="" (
+					echo [ERROR] %SSL_VERSION% Not found.
+					exit /b -1
+				)
+			)
+
+			REM If the SSL_VERSION is empty and the $RTI_CRYPTOHOME is empty too
+			REM we need to be creative. If we set the $SSL_VERSION before, we will
+			REM not enter here.
+			if "!RTI_OPENSSLHOME!"=="" (
+				call :crypto_path_calculation
+			)
+
+			if "%USE_LW_SECURE_LIBS%"=="1" (
+				set additional_rti_libs=nddslightweightsecurity !additional_rti_libs!
+			) else (
+				set additional_rti_libs=nddssecurity !additional_rti_libs!
+			)
+
 			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcrypto libssl"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
@@ -410,7 +459,7 @@ if !BUILD_CPP! == 1 (
 	set "additional_defines_rtiddsgen=-D "PERFTEST_RTI_PRO""
 
 	if !FLATDATA_AVAILABLE! == 1 (
-        @REM On Windows we always enable ZeroCopy if FlatData is available.
+		@REM On Windows we always enable ZeroCopy if FlatData is available.
 		set additional_rti_libs=nddsmetp !additional_rti_libs!
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_FLATDATA_AVAILABLE RTI_ZEROCOPY_AVAILABLE"
 		set "additional_defines_rtiddsgen_flatdata=-D "RTI_FLATDATA_AVAILABLE" -D "RTI_ZEROCOPY_AVAILABLE""
@@ -449,7 +498,7 @@ if !BUILD_CPP! == 1 (
 		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx perftest_ZeroCopySupport.cxx"
 	)
 
-    set additional_rti_libs_str=
+	set additional_rti_libs_str=
 	if "!additional_rti_libs!" NEQ "" (
 		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
 	)
@@ -486,7 +535,7 @@ if !BUILD_CPP! == 1 (
 		exit /b 1
 	)
 
-    @REM # Generate ZeroCopy types avoiding performance degradation issue
+	@REM # Generate ZeroCopy types avoiding performance degradation issue
 	if !FLATDATA_AVAILABLE! == 1 (
 		echo[
 		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
@@ -551,15 +600,48 @@ if !BUILD_CPP11! == 1 (
 	set additional_rti_libs=
 
 	if !USE_SECURE_LIBS! == 1 (
+
+		if !USE_LW_SECURE_LIBS! == 1 (
+			set "LWS_TAG=Lightweight "
+		)
+
+		echo [INFO_TAG] Using RTI !LWS_TAG!Security Libraries
+
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
+
 		if "x!STATIC_DYNAMIC!" == "xdynamic" (
+
 			set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_PERFTEST_DYNAMIC_LINKING"
+			echo [INFO] Linking Dynamically.
+
+		REM Linking Statically
 		) else (
-			if "x!RTI_OPENSSLHOME!" == "x" (
-				echo [ERROR]: In order to link statically using the security plugin you need to also provide the OpenSSL home path by using the --openssl-home option.
-				exit /b 1
+
+			if !USE_LW_SECURE_LIBS! == 1 (
+				set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LW_SECURE_PERFTEST"
 			)
-			set additional_rti_libs=nddssecurity !additional_rti_libs!
+
+			if not "x!SSL_VERSION!"=="x" (
+				call :find_ssl_libraries "%SSL_VERSION%"
+				if "!RTI_OPENSSLHOME!"=="" (
+					echo [ERROR] %SSL_VERSION% Not found.
+					exit /b -1
+				)
+			)
+
+			REM If the SSL_VERSION is empty and the $RTI_CRYPTOHOME is empty too
+			REM we need to be creative. If we set the $SSL_VERSION before, we will
+			REM not enter here.
+			if "!RTI_OPENSSLHOME!"=="" (
+				call :crypto_path_calculation
+			)
+
+			if "%USE_LW_SECURE_LIBS%"=="1" (
+				set additional_rti_libs=nddslightweightsecurity !additional_rti_libs!
+			) else (
+				set additional_rti_libs=nddssecurity !additional_rti_libs!
+			)
+
 			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcrypto libssl"
 			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
 			echo [INFO] Using security plugin. Linking Statically.
@@ -600,7 +682,7 @@ if !BUILD_CPP11! == 1 (
 		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx"
 	)
 
-    set additional_rti_libs_str=
+	set additional_rti_libs_str=
 	if "!additional_rti_libs!" NEQ "" (
 		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
 	)
@@ -1027,15 +1109,74 @@ GOTO:EOF
 	set /a version_number=%Major%%Minor%%Revision%
 GOTO:EOF
 
+:crypto_path_calculation
+
+	set "ssl_version=openssl-3"
+	call :find_ssl_libraries %ssl_version%
+	if not "!RTI_OPENSSLHOME!" == "" (
+		exit /b
+	)
+
+	set "ssl_version=openssl-1"
+	call :find_ssl_libraries %ssl_version%
+	if not "!RTI_OPENSSLHOME!" == "" (
+		exit /b
+	)
+
+	REM Well, we tried...
+	echo.
+	echo [ERROR] We couldn't find Any SSL libraries in your Connext installation folder.
+	echo You need to provide us with a path to a crypto library. Set the OpenSSL
+	echo home path by using the --openssl-home option.
+	exit /b
+
+:find_ssl_libraries
+
+	set "find_pattern=%~1"
+
+	rem We will try to recreate the RTI_OPENSSLHOME, if it exists
+	rem We will not modify it.
+
+	if "%RTI_OPENSSLHOME%" == "" (
+		call :get_absolute_folder_path "%NDDSHOME%\third_party\%find_pattern%"
+
+		if "!full_path!" == "" (
+			rem The path does not exist.
+		) else (
+			set "RTI_OPENSSLHOME=!full_path!\!architecture!"
+			if exist "!RTI_OPENSSLHOME!" (
+				echo [INFO] Using the CRYPTO LIBS from: "!RTI_OPENSSLHOME!"
+				exit /b
+			) else (
+				echo "!RTI_OPENSSLHOME!" does not exist.
+				exit /b -1
+			)
+		)
+	)
+	exit /b
+
+
+:get_absolute_folder_path
+
+	set "partial_path=%~1"
+
+	set "full_path="
+	for /d %%a in ("%partial_path%*") do (
+		set "full_path=%%a"
+		exit /b
+	)
+	exit /b
+
 :help
 	echo[
 	echo This scripts accepts the following parameters:
 	echo[
+
 	echo.    --micro                      Build RTI Perftest for RTI Connext Micro
 	echo.                                 By default RTI Perftest will assume it will be
 	echo.                                 built against RTI Connext DDS Professional.
 	echo.    --micro-24x-compatibility    Similar to --micro but ensuring compatibility
-    echo.                                 with RTI Connext Micro 2.4.11 and above.
+	echo.                                 with RTI Connext Micro 2.4.11 and above.
 	echo.    --platform your_arch         Platform for which build.sh is going to compile
 	echo.                                 RTI Perftest.
 	echo.    --nddshome path              Path to the *RTI Connext DDS Professional
@@ -1066,8 +1207,8 @@ GOTO:EOF
 	echo.                                 parameter is not present, Cmake variable
 	echo.                                 should be available from your $PATH variable.
 	echo.    --add-cmake-args <s>         Additional defines and arguments that will
-    echo.                                 be passed to the cmake executable when building
-    echo.                                 Micro. Default: Not set.
+	echo.                                 be passed to the cmake executable when building
+	echo.                                 Micro. Default: Not set.
 	echo.    --cmake-generator g          CMake generator to use. By default, NMake
 	echo.                                 makefiles will be generated.
 	echo.    --perl path                  Path to PERL executable. If this parameter is
@@ -1083,12 +1224,17 @@ GOTO:EOF
 	echo.    --dynamic                    Compile against the RTI Connext Dynamic
 	echo.                                 libraries. Default is against static ones.
 	echo.                                 (No effect when building for Micro)
-	echo.    --secure                     Enable the security options for compilation.
+	echo.    --secure / --security        Enable the security options for compilation.
+	echo.                                 Default is not enabled.
+	echo.    --lightWeightSecure/ity      Enable the security options for compilation,
+	echo.                                 using the Lightweight security libraries.
 	echo.                                 Default is not enabled.
 	echo.    --openssl-home path          Path to the openssl home. This will be used
 	echo.                                 when compiling statically and using security
 	echo.                                 Note: For Micro provide this path with /
 	echo.                                 instead of \, required by cmake.
+	echo.    --openssl-version version    Force the use of a specific openssl version.
+    echo                                  By default use openssl-3, else 1.1.
 	echo.    --clean                      If this option is present, the build.sh script
 	echo.                                 will clean all the generated code and binaries
 	echo.                                 from previous executions.

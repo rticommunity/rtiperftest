@@ -1091,6 +1091,15 @@ Test Parameters to Control Connext DDS Secure Options
 
   | **Default:** Not Enabled.
 
+-  ``-lightWeightSecurity``
+
+   .. note::
+
+       This option is only present in the Traditional and Modern C++ API implementations using Dynamic Linking.
+
+   Force the use of the LightWeight Security Library instead of the regular one.
+
+  | **Default:** Not Enabled.
 
 Raw Transport Options
 ---------------------
