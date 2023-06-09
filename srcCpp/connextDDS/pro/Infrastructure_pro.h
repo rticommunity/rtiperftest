@@ -24,12 +24,20 @@
   #define PERFTEST_CONNEXT_PRO_610
 #endif
 
+
+/*
+ * The way in which we do this is the following: If the minor version is == X
+ * we will define *_PRO_7X0 and every other version below X.
+ */
 #if RTI_DDS_VERSION_MAJOR >= 7
   // 6.1.X features are also in 7.0.0
   #define PERFTEST_CONNEXT_PRO_610
   #define PERFTEST_CONNEXT_PRO_700
   #if RTI_DDS_VERSION_MINOR >= 1
     #define PERFTEST_CONNEXT_PRO_710
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 2
+    #define PERFTEST_CONNEXT_PRO_720
   #endif
 #endif
 
