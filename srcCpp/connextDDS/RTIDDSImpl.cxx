@@ -3273,10 +3273,15 @@ bool RTIDDSImpl<T>::configure_writer_qos(
 
     dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
 
-  #ifdef PERFTEST_CONNEXT_PRO_710
+  #ifdef PERFTEST_CONNEXT_PRO_720
     if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
         dw_qos.reliability.instance_state_consistency_kind =
             DDS_RECOVER_INSTANCE_STATE_CONSISTENCY;
+    }
+  #elif defined(PERFTEST_CONNEXT_PRO_710)
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dw_qos.reliability.instance_state_recovery_kind =
+            DDS_RECOVER_INSTANCE_STATE_RECOVERY;
     }
   #endif //PERFTEST_CONNEXT_PRO_710
 
@@ -3746,10 +3751,15 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         dr_qos.protocol.disable_positive_acks = true;
     }
 
-  #ifdef PERFTEST_CONNEXT_PRO_710
+  #ifdef PERFTEST_CONNEXT_PRO_720
     if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
         dr_qos.reliability.instance_state_consistency_kind =
             DDS_RECOVER_INSTANCE_STATE_CONSISTENCY;
+    }
+  #elif defined(PERFTEST_CONNEXT_PRO_710)
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dr_qos.reliability.instance_state_recovery_kind =
+            DDS_RECOVER_INSTANCE_STATE_RECOVERY;
     }
   #endif // PERFTEST_CONNEXT_PRO_710
 
