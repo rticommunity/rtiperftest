@@ -593,9 +593,15 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_LEGACY_DD_IMPL"
     fi
 
+    if [ "${RTI_MONITORING_2}" == "1" ]; then
+        echo -e "${INFO_TAG} Adding RTI Monitoring Libraries."
+        additional_rti_libs="rtimonitoring2 ${additional_rti_libs}"
+        additional_defines=${additional_defines}" DRTI_MONITORING_2"
+    fi
+
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
 
-        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
+        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
             LWS_TAG="Lightweight "
         fi
 
@@ -1892,6 +1898,18 @@ while [ "$1" != "" ]; do
             ;;
         --legacy-DynamicData)
             LEGACY_DD_IMPL=1
+            ;;
+        --monitoring2)
+            RTI_MONITORING_2=1
+            ;;
+        --enableMonitoring2)
+            RTI_MONITORING_2=1
+            ;;
+        --observability)
+            RTI_MONITORING_2=1
+            ;;
+        --enableObservability)
+            RTI_MONITORING_2=1
             ;;
         --customType)
             USE_CUSTOM_TYPE=1

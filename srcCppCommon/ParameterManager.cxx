@@ -585,6 +585,33 @@ void ParameterManager::initialize()
     create("enableInstanceStateRecovery", enableInstanceStateRecovery);
   #endif // defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_710)
 
+  #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_720) && defined(RTI_MONITORING_2)
+
+    Parameter<bool> *enableMonitoring2 = new Parameter<bool>(false);
+    enableMonitoring2->set_command_line_argument("-enableMonitoring2","");
+    enableMonitoring2->set_description("Enable the use of the rtimonitoring2 library.\n"
+                                       "Default is disabled.");
+    enableMonitoring2->set_type(T_BOOL);
+    enableMonitoring2->set_extra_argument(NO);
+    enableMonitoring2->set_group(GENERAL);
+    enableMonitoring2->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("enableMonitoring2", enableMonitoring2);
+
+    ParameterVector<std::string> *collectorPeer = new ParameterVector<std::string>();
+    collectorPeer->set_command_line_argument("-collectorPeer", "<address>");
+    collectorPeer->set_description("Address of the Collector Service peer. If provided\n"
+                                   "it will enable the use of the rtimonitoring2 library\n"
+                                   "This parameter can be used several times for several peers.\n"
+                                   "By default no value is provided.");
+    collectorPeer->set_type(T_VECTOR_STR);
+    collectorPeer->set_extra_argument(YES);
+    collectorPeer->set_group(GENERAL);
+    collectorPeer->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("collectorPeer", collectorPeer);
+
+  #endif // defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_720) && defined(RTI_MONITORING_2)
+
+
   #ifdef RTI_PERF_TSS
     Parameter<bool> *loaningSendReceive = new Parameter<bool>(false);
     loaningSendReceive->set_command_line_argument("-loaningSendReceive", "");
