@@ -62,7 +62,7 @@ class RTIRawTransportImpl : public IMessaging {
             NDDS_Transport_Address_t &addr);
 
     /* Calculate the ports thats it will be use for receive data */
-    unsigned int get_receive_unicast_port(const char *topicName);
+    unsigned int get_receive_port(const char *topicName);
     /*------------------------------------------------------------------------*/
 
     bool is_multicast()
@@ -134,3 +134,4 @@ struct REDAWorker *raw_transport_get_worker_per_thread(
         unsigned int *workerTssKey);
 
 #endif // __RTIRawTransportImpl_H__
+
