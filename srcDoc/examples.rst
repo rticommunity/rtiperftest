@@ -23,6 +23,8 @@ different use cases:
 -  To measure CPU usage while running these tests, use ``-cpu``
    or the TOP utility.
 
+-  In case your working directory is on bin/<arch>/release/ use ``-noXmlQos``
+
 RTI Connext DDS Professional
 ----------------------------
 
@@ -117,7 +119,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -batchSize 6400 -transport UDPv4 -multicast
+    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 200 -transport UDPv4 -multicast
 
 1-to-2, Multicast, Reliable, UDPv4
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,14 +170,18 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -dataLen 63000 -secureSign -secureEncryptData -executionTime 100
+    bin/<arch>/release/perftest_cpp -pub -noPrint -dataLen 63000 -secureGovernanceFile resource/secure/signed_PerftestGovernance_SignEncryptData.xml -executionTime 100
+
 
 -  Subscriber
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 63000 -secureSign -secureEncryptData
+    bin/<arch>/release/perftest_cpp -sub -noPrint -dataLen 63000 -secureGovernanceFile resource/secure/signed_PerftestGovernance_SignEncryptData.xml
 
+
+**Note:** 
+Running this test requires a version of `RTI Perftest` compiled against the RTI Connext Security Libraries. 
 
 1-to-1, RawTransport, Unicast, BestEffort (Same Machine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,13 +229,13 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -peer 10.70.1.50 -nic 10.70.1.49  -dataLen 63000 -executionTime 100
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -peer <ipaddr_subscriber> -nic <ipaddr>  -dataLen 63000 -executionTime 100
 
 -  Subscriber
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -peer 10.70.1.49 -nic 10.70.1.50
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -peer <ipaddr_publisher> -nic <ipaddr>
 
 1-to-2, RawTransport, Multicast, BestEffort
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -238,19 +244,19 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.1.1 -numSubscribers 2 -dataLen 63000 -executionTime 100
+    bin/<arch>/release/perftest_cpp -pub -noPrint -rawTransport -multicastAddr 239.225.0.1 -nic <ipaddr> -numSubscribers 2 -dataLen 63000 -executionTime 100
 
 -  Subscriber 1
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.2.1
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 239.225.0.1 -nic <ipaddr> -sid 0
 
 -  Subscriber 2
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 225.0.0.1 -nic 10.70.2.2
+    bin/<arch>/release/perftest_cpp -sub -noPrint -rawTransport -multicastAddr 239.225.0.1 -nic <ipaddr> -sid 1
 
 
 1-to-1, RawTransport, SharedMemory, Unicast, BestEffort
@@ -306,7 +312,12 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -sendQueueSize 50
+
+
+**Note:**
+With "Large Data" (over 63000 bytes), you might need to explicitly set the `-sendqueueSize <number>` parameter in the subscriber 
+side, to limit the `send queue` of the datawriter. We suggest `50` as this is the default value in the publisher side.
 
 
 1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, Reliable, Latency test, Large Data
@@ -322,7 +333,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport SHMEM -dataLen 100000 -flatData -zeroCopy -sendQueueSize 50
 
 
 1-to-1, FlatData and Zero Copy, SharedMemory, Unicast, BestEffort, Throughput test, Large Data, Check Consistency
@@ -357,7 +368,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -checkConsistency -bestEffort
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -bestEffort
 
 1-to-1, Compression, UDPv4, Unicast, BestEffort, Latency test, Large Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -387,7 +398,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 
 ::
 
-    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -checkConsistency -bestEffort
+    bin/<arch>/release/perftest_cpp -sub -noPrint -transport UDPv4 -dataLen 100000 -bestEffort
 
 1-to-1, Over UDPv4 WAN, Unicast, Reliable, Throughput test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -401,7 +412,7 @@ To adjust throughput, experiment with the value of ``-pubRate <count>``.
 -  Subscriber
 
 **Note:** 
-    Use -transportHostPort to explicitly configure the host port. Otherwise, the host port will be equal to the public port.
+    Use ``-transportHostPort`` to explicitly configure the host port. Otherwise, the host port will be equal to the public port.
 
 ::
 
@@ -432,13 +443,13 @@ RTI Connext DDS Micro
 
 ::
 
-    bin/<arch>/release/perftest_cpp_micro -pub -noPrint -nic <name of the interface> -domain <ID> -latencyCount 1 -dataLen <length> -latencyTest -executionTime 100
+    bin/<arch>/release/perftest_cpp_micro -pub -noPrint -nic <ipaddr> -domain <ID> -latencyCount 1 -dataLen <length> -latencyTest -executionTime 100
 
 -  Subscriber:
 
 ::
 
-    bin/<arch>/release/perftest_cpp_micro -sub -noPrint -nic <name of the interface> -domain <ID>
+    bin/<arch>/release/perftest_cpp_micro -sub -noPrint -nic <ipaddr> -domain <ID>
 
 Modify ``-dataLen <bytes>`` to see latencies for different data sizes.
 Set ``-executionTime <seconds>`` to be >=100 for statistically better
