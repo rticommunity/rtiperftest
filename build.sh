@@ -444,6 +444,7 @@ function find_ssl_libraries()
 
     if [ "${RTI_CRYPTOHOME}" == "" ]; then
 
+        export result=""
         get_absolute_folder_path "$NDDSHOME/third_party/${find_pattern}"
 
         if [[ "$result" == "" ]]; then
@@ -470,6 +471,7 @@ function rti_security_lib_path_calculation()
 {
     local find_pattern=$1
 
+    export result=""
     get_absolute_folder_path "${NDDSHOME}/lib/${platform}/${find_pattern}"
     if [[ "$result" != "" ]]; then
         export ndds_security_cryto_lib_folder=$result
