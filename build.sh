@@ -413,15 +413,13 @@ function executable_checking()
 function get_absolute_folder_path()
 {
     local input="$1"
-    if [ -d "${input}"* ]; then
+    local matching_folders=("${input}"*)  # Store matching folders in an array
 
-        local current_dir=$PWD # To come back to this folder after we try to check if the folder exists
+    if [ -d "${matching_folders[0]}" ]; then
+        local current_dir=$PWD
 
-        # If the folder exists, we will asume it is unique, and if so, we can use it.
+        cd ${matching_folders[0]} # Move to the first matching folder
 
-        cd "${input}"*
-
-        # Check if that was successful
         if [[ "$?" == "0" ]]; then
             result=$PWD
         else
@@ -430,7 +428,6 @@ function get_absolute_folder_path()
 
         cd $current_dir
     fi
-
 }
 
 # This function receives the ssl folder pattern and it tries to find it in the
