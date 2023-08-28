@@ -1125,6 +1125,10 @@ function build_cpp()
     destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
     mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
 
+    if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
+        executable_suffix="_lws"
+    fi
+
     # In Android the path of the built apk slightly differs from other built binaries.
     if [[ ${platform} == *"Android"* ]]; then
         perftest_cpp_name_beginning="${classic_cpp_folder}/objs/${platform}/publisher/bin/perftest_publisher-debug"
@@ -1142,7 +1146,7 @@ function build_cpp()
         executable_extension=".apk"
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
-    "${destination_folder}/perftest_cpp${executable_extension}"
+    "${destination_folder}/perftest_cpp${executable_suffix}${executable_extension}"
 
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."

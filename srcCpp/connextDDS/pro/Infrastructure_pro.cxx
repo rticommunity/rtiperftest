@@ -1063,7 +1063,12 @@ bool PerftestConfigureSecurity(
     if (!assertPropertyToParticipantQos(
         qos,
         "com.rti.serv.secure.create_function",
-        "RTI_Security_PluginSuite_create")) {
+      #if defined(RTI_LW_SECURE_PERFTEST) && defined(PERFTEST_CONNEXT_PRO_720)
+        "RTI_SecurityLightweight_PluginSuite_create"
+      #else
+        "RTI_Security_PluginSuite_create"
+      #endif //defined(RTI_LW_SECURE_PERFTEST) && defined(PERFTEST_CONNEXT_PRO_720)
+        )) {
         return false;
     }
 
@@ -1079,7 +1084,12 @@ bool PerftestConfigureSecurity(
     if(DDSPropertyQosPolicyHelper::assert_pointer_property(
             qos.property,
             "com.rti.serv.secure.create_function_ptr",
-            (void *) RTI_Security_PluginSuite_create)
+          #if defined(RTI_LW_SECURE_PERFTEST) && defined(PERFTEST_CONNEXT_PRO_720)
+            (void *) RTI_SecurityLightweight_PluginSuite_create
+          #else
+            (void *) RTI_Security_PluginSuite_create
+          #endif //defined(RTI_LW_SECURE_PERFTEST) && defined(PERFTEST_CONNEXT_PRO_720)
+            )
                 != DDS_RETCODE_OK) {
         printf("Failed to add pointer_property "
                 "com.rti.serv.secure.create_function_ptr\n");
