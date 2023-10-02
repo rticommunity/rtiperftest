@@ -413,15 +413,13 @@ function executable_checking()
 function get_absolute_folder_path()
 {
     local input="$1"
-    if [ -d "${input}"* ]; then
+    local matching_folders=("${input}"*)  # Store matching folders in an array
 
-        local current_dir=$PWD # To come back to this folder after we try to check if the folder exists
+    if [ -d "${matching_folders[0]}" ]; then
+        local current_dir=$PWD
 
-        # If the folder exists, we will asume it is unique, and if so, we can use it.
+        cd ${matching_folders[0]} # Move to the first matching folder
 
-        cd "${input}"*
-
-        # Check if that was successful
         if [[ "$?" == "0" ]]; then
             result=$PWD
         else
@@ -430,7 +428,6 @@ function get_absolute_folder_path()
 
         cd $current_dir
     fi
-
 }
 
 # This function receives the ssl folder pattern and it tries to find it in the
@@ -444,6 +441,7 @@ function find_ssl_libraries()
 
     if [ "${RTI_CRYPTOHOME}" == "" ]; then
 
+        export result=""
         get_absolute_folder_path "$NDDSHOME/third_party/${find_pattern}"
 
         if [[ "$result" == "" ]]; then
@@ -470,6 +468,7 @@ function rti_security_lib_path_calculation()
 {
     local find_pattern=$1
 
+    export result=""
     get_absolute_folder_path "${NDDSHOME}/lib/${platform}/${find_pattern}"
     if [[ "$result" != "" ]]; then
         export ndds_security_cryto_lib_folder=$result
@@ -593,9 +592,15 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DRTI_LEGACY_DD_IMPL"
     fi
 
+    if [ "${RTI_MONITORING_2}" == "1" ]; then
+        echo -e "${INFO_TAG} Adding RTI Monitoring Libraries."
+        additional_rti_libs="rtimonitoring2 ${additional_rti_libs}"
+        additional_defines=${additional_defines}" DRTI_MONITORING_2"
+    fi
+
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
 
-        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
+        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
             LWS_TAG="Lightweight "
         fi
 
@@ -1120,6 +1125,10 @@ function build_cpp()
     destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
     mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
 
+    if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
+        executable_suffix="_lws"
+    fi
+
     # In Android the path of the built apk slightly differs from other built binaries.
     if [[ ${platform} == *"Android"* ]]; then
         perftest_cpp_name_beginning="${classic_cpp_folder}/objs/${platform}/publisher/bin/perftest_publisher-debug"
@@ -1137,7 +1146,7 @@ function build_cpp()
         executable_extension=".apk"
     fi
     cp -f "${perftest_cpp_name_beginning}${executable_extension}" \
-    "${destination_folder}/perftest_cpp${executable_extension}"
+    "${destination_folder}/perftest_cpp${executable_suffix}${executable_extension}"
 
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure copying code for ${classic_cpp_lang_string}."
@@ -1892,6 +1901,18 @@ while [ "$1" != "" ]; do
             ;;
         --legacy-DynamicData)
             LEGACY_DD_IMPL=1
+            ;;
+        --monitoring2)
+            RTI_MONITORING_2=1
+            ;;
+        --enableMonitoring2)
+            RTI_MONITORING_2=1
+            ;;
+        --observability)
+            RTI_MONITORING_2=1
+            ;;
+        --enableObservability)
+            RTI_MONITORING_2=1
             ;;
         --customType)
             USE_CUSTOM_TYPE=1

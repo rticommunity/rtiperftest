@@ -218,10 +218,10 @@ std::string RTIRawTransportImpl::print_configuration()
     // Ports
     stringStream << "\tThe following ports will be used: ";
     if (_PM->get<bool>("pub")) {
-        stringStream << get_receive_unicast_port(ANNOUNCEMENT_TOPIC_NAME) << " - "
-                     << get_receive_unicast_port(LATENCY_TOPIC_NAME) << "\n";
+        stringStream << get_receive_port(ANNOUNCEMENT_TOPIC_NAME) << " - "
+                     << get_receive_port(LATENCY_TOPIC_NAME) << "\n";
     } else {
-        stringStream << get_receive_unicast_port(THROUGHPUT_TOPIC_NAME) << "\n";
+        stringStream << get_receive_port(THROUGHPUT_TOPIC_NAME) << "\n";
     }
 
     // Set initial peers
@@ -784,10 +784,10 @@ unsigned int RTIRawTransportImpl::get_peer_unicast_port(
 }
 
 unsigned int
-RTIRawTransportImpl::get_receive_unicast_port(const char *topicName)
+RTIRawTransportImpl::get_receive_port(const char *topicName)
 {
     unsigned int portOffset = 0;
-
+    unsigned int sidValue = 0;
     /* There will be a port offset when it's been used announcement channel */
     if (!strcmp(topicName, ANNOUNCEMENT_TOPIC_NAME)) {
         portOffset = 1;
@@ -796,7 +796,10 @@ RTIRawTransportImpl::get_receive_unicast_port(const char *topicName)
     /* Get the default values to calculate the port the same way as do DDS */
     struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
-
+    /* When unicast the subscriber id will be taken into account to calculate the port. */
+    if(!_PM->get<int>("multicast")) {
+        sidValue = _PM->get<int>("sidMultiSubTest");
+    }
     /*
      * This calculation leave 2 consecutive ports free per participant.
      *
@@ -808,7 +811,7 @@ RTIRawTransportImpl::get_receive_unicast_port(const char *topicName)
      */
     return PRESRtps_getWellKnownUnicastPort(
             _PM->get<int>("domain"), /* domainId */
-            _PM->get<bool>("pub") ? 0 :  _PM->get<int>("sidMultiSubTest") + 1, /* participantId */
+            _PM->get<bool>("pub") ? 0 :  sidValue + 1, /* participantId */
             wellKnownPorts.port_base,
             wellKnownPorts.domain_id_gain,
             wellKnownPorts.participant_id_gain,
@@ -953,7 +956,7 @@ RTIRawTransportImpl::create_reader(const char *topicName, IMessagingCB *callback
     }
 
     /* Calculate the port of the new receive resource. */
-    recvPort = get_receive_unicast_port(topicName);
+    recvPort = get_receive_port(topicName);
 
     result = _plugin->create_recvresource_rrEA(
             _plugin,
