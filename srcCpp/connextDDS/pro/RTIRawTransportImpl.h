@@ -134,4 +134,3 @@ struct REDAWorker *raw_transport_get_worker_per_thread(
         unsigned int *workerTssKey);
 
 #endif // __RTIRawTransportImpl_H__
-

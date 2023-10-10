@@ -500,7 +500,7 @@ The ``build.bat`` script accepts the following list of parameters:
 
 
 .. list-table:: Build Script Parameters
-    :name: TableBuildLinuxParameters
+    :name: TableBuildWindowsParameters
     :widths: 10 30 60
     :header-rows: 1
 
