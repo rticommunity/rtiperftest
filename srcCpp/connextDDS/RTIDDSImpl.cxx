@@ -12,9 +12,12 @@
 #endif
 #include "perftest_cpp.h"
 #include "RTIDDSImpl.h"
-#ifndef PERFTEST_RTI_MICRO
+#ifdef PERFTEST_RTI_PRO
   #include <algorithm> // std::max
   #include "ndds/ndds_cpp.h"
+  #if defined(PERFTEST_CONNEXT_PRO_720) && defined(RTI_MONITORING_2)
+    #include "ndds/monitoring/monitoring_monitoringClass.h"
+  #endif
   #include "qos_string.h"
 #endif
 
@@ -257,7 +260,7 @@ void RTIDDSImpl<T>::shutdown()
             return;
         }
     } else {
-        printf("[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)\n");
+        fprintf(stderr, "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)\n");
     }
   #endif
 
@@ -2469,6 +2472,30 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
                 PERFTEST_QOS_STRING,
                 PERFTEST_QOS_STRING_SIZE);
     }
+
+    #if defined(PERFTEST_CONNEXT_PRO_720) && defined(RTI_MONITORING_2)
+
+    if (_PM->is_set("enableMonitoring2")) {
+        factory_qos.monitoring.enable = DDS_BOOLEAN_TRUE;
+    }
+
+    if (_PM->is_set("collectorPeer")) {
+        factory_qos.monitoring.enable = DDS_BOOLEAN_TRUE;
+        const std::vector<std::string> collectorPeerList =
+                _PM->get_vector<std::string>("collectorPeer");
+        if (!collectorPeerList.empty()) {
+            std::vector<char*> cstrings;
+            cstrings.reserve(collectorPeerList.size());
+            for(unsigned int i = 0; i < collectorPeerList.size(); ++i) {
+                cstrings.push_back(const_cast<char*>(collectorPeerList[i].c_str()));
+            }
+            factory_qos.monitoring.distribution_settings.dedicated_participant.collector_initial_peers.from_array(
+                    (const char **)&cstrings[0],
+                    (long)collectorPeerList.size());
+        }
+    }
+    #endif // defined(PERFTEST_CONNEXT_PRO_720) && defined(RTI_MONITORING_2)
+
     _factory->set_qos(factory_qos);
 
     if (_factory->reload_profiles() != DDS_RETCODE_OK) {
@@ -2659,6 +2686,15 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     DDS_DomainParticipantFactoryQos factory_qos;
     DDS_PublisherQos publisherQoS;
 
+
+
+  #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_PRO_720) && defined(RTI_MONITORING_2)
+    if (_PM->is_set("enableMonitoring2") || _PM->is_set("collectorPeer")) {
+        // No return code associated to this function.
+        RTI_Monitoring_initialize();
+        fprintf(stderr, "Monitoring Library Initialized\n");
+    }
+  #endif
 
   #if defined(PERFTEST_RTI_PRO) && defined(PERFTEST_CONNEXT_PRO_610)
 
@@ -3273,7 +3309,12 @@ bool RTIDDSImpl<T>::configure_writer_qos(
 
     dw_qos.resource_limits.initial_samples = _PM->get<int>("sendQueueSize");
 
-  #ifdef PERFTEST_CONNEXT_PRO_710
+  #ifdef PERFTEST_CONNEXT_PRO_720
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dw_qos.reliability.instance_state_consistency_kind =
+            DDS_RECOVER_INSTANCE_STATE_CONSISTENCY;
+    }
+  #elif defined(PERFTEST_CONNEXT_PRO_710)
     if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
         dw_qos.reliability.instance_state_recovery_kind =
             DDS_RECOVER_INSTANCE_STATE_RECOVERY;
@@ -3746,7 +3787,12 @@ bool RTIDDSImpl<T>::configure_reader_qos(
         dr_qos.protocol.disable_positive_acks = true;
     }
 
-  #ifdef PERFTEST_CONNEXT_PRO_710
+  #ifdef PERFTEST_CONNEXT_PRO_720
+    if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
+        dr_qos.reliability.instance_state_consistency_kind =
+            DDS_RECOVER_INSTANCE_STATE_CONSISTENCY;
+    }
+  #elif defined(PERFTEST_CONNEXT_PRO_710)
     if (_PM->get<bool>("keyed") && _PM->is_set("enableInstanceStateRecovery")) {
         dr_qos.reliability.instance_state_recovery_kind =
             DDS_RECOVER_INSTANCE_STATE_RECOVERY;

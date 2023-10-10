@@ -403,7 +403,7 @@ if !BUILD_CPP! == 1 (
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LEGACY_DD_IMPL"
 	)
 
-	set "ADDITIONAL_DEFINES=PERFTEST_RTI_PRO RTI_LANGUAGE_CPP_TRADITIONAL"
+	set "ADDITIONAL_DEFINES=PERFTEST_RTI_PRO RTI_LANGUAGE_CPP_TRADITIONAL RTI_WIN32"
 
 	if !USE_SECURE_LIBS! == 1 (
 
@@ -422,7 +422,7 @@ if !BUILD_CPP! == 1 (
 
 		REM Linking Statically
 		) else (
-		
+
 			if !USE_LW_SECURE_LIBS! == 1 (
 				set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LW_SECURE_PERFTEST"
 			)
@@ -575,9 +575,13 @@ if !BUILD_CPP! == 1 (
 		exit /b 1
 	)
 
+	if !USE_LW_SECURE_LIBS! == 1 (
+		set "executable_suffix=_lws"
+	)
+
 	echo [INFO]: Copying perftest_cpp executable file:
 	md "%bin_folder%"\%architecture%\!RELEASE_DEBUG!
-	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp"%executable_extension%"
+	copy /Y "%classic_cpp_folder%"\objs\%architecture%\perftest_publisher"%executable_extension%" "%bin_folder%"\%architecture%\!RELEASE_DEBUG!\perftest_cpp"%executable_suffix%""%executable_extension%"
 	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
@@ -596,7 +600,7 @@ if !BUILD_CPP11! == 1 (
 	call::solution_compilation_flag_calculation
 	call::get_flatdata_available
 
-	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_MODERN"
+	set "ADDITIONAL_DEFINES=RTI_LANGUAGE_CPP_MODERN RTI_WIN32"
 	set additional_rti_libs=
 
 	if !USE_SECURE_LIBS! == 1 (

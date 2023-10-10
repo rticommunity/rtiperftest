@@ -75,7 +75,16 @@ Find more information in the :ref:`Test Parameters only for Publishing Applicati
 What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Fixed error in C++11, C#, and Java when using security |fixedTag|
+Issue when using multicast in rawTransport mode |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, when using multicast and raw transport in a multi-subscriber scenario, 
+only the subscriber with ID 0 would receive the packets correctly since the receive port was 
+incorrectly calculated. This issue has been fixed.
+
+
+
+Error in C++11, C#, and Java when using security |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The following error could appear when using the *C++11*, *C#*, or *Java* API
@@ -151,8 +160,8 @@ Set default Encryption Algorithm to aes-128-gcm |newTag|
 
 In previous versions *Perftest* would use the default value for the Encryption
 algorithm when using *RTI Connext DDS Secure*. However, starting in 7.0.0. The
-default value has been upgraded to `aes-256-gcm`. While this new value offers a
-higher level of security, `aes-128-gcm`remains being secure and slightly more
+default value has been upgraded to ``aes-256-gcm``. While this new value offers a
+higher level of security, ``aes-128-gcm`` remains being secure and slightly more
 efficient CPU/Performance wise. For that reason as well as for comparison with
 previous versions of *RTI Connext DDS Secure*, *Perftest* has adopted that new
 value.
