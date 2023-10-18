@@ -135,7 +135,7 @@ void RTIDDSImpl<T>::shutdown()
 
     // Delete factory only I am the only participant
     if (participants.empty()){
-        _participant.finalize_participant_factory();
+        dds::all::DomainParticipant::finalize_participant_factory();
     } else {
         std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)"
                   << std::endl;

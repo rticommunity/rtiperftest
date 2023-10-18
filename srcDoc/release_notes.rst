@@ -9,6 +9,29 @@ Release Notes develop
 What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
 
+<- Nothing new yet ->
+
+What's Fixed in develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Terminated connection in VxWorks after finishing test for *Traditional* and *Modern* C++ |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When using the *Traditional* or *Modern* C++ API implementations of *RTI Perftest* in *VxWorks*,
+the connection would be terminated when the Publisher and Subscriber sides were deleting the
+entities to finish the test.
+
+The problem would reproduce only when using *stdout* and not if using a file to output the
+results of the test.
+
+This issue has been fixed.
+
+Release Notes 4.1
+---------------------
+
+What's New in 4.1
+~~~~~~~~~~~~~~~~~~~~~
+
 Support for the LightWeight Security library |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -72,17 +95,15 @@ test.
 Find more information in the :ref:`Test Parameters only for Publishing Applications` section.
 
 
-What's Fixed in develop
+What's Fixed in 4.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Issue when using multicast in rawTransport mode |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In previous releases, when using multicast and raw transport in a multi-subscriber scenario, 
-only the subscriber with ID 0 would receive the packets correctly since the receive port was 
+In previous releases, when using multicast and raw transport in a multi-subscriber scenario,
+only the subscriber with ID 0 would receive the packets correctly since the receive port was
 incorrectly calculated. This issue has been fixed.
-
-
 
 Error in C++11, C#, and Java when using security |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
