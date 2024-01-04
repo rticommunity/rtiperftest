@@ -1046,6 +1046,12 @@ goto:EOF
 		set cs_64=x64\
 		set win_arch=x64
 		set cs_win_arch=x64
+	 else if not x%architecture:arm64=%==x%architecture% (
+		set begin_sol=perftest_publisher-arm64-
+		set begin_sol_cs=perftest-arm64-
+		set cs_64=arm64\
+		set win_arch=arm64
+		set cs_win_arch=arm64	
 	) else (
 		set begin_sol=perftest_publisher-
 		set begin_sol_cs=perftest-
