@@ -1060,7 +1060,6 @@ goto:EOF
 			set "end_sol=vs%%a"
 		
 			rem Set the VS projects extension, VS2008 uses .vcproj, newer versions .vcxproj
-			set extension=.vcxproj
 			if /i "%%a"=="2008" (
 				set extension=.vcproj
 			) else (
