@@ -1052,30 +1052,21 @@ goto:EOF
 		set win_arch=win32
 		set cs_win_arch=x86
 	)
-	if not x%architecture:VS2008=%==x%architecture% (
-		set end_sol=vs2008
-		set extension=.vcproj
-	)
-	if not x%architecture:VS2010=%==x%architecture% (
-		set end_sol=vs2010
-		set extension=.vcxproj
-	)
-	if not x%architecture:VS2012=%==x%architecture% (
-		set end_sol=vs2012
-		set extension=.vcxproj
-	)
-	if not x%architecture:VS2013=%==x%architecture% (
-		set end_sol=vs2013
-		set extension=.vcxproj
-	)
-	if not x%architecture:VS2015=%==x%architecture% (
-		set end_sol=vs2015
-		set extension=.vcxproj
-	)
-	if not x%architecture:VS2017=%==x%architecture% (
-		set end_sol=vs2017
-		set extension=.vcxproj
-	)
+	
+	rem Extract the "VSXXXX" pattern from the architecture string
+		for /f "tokens=*" %%a in ('echo %architecture% ^| findstr /i "VS[0-9][0-9][0-9][0-9]"') do (
+		
+			rem Set the solution name based on the version
+			set "end_sol=vs%%a"
+		
+			rem Set the VS projects extension, VS2008 uses .vcproj, newer versions .vcxproj
+			set extension=.vcxproj
+			if /i "%%a"=="2008" (
+				set extension=.vcproj
+			) else (
+				set extension=.vcxproj
+			)
+		)
 
 	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
 		set Major_new_sol_name=%%a
