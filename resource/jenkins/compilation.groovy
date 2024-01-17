@@ -72,7 +72,7 @@ pipeline {
                     destinationFolder = "${destinationFolderBase}/${perftestBRANCH}"
                     destinationFolderId = "${destinationFolder}/${dateId}"
 
-                    echo " - NDDSHOME: ${NDDSHOME}\n - Perftest branch: ${perftestBRANCH}\n - Destination Folder: ${destinationFolder}"
+                    echo " - NDDSHOME: ${NDDSHOME}\n - RTIMEHOME: ${RTIMEHOME}\n - Perftest branch: ${perftestBRANCH}\n - Destination Folder: ${destinationFolder}"
 
                     perftestCompilationCommandPro = "./build.sh \
                             --platform ${platform} \
