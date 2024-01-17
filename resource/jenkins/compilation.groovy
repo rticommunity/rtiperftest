@@ -22,7 +22,12 @@ pipeline {
         string(
             name: 'NDDSHOME',
             defaultValue: '/home/perfuser/ndds/7.2.0/rti_connext_dds-7.2.0',
-            description: 'The Connext DDS Pro Home folder we are going to use to compile against.'
+            description: 'The Connext Pro Home folder we are going to use to compile against.'
+        ),
+        string(
+            name: 'RTIMEHOME',
+            defaultValue: '/home/perfuser/trees/micro/release-2.4.14.1/rti/build/support_2.4.x/cmake/rti_me.2.0',
+            description: 'The Connext Micro home folder we are going to use to compile against.'
         )
     }
     options {
@@ -50,6 +55,14 @@ pipeline {
                         return 1
                     }
 
+                    if (params.RTIMEHOME.trim()) {
+                        RTIMEHOME= params.RTIMEHOME
+                    } else {
+                        echo "ERROR: RTIMEHOME cannot be empty"
+                        currentBuild.result = "FAILURE"
+                        return 1
+                    }
+
                     def curDate = new Date()
                     def date = new SimpleDateFormat("yyyyMMdd")
                     date.timeZone = java.util.TimeZone.getTimeZone('America/Los_Angeles')
@@ -61,11 +74,16 @@ pipeline {
 
                     echo " - NDDSHOME: ${NDDSHOME}\n - Perftest branch: ${perftestBRANCH}\n - Destination Folder: ${destinationFolder}"
 
-                    perftestCompilationCommand = "./build.sh \
+                    perftestCompilationCommandPro = "./build.sh \
                             --platform ${platform} \
                             --nddshome ${NDDSHOME} \
                             --cpp-build \
-                            --cpp11-build"
+                            --cpp11-build \
+                            --java-build"
+                    perftestCompilationCommandMicro = "./build.sh \
+                            --platform ${platform} \
+                            --rtimehome ${RTIMEHOME} \
+                            --micro-24x-compatibility"
                 }
             }
         }
@@ -86,7 +104,7 @@ pipeline {
                     sshagent(credentials: ["$user-ssh-key"]) {
                         sh("""ssh -o StrictHostKeyChecking=no $user@$executionMachine \
                             "cd ${destinationFolderId} && \
-                            ${perftestCompilationCommand}"
+                            ${perftestCompilationCommandPro}"
                         """)
                     }
                 }
@@ -96,6 +114,26 @@ pipeline {
                     cleanWs()
                 }
             }
-        } // end Perftest Compilation
+        } // end Perftest Compilation Pro
+        stage('Compile Perftest against ConnextDDS Micro') {
+            agent {
+                label "docker"
+            }
+            steps {
+                script {
+                    sshagent(credentials: ["$user-ssh-key"]) {
+                        sh("""ssh -o StrictHostKeyChecking=no $user@$executionMachine \
+                            "cd ${destinationFolderId} && \
+                            ${perftestCompilationCommandMicro}"
+                        """)
+                    }
+                }
+            }
+            post {
+                cleanup {
+                    cleanWs()
+                }
+            }
+        } // end Perftest Compilation Pro
     }
 }
