@@ -23,7 +23,7 @@ pipeline {
             name: 'NDDSHOME',
             defaultValue: '/home/perfuser/ndds/7.2.0/rti_connext_dds-7.2.0',
             description: 'The Connext Pro Home folder we are going to use to compile against.'
-        ),
+        )
         string(
             name: 'RTIMEHOME',
             defaultValue: '/home/perfuser/trees/micro/release-2.4.14.1/rti/build/support_2.4.x/cmake/rti_me.2.0',
