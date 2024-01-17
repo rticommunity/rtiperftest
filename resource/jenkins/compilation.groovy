@@ -87,7 +87,7 @@ pipeline {
                 }
             }
         }
-        stage("Compile with Connext Pro ${platform}") {
+        stage('Compile with Connext Pro') {
             agent {
                 label "docker"
             }
@@ -115,7 +115,7 @@ pipeline {
                 }
             }
         } // end Perftest Compilation Pro
-        stage("Compile with Connext Micro ${platform}") {
+        stage('Compile with Connext Micro') {
             agent {
                 label "docker"
             }
