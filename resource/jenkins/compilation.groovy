@@ -87,7 +87,7 @@ pipeline {
                 }
             }
         }
-        stage('Compile Perftest against ConnextDDS Pro') {
+        stage("Compile with Connext Pro ${platform}") {
             agent {
                 label "docker"
             }
@@ -115,7 +115,7 @@ pipeline {
                 }
             }
         } // end Perftest Compilation Pro
-        stage('Compile Perftest against ConnextDDS Micro') {
+        stage("Compile with Connext Micro ${platform}") {
             agent {
                 label "docker"
             }
