@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat
 
 /* Global variables used in multiple stages of the pipeline */
 executionMachine = 'bld-ubuntu1804.rti.com'
+executionMachineMicro = 'sjc01perf13.rti.com'
 user = 'perfuser'
 perftestRepo = 'ssh://git@bitbucket.rti.com:7999/perf/rti-perftest.git'
 destinationFolderBase = "/home/perfuser/jenkins/perftest-testing"
@@ -122,7 +123,7 @@ pipeline {
             steps {
                 script {
                     sshagent(credentials: ["$user-ssh-key"]) {
-                        sh("""ssh -o StrictHostKeyChecking=no $user@$executionMachine \
+                        sh("""ssh -o StrictHostKeyChecking=no $user@$executionMachineMicro \
                             "cd ${destinationFolderId} && \
                             ${perftestCompilationCommandMicro}"
                         """)
