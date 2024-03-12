@@ -848,11 +848,11 @@ namespace PerformanceTest
                 }
 
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                    policy.Add("com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
                     parameters.SecurePSK));
 
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    policy.Add("com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
                     parameters.SecurePSKAlgorithm));
             }
 

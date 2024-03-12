@@ -1197,14 +1197,14 @@ bool PerftestConfigureSecurity(
 
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                "com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
                 _PM->get<std::string>("securePSK").c_str())) {
             return false;
         }
 
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                "com.rti.serv.secure.cryptography.rtps_psk_symmetric_cipher_algorithm",
                 _PM->get<std::string>("securePSKAlgorithm").c_str())) {
             return false;
         }

@@ -15,7 +15,7 @@ do
           read_sendQueueSize=$2
           shift 2
           ;;
-      -bestEffort)
+      -bestEffort | -best)
           read_bestEffort=1
           shift
           ;;
@@ -45,6 +45,10 @@ do
           ;;
       -nddshome)
           read_NDDSHOME=$2
+          shift 2
+          ;;
+      -nic)
+          read_nic=$2
           shift 2
           ;;
       -*)
@@ -121,6 +125,12 @@ else
     export THROUGHPUT_QOS_INITIAL_SAMPLES=$SEND_QUEUE_SIZE
     export THROUGHPUT_QOS_MAX_SAMPLES=LENGTH_UNLIMITED
     export THROUGHPUT_QOS_MAX_SAMPLES_PER_INSTANCE=LENGTH_UNLIMITED
+fi
+
+if [ "$read_nic" = "" ]; then
+    export INTERFACE_NAME="*"
+else
+    export INTERFACE_NAME=$read_nic
 fi
 
 export THROUGHPUT_QOS_HIGH_WATERMARK=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.9 | bc)`

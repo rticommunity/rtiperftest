@@ -1046,11 +1046,13 @@ function build_cpp()
     echo -e "${INFO_TAG} Command: $rtiddsgen_command"
 
     # Executing RTIDDSGEN command here.
-    eval $rtiddsgen_command
-    if [ "$?" != 0 ]; then
-        echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-        clean_copied_files
-        exit -1
+    if [[ "${SKIP_GENERATE}" == "" ]]; then
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+            clean_copied_files
+            exit -1
+        fi
     fi
 
     # Generate ZeroCopy types avoiding performance degradation issue
@@ -1064,11 +1066,13 @@ function build_cpp()
         -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
 
         echo -e "${INFO_TAG} Command (Generating Zero Copy types): $rtiddsgen_command"
-        eval $rtiddsgen_command
-        if [ "$?" != 0 ]; then
-            echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
-            clean_copied_files
-            exit -1
+        if [[ "${SKIP_GENERATE}" == "" ]]; then
+            eval $rtiddsgen_command
+            if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+                clean_copied_files
+                exit -1
+            fi
         fi
 
         rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
@@ -1078,6 +1082,11 @@ function build_cpp()
     "${classic_cpp_folder}/perftest_publisher.cxx"
     cp "${classic_cpp_folder}/perftest_cpp.cxx" \
     "${classic_cpp_folder}/perftest_subscriber.cxx"
+
+    if [ "${JUST_GENERATE}" == "1" ]; then
+        echo -e "${INFO_TAG} Code generation done. Skipping build (JUST_GENERATE=1)."
+        exit 0
+    fi
 
     ##############################################################################
     # Compile srcCpp code
@@ -2012,6 +2021,13 @@ while [ "$1" != "" ]; do
             ;;
         --no-zeroCopy)
             SKIP_ZEROCOPY="1"
+            ;;
+        # These options are not exposed to the user (yet)
+        --just-generate)
+            JUST_GENERATE=1
+            ;;
+        --skip-generate | --just-build)
+            SKIP_GENERATE=1
             ;;
         *)
             echo -e "${ERROR_TAG} unknown parameter \"$1\""

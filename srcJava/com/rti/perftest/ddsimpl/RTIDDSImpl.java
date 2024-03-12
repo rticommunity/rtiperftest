@@ -985,12 +985,12 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
-                    "com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                    "com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
                     _securePSK,
                     false);
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
-                    "com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    "com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
                     _securePSKAlgorithm,
                     false);
         }
