@@ -983,6 +983,16 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _securePSKAlgorithm = "AES256+GCM";
             }
 
+
+            // IF the _securePSKAlgorithm contains GMAC we need to enable the AAD
+            if (_securePSKAlgorithm.contains("GMAC")) {
+                PropertyQosPolicyHelper.add_property(
+                    dpQos.property,
+                    "com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind",
+                    "SIGN",
+                    false);
+            }
+
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
                     "com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",

@@ -1521,6 +1521,12 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         }
         dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase"]
                     = _PM->get<std::string>("securePSK");
+
+        if (_PM->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
+            dpQosProperties["com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind"]
+                    = "SIGN";
+        }
+
         dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm"]
                     = _PM->get<std::string>("securePSKAlgorithm");
     }

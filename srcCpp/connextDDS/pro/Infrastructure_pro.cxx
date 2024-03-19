@@ -1202,6 +1202,15 @@ bool PerftestConfigureSecurity(
             return false;
         }
 
+        if (_PM->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
+            if (!addPropertyToParticipantQos(
+                    qos,
+                    "com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind",
+                    "SIGN")) {
+                return false;
+            }
+        }
+
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.cryptography.rtps_psk_symmetric_cipher_algorithm",
