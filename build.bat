@@ -1060,18 +1060,18 @@ goto:EOF
 	)
 
 	rem Extract the "VSXXXX" pattern from the architecture string
-		for /f "tokens=2 delims=VS" %%a in ('echo %architecture% ^| findstr /i "VS[0-9][0-9][0-9][0-9]"') do (
+	for /f "tokens=2 delims=VS" %%a in ('echo %architecture% ^| findstr /i "VS[0-9][0-9][0-9][0-9]"') do (
 
-			rem Set the solution name based on the version
-			set "end_sol=vs%%a"
+		rem Set the solution name based on the version
+		set "end_sol=vs%%a"
 
-			rem Set the VS projects extension, VS2008 uses .vcproj, newer versions .vcxproj
-			if %%a lss 2009 (
-				set extension=.vcproj
-			) else (
-				set extension=.vcxproj
-			)
+		rem Set the VS projects extension, VS2008 uses .vcproj, newer versions .vcxproj
+		if %%a lss 2009 (
+			set extension=.vcproj
+		) else (
+			set extension=.vcxproj
 		)
+	)
 
 	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
 		set Major_new_sol_name=%%a

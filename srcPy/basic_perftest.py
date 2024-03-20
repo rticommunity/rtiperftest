@@ -1,3 +1,11 @@
+# (c) 2005-2023 Copyright, Real-Time Innovations, Inc. All rights reserved.
+# Subject to Eclipse Public License v1.0; see LICENSE.md for details.
+
+# This is a simple performance test for RTI Connext DDS for the Python API.
+# It is based on the C++ version of the test, and it is intended to be used
+# experimentally at this point. It is not intended to be a full-featured
+# performance test, but just cover the basic use-cases.
+
 import time
 from dataclasses import field
 from typing import Sequence

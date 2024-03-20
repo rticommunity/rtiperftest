@@ -26,6 +26,12 @@ results of the test.
 
 This issue has been fixed.
 
+Updated property names for *RTI Connext DDS LightWeight Security* PSK |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The property names for the *RTI Connext DDS LightWeight Security* PSK have been updated to
+match the new names used in *RTI Connext DDS 7.3.0*.
+
 Release Notes 4.1
 ---------------------
 
