@@ -135,7 +135,7 @@ void RTIDDSImpl<T>::shutdown()
 
     // Delete factory only I am the only participant
     if (participants.empty()){
-        _participant.finalize_participant_factory();
+        dds::all::DomainParticipant::finalize_participant_factory();
     } else {
         std::cout << "[Warning] Cannot finalize Domain Factory since it is being in use by another thread(s)"
                   << std::endl;
@@ -1428,14 +1428,23 @@ void RTIDDSImpl<T>::configureSecurePlugin(
   #ifdef RTI_PERFTEST_DYNAMIC_LINKING
 
     dpQosProperties["com.rti.serv.secure.create_function"] =
+        #if defined(RTI_LW_SECURE_PERFTEST)
+            "RTI_SecurityLightweight_PluginSuite_create";
+        #else
             "RTI_Security_PluginSuite_create";
+        #endif //defined(RTI_LW_SECURE_PERFTEST)
 
     dpQosProperties["com.rti.serv.secure.library"]
             = _PM->get<std::string>("secureLibrary");
 
   #else // Static library linking
 
+  #if defined(RTI_LW_SECURE_PERFTEST)
+    void *pPtr = (void *) RTI_SecurityLightweight_PluginSuite_create;
+  #else
     void *pPtr = (void *) RTI_Security_PluginSuite_create;
+  #endif //defined(RTI_LW_SECURE_PERFTEST)
+
     dpQosProperties["com.rti.serv.secure.create_function_ptr"] =
             rti::util::ptr_to_str(pPtr);
 
@@ -1457,7 +1466,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
     // In the case where we are dynamic, we should not set these properties if
     // we are using the lightweight security library.
     if (!_PM->get<bool>("lightWeightSecurity")) {
-        
+
         // check if governance file provided
         if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
             dpQosProperties["com.rti.serv.secure.access_control.governance_file"] =
@@ -1487,7 +1496,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
 
         dpQosProperties["com.rti.serv.secure.cryptography.max_receiver_specific_macs"]
                 = "4";
-        
+
         // private key
         dpQosProperties["com.rti.serv.secure.authentication.private_key_file"]
                 = _PM->get<std::string>("securePrivateKey");
@@ -1502,7 +1511,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     if (_PM->is_set("securePSK")) {
-        dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
+        dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase"]
                     = _PM->get<std::string>("securePSK");
     }
 
@@ -1510,9 +1519,15 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         if (!_PM->is_set("securePSK")) {
             _PM->set("securePSK", "DefaultValue");
         }
-        dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key"]
+        dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase"]
                     = _PM->get<std::string>("securePSK");
-        dpQosProperties["com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm"]
+
+        if (_PM->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
+            dpQosProperties["com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind"]
+                    = "SIGN";
+        }
+
+        dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm"]
                     = _PM->get<std::string>("securePSKAlgorithm");
     }
 

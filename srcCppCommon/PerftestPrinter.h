@@ -32,7 +32,7 @@ public:
 
     PerftestPrinter() : _printSummaryHeaders(true), _dataLength(100) {};
     virtual ~PerftestPrinter() {
-        if (_outputFile != NULL) {
+        if (_outputFile != NULL && _outputFile != stdout) {
             fclose(_outputFile);
         }
     };

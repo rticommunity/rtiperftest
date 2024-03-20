@@ -54,6 +54,10 @@ do
           export NDDSHOME=$2
           shift 2
           ;;
+      -interface | -nic)
+          read_interface=$2
+          shift 2
+          ;;
       -*)
           echo "Error: Unknown option: $1" >&2
           exit 1
@@ -129,6 +133,12 @@ else
     export THROUGHPUT_QOS_MAX_SAMPLES_PER_INSTANCE=LENGTH_UNLIMITED
 fi
 
+if [ "$read_interface" = "" ]; then
+    export INTERFACE_NAME="*"
+else
+    export INTERFACE_NAME=$read_interface
+fi
+
 export THROUGHPUT_QOS_HIGH_WATERMARK=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.9 | bc)`
 export THROUGHPUT_QOS_LOW_WATERMARK=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
 export THROUGHPUT_QOS_HB_PER_MAX_SAMPLES=`LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
@@ -182,8 +192,11 @@ echo -e "${GREEN}[Running]${NC} $command_line_parameter\n"
 trap 'ctrl_c' SIGINT
 
 function clean() {
-    kill $pid
+    echo -e " ${RED}FINISHING !!!!!!!!!!! ${NC}"
+    kill -9 $pid
     pkill $EXECUTABLE_NAME
+    pkill rtipersistences
+    ls -l PS_*
     rm -rf PS_*
     sleep 10
 }
@@ -195,8 +208,10 @@ function ctrl_c() {
 
 
 ################################################################################
-$command_line_parameter &
 
+mkdir -p /tmp/PS/
+cd /tmp/PS/
+$command_line_parameter &
 export pid=$!
 sleep $executionTime
 clean

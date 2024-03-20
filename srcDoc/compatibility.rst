@@ -3,7 +3,7 @@
 Compatibility
 =============
 
-*RTI Perftest 4.1* is designed to be compatible with the *RTI Connext DDS*
+*RTI Perftest Develop* is designed to be compatible with the *RTI Connext DDS*
 middleware. It has been compiled and tested against:
 
 - *RTI Connext DDS Professional* 6.0.0 and above. Nonetheless previous versions

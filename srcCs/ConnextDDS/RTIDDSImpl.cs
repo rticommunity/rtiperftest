@@ -847,12 +847,18 @@ namespace PerformanceTest
                     parameters.SecurePSKAlgorithm = "AES256+GCM";
                 }
 
+                if (parameters.SecurePSKAlgorithm.Contains("GMAC"))
+                {
+                    dpQos = dpQos.WithProperty(policy =>
+                        policy.Add("com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind", "SIGN"));
+                }
+
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key",
+                    policy.Add("com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
                     parameters.SecurePSK));
 
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.cryptography.rtps_protection_preshared_key_algorithm",
+                    policy.Add("com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
                     parameters.SecurePSKAlgorithm));
             }
 

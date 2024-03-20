@@ -41,7 +41,7 @@
                 </resource_limits>
 
                 <transport_builtin>
-                    <mask>$(TRANSPORT_BUILTIN_MASK)</mask>
+                    <mask>udpv4</mask>
                 </transport_builtin>
 
                 <property>
@@ -87,6 +87,10 @@
                         <element>
                             <name>dds.transport.TCPv4.tcp1.parent.message_size_max</name>
                             <value>65536</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.UDPv4.builtin.parent.allow_interfaces_list</name>
+                            <value>$(INTERFACE_NAME)</value>
                         </element>
                     </value>
                 </property>

@@ -51,6 +51,10 @@ do
           read_destination=$2
           shift 2
           ;;
+      -interface | -nic)
+          read_interface=$2
+          shift 2
+          ;;
       -*)
           echo "Error: Unknown option: $1" >&2
           exit 1
@@ -127,6 +131,12 @@ else
     export THROUGHPUT_QOS_MAX_SAMPLES_PER_INSTANCE=LENGTH_UNLIMITED
 fi
 
+if [ "$read_interface" = "" ]; then
+    export INTERFACE_NAME="*"
+else
+    export INTERFACE_NAME=$read_interface
+fi
+
 export THROUGHPUT_QOS_HIGH_WATERMARK=`printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.9 | bc)`
 export THROUGHPUT_QOS_LOW_WATERMARK=`printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
 export THROUGHPUT_QOS_HB_PER_MAX_SAMPLES=`printf "%.0f" $(expr $SEND_QUEUE_SIZE*0.1 | bc)`
@@ -192,4 +202,8 @@ echo " "
 
 cd $destination
 /bin/rm -rf rti_recorder_default*.dat
+echo "Running from $destination"
 $command_line_parameter
+echo "Size of rti_recorder_default*.dat is: "
+ls -lh rti_recorder_default*.dat
+ll rti_recorder_default*.dat

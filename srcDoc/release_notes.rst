@@ -3,6 +3,35 @@
 Release Notes
 =============
 
+Release Notes develop
+---------------------
+
+What's New in develop
+~~~~~~~~~~~~~~~~~~~~~
+
+<- Nothing new yet ->
+
+What's Fixed in develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Terminated connection in VxWorks after finishing test for *Traditional* and *Modern* C++ |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When using the *Traditional* or *Modern* C++ API implementations of *RTI Perftest* in *VxWorks*,
+the connection would be terminated when the Publisher and Subscriber sides were deleting the
+entities to finish the test.
+
+The problem would reproduce only when using *stdout* and not if using a file to output the
+results of the test.
+
+This issue has been fixed.
+
+Updated property names for *RTI Connext DDS LightWeight Security* PSK |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The property names for the *RTI Connext DDS LightWeight Security* PSK have been updated to
+match the new names used in *RTI Connext DDS 7.3.0*.
+
 Release Notes 4.1
 ---------------------
 
