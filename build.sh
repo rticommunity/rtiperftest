@@ -230,6 +230,7 @@ function clean()
 
     rm -f  "${script_location}"/srcC*/README_*.txt
     rm -f  "${script_location}"/srcC*/perftest.*
+    rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
     rm -f  "${script_location}"/srcC*/perftestSupport.*
     rm -f  "${script_location}"/srcC*/perftest_publisher.*
@@ -717,6 +718,7 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" DMAX_DARWIN_SHMEM_SIZE=${darwin_shmem_size}"
     fi
 
+    # Adding RTI_ZEROCOPY_AVAILABLE, RTI_FLATDATA_AVAILABLE and RTI_FLATDATA_MAX_SIZE as defines
     if [ "${FLATDATA_AVAILABLE}" == "1" ]; then
         additional_defines=${additional_defines}" DRTI_FLATDATA_AVAILABLE"
         additional_rtiddsgen_defines_flatdata=" -D RTI_FLATDATA_AVAILABLE"
@@ -1010,6 +1012,18 @@ function build_cpp()
         additional_defines=${additional_defines}" DPERFTEST_FAST_QUEUE"
     fi
 
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.h \
+        perftest_ZeroCopyPlugin.h \
+        perftest_ZeroCopySupport.h"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx \
+        perftest_ZeroCopySupport.cxx"
+    fi
+
     ##############################################################################
     # Generate files for srcCpp
 
@@ -1039,6 +1053,29 @@ function build_cpp()
             clean_copied_files
             exit -1
         fi
+    fi
+
+    # Generate ZeroCopy types avoiding performance degradation issue
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Generating Zero Copy code"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${classic_cpp_lang_string} \
+        ${additional_rtiddsgen_defines} \
+        -replace -create typefiles \
+        -platform ${platform} \
+        ${rtiddsgen_extra_options} ${additional_defines_custom_type} \
+        -d \"${classic_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
+
+        echo -e "${INFO_TAG} Command (Generating Zero Copy types): $rtiddsgen_command"
+        if [[ "${SKIP_GENERATE}" == "" ]]; then
+            eval $rtiddsgen_command
+            if [ "$?" != 0 ]; then
+                echo -e "${ERROR_TAG} Failure generating code for ${classic_cpp_lang_string}."
+                clean_copied_files
+                exit -1
+            fi
+        fi
+
+        rm -rf ${classic_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
     cp "${classic_cpp_folder}/perftest_cpp.cxx" \
@@ -1375,6 +1412,17 @@ function build_cpp11()
         PerftestTransport.cxx \
         PerftestPrinter.cxx"
 
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        additional_header_files="${additional_header_files} \
+        perftest_ZeroCopy.hpp \
+        perftest_ZeroCopyPlugin.hpp"
+
+        additional_source_files="${additional_source_files} \
+        perftest_ZeroCopy.cxx \
+        perftest_ZeroCopyPlugin.cxx"
+    fi
+
+
     ##############################################################################
     # Generate files for srcCpp11
     rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
@@ -1405,6 +1453,26 @@ function build_cpp11()
         echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
         clean_copied_files
         exit -1
+    fi
+
+    # Generate Zero Copy types avoiding performance degradation issue
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        echo -e "${INFO_TAG} Generating Zero Copy code"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language ${modern_cpp_lang_string} \
+        ${additional_rtiddsgen_defines} \
+        -replace -create typefiles -platform ${platform} \
+        ${rtiddsgen_extra_options} \
+        -d \"${modern_cpp_folder}\" \"${idl_location}/perftest_ZeroCopy.idl\""
+
+        echo -e "${INFO_TAG} Command (Generating Zero Copy types): $rtiddsgen_command"
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for ${modern_cpp_lang_string}."
+            clean_copied_files
+            exit -1
+        fi
+
+        rm -rf ${modern_cpp_folder}/makefile_perftest_ZeroCopy_${platform}
     fi
 
     cp "${modern_cpp_folder}/perftest_cpp.cxx" \
@@ -1998,7 +2066,7 @@ elif [ "${BUILD_MICRO}" -eq "1" ]; then
 else # Build for ConnextDDS Pro
     rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
 
-    classic_cpp_lang_string=C++98
+    classic_cpp_lang_string=C++
     modern_cpp_lang_string=C++11
     java_lang_string=java
     cs_lang_string=C#

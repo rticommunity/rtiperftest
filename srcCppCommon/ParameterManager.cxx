@@ -379,7 +379,7 @@ void ParameterManager::initialize()
     checkconsistency->set_group(GENERAL);
     checkconsistency->set_supported_middleware(Middleware::RTIDDSPRO);
     create("checkconsistency", checkconsistency);
-    #endif // RTI_ZEROCOPY_AVAILABLE
+    #endif
   #endif
 
   #if defined(RTI_LANGUAGE_CPP_TRADITIONAL) && defined(PERFTEST_CONNEXT_PRO_610)

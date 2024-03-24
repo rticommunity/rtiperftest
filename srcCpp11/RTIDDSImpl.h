@@ -18,6 +18,10 @@
 #include "PerftestTransport.h"
 #include <rti/domain/find.hpp>
 
+#ifdef RTI_ZEROCOPY_AVAILABLE
+#include "perftest_ZeroCopy.hpp"
+#endif
+
 #ifdef RTI_DARWIN
 #include <sys/types.h>
 #include <sys/sysctl.h>

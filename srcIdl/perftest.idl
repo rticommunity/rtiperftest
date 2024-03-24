@@ -32,6 +32,16 @@ const string ANNOUNCEMENT_TOPIC_NAME_STRING = "Announcement";
 #endif
 
 /*
+ * This idl uses prefix annotations. In order to compile with previous versions
+ * of *Connext DDS Professional* modify the following annotations:
+ *
+ * - @final -- Remove it and replace at the
+ *             end with "//@Extensibility FINAL_EXTENSIBILITY"
+ * - @key   -- Remove it and replace it at the end of the member with "//@key"
+ *
+ */
+
+/*
  * FACE Types need to be inside a FACE::DM module
  */
 #ifdef RTI_PERF_TSS
@@ -192,96 +202,4 @@ struct TestDataKeyedLarge_FlatData_t {
   #endif
 };
 
-#ifdef RTI_ZEROCOPY_AVAILABLE
-/*
- * ZERO COPY WITH FLATDATA
- */
-@mutable
-@language_binding(FLAT_DATA)
-@transfer_mode(SHMEM_REF)
-struct TestData_ZeroCopy_w_FlatData_t {
-    octet key[KEY_SIZE];
-
-    long entity_id;
-    unsigned long seq_num;
-    long timestamp_sec;
-    unsigned long timestamp_usec;
-    long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
-  #ifdef RTI_CUSTOM_TYPE_FLATDATA
-    RTI_CUSTOM_TYPE_FLATDATA custom_type;
-    long custom_type_size;
-  #endif
-};
-
-@mutable
-@language_binding(FLAT_DATA)
-@transfer_mode(SHMEM_REF)
-struct TestDataKeyed_ZeroCopy_w_FlatData_t {
-    @key
-    octet key[KEY_SIZE];
-
-    long entity_id;
-    unsigned long seq_num;
-    long timestamp_sec;
-    unsigned long timestamp_usec;
-    long latency_ping;
-    sequence<octet, MAX_BOUNDED_SEQ_SIZE> bin_data;
-  #ifdef RTI_CUSTOM_TYPE_FLATDATA
-    @key
-    RTI_CUSTOM_TYPE_FLATDATA custom_type;
-    long custom_type_size;
-  #endif
-};
-
-@mutable
-@language_binding(FLAT_DATA)
-@transfer_mode(SHMEM_REF)
-struct TestDataLarge_ZeroCopy_w_FlatData_t {
-    octet key[KEY_SIZE];
-
-    long entity_id;
-    unsigned long seq_num;
-    long timestamp_sec;
-    unsigned long timestamp_usec;
-    long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
-  #ifdef RTI_CUSTOM_TYPE_FLATDATA
-    RTI_CUSTOM_TYPE_FLATDATA custom_type;
-    long custom_type_size;
-  #endif
-};
-
-@mutable
-@language_binding(FLAT_DATA)
-@transfer_mode(SHMEM_REF)
-struct TestDataKeyedLarge_ZeroCopy_w_FlatData_t {
-    @key
-    octet key[KEY_SIZE];
-
-    long entity_id;
-    unsigned long seq_num;
-    long timestamp_sec;
-    unsigned long timestamp_usec;
-    long latency_ping;
-    sequence<octet, RTI_FLATDATA_MAX_SIZE> bin_data;
-  #ifdef RTI_CUSTOM_TYPE_FLATDATA
-    @key
-    RTI_CUSTOM_TYPE_FLATDATA custom_type;
-    long custom_type_size;
-  #endif
-};
-
-#endif // RTI_ZEROCOPY_AVAILABLE
-
 #endif // RTI_FLATDATA_AVAILABLE
-
-/*
- * This idl uses prefix annotations. In order to compile with previous versions
- * of *Connext DDS Professional* modify the following annotations:
- *
- * - @final -- Remove it and replace at the
- *             end with "//@Extensibility FINAL_EXTENSIBILITY"
- * - @key   -- Remove it and replace it at the end of the member with "//@key"
- *
- */
