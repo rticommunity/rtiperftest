@@ -460,19 +460,6 @@ void ParameterManager::initialize()
     preallocateFragmentation->set_supported_middleware(Middleware::RTIDDSPRO);
     create("preallocateFragmentedSamples", preallocateFragmentation);
 
-  #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
-    Parameter<bool> *useLegacyDynamicData = new Parameter<bool>(false);
-    useLegacyDynamicData->set_command_line_argument("-useLegacyDynamicData", "");
-    useLegacyDynamicData->set_description(
-            "Use the Legacy Dynamic Data implementation");
-    useLegacyDynamicData->set_type(T_BOOL);
-    useLegacyDynamicData->set_extra_argument(NO);
-    useLegacyDynamicData->set_group(GENERAL);
-    useLegacyDynamicData->set_supported_middleware(
-            Middleware::RTIDDSPRO);
-    create("useLegacyDynamicData", useLegacyDynamicData);
-  #endif
-
     Parameter<int> *sendQueueSize = new Parameter<int>(50);
     sendQueueSize->set_command_line_argument("-sendQueueSize", "<number>");
     sendQueueSize->set_description(
