@@ -20,9 +20,6 @@
 
 #include "MessagingIF.h"
 #include "perftestSupport.h"
-#ifdef RTI_ZEROCOPY_AVAILABLE
-  #include "perftest_ZeroCopySupport.h"
-#endif
 #include "PerftestTransport.h"
 #include "Infrastructure_common.h"
 #ifdef PERFTEST_RTI_PRO
