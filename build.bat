@@ -485,11 +485,6 @@ if !BUILD_CPP! == 1 (
 	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h PerftestPrinter.h FileDataLoader.h"
 	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx PerftestPrinter.cxx FileDataLoader.cxx"
 
-	if !FLATDATA_AVAILABLE! == 1 (
-		set "additional_header_files=!additional_header_files! perftest_ZeroCopy.h perftest_ZeroCopyPlugin.h perftest_ZeroCopySupport.h"
-		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx perftest_ZeroCopySupport.cxx"
-	)
-
 	set additional_rti_libs_str=
 	if "!additional_rti_libs!" NEQ "" (
 		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
@@ -525,33 +520,6 @@ if !BUILD_CPP! == 1 (
 		echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
 		call::clean_copied_files
 		exit /b 1
-	)
-
-	@REM # Generate ZeroCopy types avoiding performance degradation issue
-	if !FLATDATA_AVAILABLE! == 1 (
-		echo[
-		echo "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
-		!additional_defines_rtiddsgen!^
-		!additional_defines_rtiddsgen_flatdata!^
-		-replace -create typefiles^
-		-platform %architecture%^
-		!rtiddsgen_extra_options! !additional_defines_custom_type!^
-		-d "%classic_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
-
-		echo[
-		echo [INFO]: Generating Zero Copy code
-		call "%rtiddsgen_executable%" -language %classic_cpp_lang_string%^
-		!additional_defines_rtiddsgen!^
-		!additional_defines_rtiddsgen_flatdata!^
-		-replace -create typefiles^
-		-platform %architecture%^
-		!rtiddsgen_extra_options! !additional_defines_custom_type!^
-		-d "%classic_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
-		if not !ERRORLEVEL! == 0 (
-			echo [ERROR]: Failure generating code for %classic_cpp_lang_string%.
-			call::clean_copied_files
-			exit /b 1
-		)
 	)
 
 	call copy "%classic_cpp_folder%"\perftest_cpp.cxx "%classic_cpp_folder%"\perftest_publisher.cxx
@@ -673,11 +641,6 @@ if !BUILD_CPP11! == 1 (
 	set "additional_header_files=ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h PerftestPrinter.h"
 	set "additional_source_files=ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx PerftestPrinter.cxx"
 
-	if !FLATDATA_AVAILABLE! == 1 (
-		set "additional_header_files=!additional_header_files! perftest_ZeroCopy.hpp perftest_ZeroCopyPlugin.hpp"
-		set "additional_source_files=!additional_source_files! perftest_ZeroCopy.cxx perftest_ZeroCopyPlugin.cxx"
-	)
-
 	set additional_rti_libs_str=
 	if "!additional_rti_libs!" NEQ "" (
 		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
@@ -715,32 +678,6 @@ if !BUILD_CPP11! == 1 (
 		echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
 		call::clean_copied_files
 		exit /b 1
-	)
-
-	if !FLATDATA_AVAILABLE! == 1 (
-		echo[
-		echo "%rtiddsgen_executable%" -language %modern_cpp_lang_string%^
-		!additional_defines_rtiddsgen!^
-		!additional_defines_rtiddsgen_flatdata!^
-		-replace -create typefiles -platform %architecture%^
-		!rtiddsgen_extra_options!^
-		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
-
-
-		@REM # Generate Zero Copy types avoiding performance degradation issue
-		echo[
-		echo [INFO]: Generating Zero Copy code
-		call "%rtiddsgen_executable%" -language %modern_cpp_lang_string%^
-		!additional_defines_rtiddsgen!^
-		!additional_defines_rtiddsgen_flatdata!^
-		-replace -create typefiles -platform %architecture%^
-		!rtiddsgen_extra_options!^
-		-d "%modern_cpp_folder%" "%idl_location%\perftest_ZeroCopy.idl"
-		if not !ERRORLEVEL! == 0 (
-			echo [ERROR]: Failure generating code for %modern_cpp_lang_string%.
-			call::clean_copied_files
-			exit /b 1
-		)
 	)
 
 	call copy "%modern_cpp_folder%"\perftest_cpp.cxx "%modern_cpp_folder%"\perftest_publisher.cxx
@@ -1321,9 +1258,6 @@ GOTO:EOF
 	del %script_location%srcCpp\perftest.* > nul 2>nul
 	del %script_location%srcCpp\perftestPlugin.* > nul 2>nul
 	del %script_location%srcCpp\perftestSupport.* > nul 2>nul
-	del %script_location%srcCpp\perftest_ZeroCopy.* > nul 2>nul
-	del %script_location%srcCpp\perftest_ZeroCopyPlugin.* > nul 2>nul
-	del %script_location%srcCpp\perftest_ZeroCopySupport.* > nul 2>nul
 	del %script_location%srcCpp\perftest_publisher.cxx > nul 2>nul
 	del %script_location%srcCpp\perftest_subscriber.cxx > nul 2>nul
 	del %script_location%srcCpp\perftestApplication.h > nul 2>nul
