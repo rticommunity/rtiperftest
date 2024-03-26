@@ -404,6 +404,11 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
                 _PM->set<long>("batchSize", -3);
             }
         }
+
+        if ((_PM->is_set("pubRate") || _PM->is_set("pubRateBps"))
+                && _PM->is_set("batchSize")) {
+            _PM->set<long>("batchSize", -4); // Disable Batching
+        }
     }
 
     // Manage parameter -enableTurboMode

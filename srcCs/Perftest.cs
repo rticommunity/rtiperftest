@@ -826,6 +826,11 @@ namespace PerformanceTest
                         sb.Append("\t\t  BatchSize cannot be used with\n");
                         sb.Append("\t\t  Large Data.\n");
                     }
+                    if (batchSize == -3)
+                    {
+                        sb.Append("\t\t  BatchSize disabled by default.\n");
+                        sb.Append("\t\t  when using -pubRate.\n");
+                    }
                 }
 
                 // Publication Rate

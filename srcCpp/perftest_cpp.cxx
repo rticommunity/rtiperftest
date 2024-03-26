@@ -715,6 +715,9 @@ void perftest_cpp::print_configuration()
             } else if (_PM.get<long>("batchSize") == -3) {
                 stringStream << "\t\t  BatchSize cannot be used with\n"
                              << "\t\t  FlatData and/or Zero-Copy.\n";
+            } else if (_PM.get<long>("batchSize") == -4) {
+                stringStream << "\t\t  BatchSize disabled by default.\n"
+                             << "\t\t  when using -pubRate.\n";
             }
         }
       #endif

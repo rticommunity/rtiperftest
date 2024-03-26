@@ -637,6 +637,8 @@ public final class PerfTest {
             }
             else if ( "-pubRate".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
+                _messagingArgv[_messagingArgc++] = argv[i];
+
                 if (( i == (argc-1)) || argv[++i].startsWith("-") ) {
                     System.err.println("Missing <samples/s>:<method> after -pubRate");
                     return false;
@@ -895,6 +897,10 @@ public final class PerfTest {
                 if (batchSize == -2) {
                     sb.append("\t\t  BatchSize cannot be used with\n");
                     sb.append("\t\t  Large Data.\n");
+                }
+                if (batchSize == -3) {
+                    sb.append("\t\t  BatchSize disabled by default.\n");
+                    sb.append("\t\t  when using -pubRate.\n");
                 }
             }
 
