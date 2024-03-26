@@ -239,6 +239,10 @@ namespace PerformanceTest
                     }
                 }
             }
+            if (parameters.PubRateSet && parameters.BatchSizeSet)
+            {
+                parameters.batchSize = -3;
+            }
 
             if (parameters.EnableTurboMode)
             {

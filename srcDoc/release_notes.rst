@@ -9,9 +9,25 @@ Release Notes develop
 What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
 
-<- Nothing new yet ->
+Using `-pubRate` will disable batching by default  |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In previous releases, using `-pubRate` would not modify the batching behavior
+of *Perftest* (enabled by default for a throughput test). This would lead to
+confusion and scenarios difficult to understand.
+
+This behavior has been modified and now using `-pubRate` will disable batching
+by default. However if explicitly set via command line, batching will still be enabled.
 
 What's Fixed in develop
+~~~~~~~~~~~~~~~~~~~~~~~
+
+<- Nothing new yet ->
+
+Release Notes 4.1.1
+---------------------
+
+What's Fixed in 4.1.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Terminated connection in VxWorks after finishing test for *Traditional* and *Modern* C++ |fixedTag|
