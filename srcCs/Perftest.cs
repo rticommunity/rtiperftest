@@ -57,8 +57,6 @@ namespace PerformanceTest
         public const int INITIALIZE_SIZE = 1234;
         // Flag used to indicate end of test
         public const int FINISHED_SIZE = 1235;
-        // Flag used to indicate end of test
-        public const int LENGTH_CHANGED_SIZE = 1236;
 
         /*
          * Value used to compare against to check if the latency_min has
@@ -90,7 +88,7 @@ namespace PerformanceTest
                 return;
             }
 
-            ulong maxPerftestSampleSize = Math.Max(dataSize, LENGTH_CHANGED_SIZE);
+            ulong maxPerftestSampleSize = Math.Max(dataSize, FINISHED_SIZE);
 
             if (parameters.UnboundedSizeSet)
             {
@@ -961,18 +959,6 @@ namespace PerformanceTest
                 prevTime = now;
                 Thread.Sleep(1000);
                 now = GetTimeUsec();
-
-                if (readerListener.changeSize)
-                { // ACK change_size
-                    TestMessage messageChangeSize = new TestMessage();
-                    messageChangeSize.entityId = subID;
-                    // messageChangeSize.data = new List<byte>(new byte[1]);
-                    // messageChangeSize.size = 1;
-                    messageChangeSize.Size = 1;
-                    announcementWriter.Send(messageChangeSize, false);
-                    announcementWriter.Flush();
-                    readerListener.changeSize = false;
-                }
 
                 if (readerListener.endTest)
                 {
