@@ -265,8 +265,6 @@ namespace PerformanceTest
             packetsReceived = 0;
             bytesReceived = 0;
             missingPackets = 0;
-            // length changed only used in scan mode in which case
-            // there is only 1 publisher with ID 0
             lastSeqNum[0] = 0;
             beginTime = now;
         }

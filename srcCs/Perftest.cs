@@ -207,9 +207,6 @@ namespace PerformanceTest
                     new string[] { "--numPublishers", "-numPublishers" },
                     getDefaultValue: () => 1,
                     description: "Number of publishers running in test."),
-                new System.CommandLine.Option<string>(
-                    new string[] { "--scan", "-scan" },
-                    description: "This option is deprecated in this version of perftest."),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--noPrintIntervals", "-noPrintIntervals" },
                     description: "Don't print statistics at intervals during test."),
@@ -788,7 +785,7 @@ namespace PerformanceTest
                 sb.Append(latencyCount);
                 sb.Append('\n');
 
-                // Scan/Data Sizes
+                // Data Sizes
                 sb.Append("\tData Size: ");
                 sb.Append(dataSize);
                 sb.Append('\n');
