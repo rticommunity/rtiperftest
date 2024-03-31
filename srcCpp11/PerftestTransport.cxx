@@ -271,14 +271,6 @@ void configureShmemTransport(
 {
     using namespace rti::core::policy;
     unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
-    /*
-     * If we specify -scan, then we are interested in the highest size.
-     * Since the vector for scan is sorted, that number should be the last
-     * element.
-     */
-    if (_PM->is_set("scan")) {
-        datalen = _PM->get_vector<unsigned long long>("scan").back();
-    }
 
     long parentMsgSizeMax = transport.minimumMessageSizeMax;
     std::ostringstream ss;
