@@ -38,7 +38,6 @@ import com.rti.perftest.TestMessage;
     public long intervalTime = 0;
     public double missingPacketsPercent = 0.0;
     public CpuMonitor CpuMonitor = new CpuMonitor();
-    public boolean change_size = false;
 
     // -----------------------------------------------------------------------
     // Private Fields
@@ -152,14 +151,6 @@ import com.rti.perftest.TestMessage;
             }
         }
 
-        // reset internals
-        if (message.size == PerfTest.LENGTH_CHANGED_SIZE) {
-            print_summary_throughput(message);
-            change_size = true;
-            return;
-        }
-
-        // case where not running a scan
         if (message.size != lastDataLength) {
             packetsReceived = 0;
             bytesReceived = 0;
@@ -262,8 +253,6 @@ import com.rti.perftest.TestMessage;
         packetsReceived = 0;
         bytesReceived = 0;
         missingPackets = 0;
-        // length changed only used in scan mode in which case
-        // there is only 1 publisher with ID 0
         _last_seq_num[0] = 0;
         _beginTime = now;
     }

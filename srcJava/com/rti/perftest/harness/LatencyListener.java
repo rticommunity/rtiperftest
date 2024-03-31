@@ -89,17 +89,13 @@ import com.rti.perftest.TestMessage;
         long now = PerfTest.getTimeUsec();      // may be negative!
 
         switch (message.size) {
+
             // Initializing message, don't process
             case PerfTest.INITIALIZE_SIZE:
                 return;
 
             // Test finished message
             case PerfTest.FINISHED_SIZE:
-                return;
-
-            // Data length is changing size
-            case PerfTest.LENGTH_CHANGED_SIZE:
-                print_summary_latency();
                 return;
 
             default:

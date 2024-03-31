@@ -14,32 +14,22 @@ public class PerftestTimerTask extends TimerTask {
 
   private PerfTest perftest;
   private Timer timer;
-  private boolean _isScan;
   
   public PerftestTimerTask(PerfTest _perftest) {
       // this way we can modify testCompleted in perftest
       perftest = _perftest;
       // running timer task as daemon thread (true)
       timer = new Timer(true);
-      _isScan = false;
   }
   
   @Override
   public void run() {
-      if (!_isScan) {
-          perftest.finishTest();
-      } else {
-          perftest.finishTestScan();
-      }
+      perftest.finishTest();
   }
 
-  public void setTimeout(long executionTime, boolean isScan) {
+  public void setTimeout(long executionTime) {
       timer.schedule(this, executionTime * 1000);
-      _isScan = isScan;
-      if (!_isScan) {
-          System.err.println("Setting timeout to "
-                + executionTime + " seconds.");
-      }
+      System.err.println("Setting timeout to " + executionTime + " seconds.");
   }
   
   public void cancelTimer() {

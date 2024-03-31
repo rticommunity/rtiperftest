@@ -39,8 +39,7 @@ import com.rti.perftest.TestMessage;
         /*
          * The subscriber_list vector contains the list of discovered subscribers.
          *
-         * - If the message.size is INITIALIZE or LENGTH_CHANGED and the
-         *   subscriber is not in the list, it will be added.
+         * - If the message.size is INITIALIZE_SIZE, it will be added.
          * - If the message.size is FINISHED_SIZE and the
          *   subscriber is in the list, it will be removed.
          *
@@ -49,8 +48,7 @@ import com.rti.perftest.TestMessage;
          *   being changed.
          * - If all the subscribers are notified that the test has finished.
          */
-        if ((message.size == PerfTest.INITIALIZE_SIZE
-                || message.size == PerfTest.LENGTH_CHANGED_SIZE)
+        if ((message.size == PerfTest.INITIALIZE_SIZE)
                 && !subscriber_list.contains(message.entity_id)) {
             subscriber_list.add(message.entity_id);
         } else if (message.size == PerfTest.FINISHED_SIZE) {

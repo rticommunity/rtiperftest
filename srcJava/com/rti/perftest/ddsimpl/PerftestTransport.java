@@ -915,17 +915,6 @@ public class PerftestTransport {
         Property_t propertyValue = PropertyQosPolicyHelper.lookup_property(qos.property,
                 "dds.transport.shmem.builtin.parent.message_size_max");
 
-        // /*
-        //  * If we specify -scan, then we are interested in the highest size.
-        //  * Since the vector for scan is sorted, that number should be the last
-        //  * element.
-        //  */
-        // if (_PM->is_set("scan")) {
-        //     const std::vector<unsigned long long> scanList =
-        //             _PM->get_vector<unsigned long long>("scan");
-        //     datalen = scanList[scanList.size() - 1];
-        // }
-
         long parentMsgSizeMax = minimumMessageSizeMax;
         boolean messageSizeMaxSet = false;
 
