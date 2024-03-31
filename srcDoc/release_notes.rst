@@ -9,7 +9,11 @@ Release Notes develop
 What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
 
-<- Nothing new yet ->
+``-scan`` option is now deprecated
+++++++++++++++++++++++++++++++++++
+
+The ``-scan`` command-line option was previously available in the *Traditional C++*,
+*Modern C++*, and *Java API*, it was deprecated in 4.0 and now it has been removed.
 
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~
