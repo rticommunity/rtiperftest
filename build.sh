@@ -59,7 +59,6 @@ RELEASE_DEBUG=release
 STATIC_DYNAMIC=static
 USE_SECURE_LIBS=0
 USE_LW_SECURE_LIBS=0
-LEGACY_DD_IMPL=0
 
 # Variables for customType
 custom_type_folder="${idl_location}/customType"
@@ -585,11 +584,6 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" O3"
     else
         additional_defines=${additional_defines}" O0"
-    fi
-
-    if [ "${LEGACY_DD_IMPL}" == "1" ]; then
-        echo -e "${INFO_TAG} Allow the use of both legacy and new Dynamic Data Impl."
-        additional_defines=${additional_defines}" DRTI_LEGACY_DD_IMPL"
     fi
 
     if [ "${RTI_MONITORING_2}" == "1" ]; then
@@ -1907,9 +1901,6 @@ while [ "$1" != "" ]; do
         --lightWeightSecurity)
             USE_SECURE_LIBS=1
             USE_LW_SECURE_LIBS=1
-            ;;
-        --legacy-DynamicData)
-            LEGACY_DD_IMPL=1
             ;;
         --monitoring2)
             RTI_MONITORING_2=1

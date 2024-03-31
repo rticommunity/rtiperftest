@@ -46,7 +46,6 @@ set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
 set USE_SECURE_LIBS=0
 set USE_LW_SECURE_LIBS=0
-set LEGACY_DD_IMPL=0
 
 @REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
 set rtiddsgen_version_number_new_solution_name=2.3.6
@@ -145,8 +144,6 @@ if NOT "%1"=="" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
 				SET STATIC_DYNAMIC=dynamic
-		) ELSE if "%1"=="--legacy-DynamicData" (
-				SET LEGACY_DD_IMPL=1
 		) ELSE if "%1"=="--secure" (
 				SET USE_SECURE_LIBS=1
 		) ELSE if "%1"=="--lightWeightSecure" (
@@ -396,11 +393,6 @@ if !BUILD_CPP! == 1 (
 		if !USE_CUSTOM_TYPE_FLAT! == 1 (
 			set "additional_defines_custom_type=!additional_defines_custom_type! -D RTI_CUSTOM_TYPE_FLATDATA=%custom_type_flat%"
 		)
-	)
-
-	if !LEGACY_DD_IMPL! == 1 (
-		echo [INFO]: Allow the use of both legacy and new Dynamic Data Impl.
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LEGACY_DD_IMPL"
 	)
 
 	set "ADDITIONAL_DEFINES=PERFTEST_RTI_PRO RTI_LANGUAGE_CPP_TRADITIONAL RTI_WIN32"

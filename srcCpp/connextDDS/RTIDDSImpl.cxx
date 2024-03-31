@@ -403,6 +403,11 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
                 _PM->set<long>("batchSize", -3);
             }
         }
+
+        if ((_PM->is_set("pubRate") || _PM->is_set("pubRateBps"))
+                && _PM->is_set("batchSize")) {
+            _PM->set<long>("batchSize", -4); // Disable Batching
+        }
     }
 
     // Manage parameter -enableTurboMode
@@ -507,13 +512,7 @@ std::string RTIDDSImpl<T>::print_configuration()
     // Dynamic Data
     stringStream << "\tDynamic Data: ";
     if (_PM->get<bool>("dynamicData")) {
-        stringStream << "Yes";
-      #ifdef RTI_LEGACY_DD_IMPL
-        if (_PM->get<bool>("useLegacyDynamicData")) {
-            stringStream << " (Legacy Implementation)";
-        }
-      #endif
-        stringStream << "\n";
+        stringStream << "Yes\n";
     } else {
         stringStream << "No\n";
     }
@@ -2791,13 +2790,6 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
   #endif
 
   #ifdef PERFTEST_RTI_PRO
-
-  #ifdef RTI_LEGACY_DD_IMPL
-    // If we are using Dynamic Data, check if we want to use the new or old impl
-    if (_PM->get<bool>("dynamicData") && _PM->get<bool>("useLegacyDynamicData")) {
-        DDS_DynamicData_enable_legacy_impl();
-    }
-  #endif // RTI_LEGACY_DD_IMPL
 
   #ifdef PERFTEST_FAST_QUEUE
     if (_PM->get<bool>("bestEffort") && _PM->get<bool>("fastQueue")) {

@@ -114,6 +114,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _isLargeData = false;
     private long _maxSynchronousSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
     private boolean _isPublisher = false;
+    private boolean _isPubRateSet = false;
     private boolean _IsAsynchronous = false;
     private boolean _isDynamicData = false;
     private String  _FlowControllerCustom = "default";
@@ -383,6 +384,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 } else {
                     _batchSize = 0;
                 }
+            }
+
+            if (_isPubRateSet && _isBatchSizeProvided) {
+                _batchSize = -3;
             }
         }
 
@@ -1396,6 +1401,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
 
             if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isPublisher = true;
+            }
+            else if ( "-pubRate".toLowerCase().startsWith(argv[i].toLowerCase()))
+            {
+                _isPubRateSet = true;
             }
             else if ("-dynamicData".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isDynamicData = true;
