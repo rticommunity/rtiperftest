@@ -699,6 +699,7 @@ The Raw Transport feature allows the following configurations:
 -  `Multicast` (only for UDPv4)
 -  `One-to-many communication` (Pub -> Sub)
 -  `Latency Test` / `Throughput Test`
+-  `Scan`
 
 Some of the command-line parameters that exist for DDS are not supported if
 ``-rawTransport`` is used.
