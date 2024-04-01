@@ -910,6 +910,13 @@ public final class PerfTest {
 
         TestMessage announcement_msg = new TestMessage();
         announcement_msg.entity_id = subID;
+        // Announcement message that will be used by the announcement_writer
+        // to send information to the Publisher. This message size will indicate
+        // different things.
+        //
+        // We will use 2 sizes: INITIALIZE_SIZE and FINISHED_SIZE,
+        // msg.data will be used as the payload of such messages, so we choose the
+        // greatest size.
         announcement_msg.data = new byte[FINISHED_SIZE];
         announcement_msg.size = INITIALIZE_SIZE;
 
