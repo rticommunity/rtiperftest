@@ -90,8 +90,7 @@ bool RTIRawTransportImpl::validate_input() {
     }
 
     if (((unsigned long) _PM->get<long>("batchSize")
-                < _PM->get<unsigned long long>("dataLen") * 2)
-            && !_PM->is_set("scan")) {
+                < _PM->get<unsigned long long>("dataLen") * 2)) {
         /*
          * We don't want to use batching if the batch size is not large
          * enough to contain at least two samples (in this case we avoid the

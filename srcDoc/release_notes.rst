@@ -19,6 +19,13 @@ confusion and scenarios difficult to understand.
 This behavior has been modified and now using `-pubRate` will disable batching
 by default. However if explicitly set via command line, batching will still be enabled.
 
+``-scan`` option is now removed
++++++++++++++++++++++++++++++++
+
+The ``-scan`` command-line option was previously available in the *Traditional C++*,
+*Modern C++*, and *Java API*, it was deprecated in 4.0 and now it has been removed.
+
+
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~
 

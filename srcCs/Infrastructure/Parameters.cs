@@ -71,7 +71,6 @@ namespace PerformanceTest
         public uint LatencyCount { get; set; }
         public uint NumSubscribers { get; set; }
         public uint NumPublishers { get; set; }
-        public bool Scan { get; set; }
         public bool NoPrintIntervals { get; set; }
         public bool UseReadThread { get; set; }
         public bool LatencyTest

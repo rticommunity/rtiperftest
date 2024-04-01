@@ -172,8 +172,7 @@ bool data_size_related_calculations(QoSBundle* ctx)
                 ctx->pm->set<long>("batchSize", -2);
             }
         } else if (((unsigned long)ctx->pm->get<long>("batchSize")
-                        < ctx->pm->get<unsigned long long>("dataLen") * 2)
-                    && !ctx->pm->is_set("scan")) {
+                        < ctx->pm->get<unsigned long long>("dataLen") * 2)) {
             /*
             * We don't want to use batching if the batch size is not large
             * enough to contain at least two samples (in this case we avoid the
@@ -199,25 +198,6 @@ bool data_size_related_calculations(QoSBundle* ctx)
         } if (ctx->isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             ctx->pm->set<bool>("enableTurboMode", false);
-        }
-    }
-
-    // Manage the parameter: -scan
-    if (ctx->pm->is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                ctx->pm->get_vector<unsigned long long>("scan");
-
-        // Check if scan is large data or small data
-        if (scanList[0] <= (unsigned long long) ctx->maxSynchronousSize
-                && scanList[scanList.size() - 1] > (unsigned long long)ctx->maxSynchronousSize) {
-            fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < scanList.size(); i++) {
-                fprintf(stderr, "%llu ", scanList[i]);
-            }
-            fprintf(stderr,
-                    "] should be either all smaller or all bigger than %llu.\n",
-                    *ctx->maxSynchronousSize);
-            return false;
         }
     }
 

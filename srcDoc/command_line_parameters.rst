@@ -73,8 +73,6 @@ Test Parameters for Publishing and Subscribing Applications
    given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
    modified in the ``build.bat`` and ``build.sh`` scripts.
 
-   If ``-scan`` is specified, this value is ignored.
-
 -  ``-verbosity``
 
    Run with different levels of verbosity for *Connext DDS*.
@@ -826,8 +824,7 @@ Test Parameters only for Publishing Applications
 -  ``-numIter <count>``
 
    Number of samples to send. See :ref:`Number of Iterations vs. Latency Count` and
-   :ref:`Warming Up`. If you set ``scan`` = ``true``, you cannot set this option
-   (see ``-scan``).
+   :ref:`Warming Up`.
 
    | **Default:** ``100000000`` for throughput tests or ``10000000``
                    for latency tests (when ``-latencyTest`` is specified);
@@ -881,27 +878,6 @@ Test Parameters only for Publishing Applications
 
    | **Default method:** ``spin``
    | **Values method:** ``spin or sleep``
-
--  ``-scan <size1>:<size2>:...:<sizeN>``
-
-   .. note::
-
-      This command-line option is deprecated and will not be available in future versions
-      of *RTI Perftest*.
-
-   Run test in scan mode. The list of sizes is optional and can be either in the
-   [32,64900] range or in the [64970,2147482620] range (Large Data cannot be tested
-   in the same scan test as small data sizes). Default values to test with are
-   '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64900'.
-   
-   The ``-executionTime`` parameter is applied for every size of the scan.
-   If ``-executionTime`` is not set, a timeout of 60 seconds will be applied.
-
-   **Default:** ``false`` (no scan)
-
-   .. note::
-
-       Not available in the C# API implementation.
 
 -  ``-sendQueueSize <number>``
 

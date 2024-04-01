@@ -812,39 +812,6 @@ void ParameterManager::initialize()
     create("pubRatebps", pubRatebps);
 #endif
 
-     std::vector<unsigned long long> scanList;
-    scanList.push_back(32);
-    scanList.push_back(64);
-    scanList.push_back(128);
-    scanList.push_back(256);
-    scanList.push_back(512);
-    scanList.push_back(1024);
-    scanList.push_back(2048);
-    scanList.push_back(4096);
-    scanList.push_back(8192);
-    scanList.push_back(16384);
-    scanList.push_back(32768);
-    scanList.push_back(64900);
-    ParameterVector<unsigned long long> *scan =
-            new ParameterVector<unsigned long long>(scanList);
-    scan->set_command_line_argument("-scan", "<size1>:<size2>:...:<sizeN>");
-    scan->set_description(
-            "(Deprecated). Run test in scan mode, traversing\n"
-            "a range of sample data sizes from\n"
-            "[32,64900] or [64970,2147482620] bytes,\n"
-            "in the case that you are using large data or not.\n"
-            "The list of sizes is optional.\n"
-            "Default values are "
-            "'32:64:128:256:512:1024:2048:4096:8192:16384:32768:64900'\n"
-            "Default: Not set");
-    scan->set_type(T_VECTOR_NUMERIC);
-    scan->set_extra_argument(POSSIBLE);
-    scan->set_range(perftest_cpp::OVERHEAD_BYTES, MAX_PERFTEST_SAMPLE_SIZE);
-    scan->set_parse_method(SPLIT);
-    scan->set_group(PUB);
-    scan->set_supported_middleware(Middleware::ALLDDS);
-    create("scan", scan);
-
     Parameter<unsigned long long> *sleep = new Parameter<unsigned long long>(0);
     sleep->set_command_line_argument("-sleep", "<millisec>");
     sleep->set_description(

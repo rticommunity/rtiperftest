@@ -72,7 +72,6 @@ extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
 #endif // RTI_PRO
 
 bool perftest_cpp::_testCompleted = false;
-bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {0, 0, 0, 0};
@@ -93,7 +92,6 @@ int main(int argc, char *argv[])
 {
 
     perftest_cpp::_testCompleted = false;
-    perftest_cpp::_testCompleted_scan = true; // In order to enter into the scan mode
 
     try {
         perftest_cpp app;
@@ -493,13 +491,6 @@ bool perftest_cpp::validate_input()
         }
     }
 
-    if (_PM.is_set("scan") && _PM.is_set("pubRatebps")) {
-        fprintf(stderr,
-                "'-scan' cannot be used with '-pubRatebps', use '-pubRate' "
-                "instead\n");
-        return false;
-    }
-
     if (_PM.is_set("loadDataFromFile")){
         /*
          * Load a file in memory if realPayload is set.
@@ -534,31 +525,7 @@ bool perftest_cpp::validate_input()
         _threadPriorities.isSet = true;
     }
 
-    // Manage the parameter: -scan
-    if (_PM.is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                _PM.get_vector<unsigned long long>("scan");
-        // Max size of scan
-        _PM.set<unsigned long long>("dataLen", scanList[scanList.size() - 1]);
-        if (_PM.get<unsigned long long>("executionTime") == 0){
-            _PM.set<unsigned long long>("executionTime", 60);
-        }
-        // Check if scan is large data or small data
-        if (scanList[0] <= (unsigned long long) MAX_BOUNDED_SEQ_SIZE
-                && scanList[scanList.size() - 1]
-                    > (unsigned long long) MAX_BOUNDED_SEQ_SIZE) {
-            fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < scanList.size(); i++) {
-                fprintf(stderr, "%llu ", scanList[i]);
-            }
-            fprintf(stderr,
-                    "] should be either all smaller or all bigger than %d.\n",
-                    MAX_BOUNDED_SEQ_SIZE);
-            return false;
-        }
-    }
-
-    // Check if we need to enable the use of unbounded sequences. This works also for -scan
+    // Check if we need to enable the use of unbounded sequences.
     if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
         if (_PM.get<int>("unbounded") == 0) {
             _PM.set<int>("unbounded", MAX_BOUNDED_SEQ_SIZE);
@@ -671,26 +638,9 @@ void perftest_cpp::print_configuration()
                      << _PM.get<unsigned long long>("latencyCount")
                      << " samples\n";
 
-        // Scan/Data Sizes
+        // Data Sizes
         stringStream << "\tData Size: ";
-        if (_PM.is_set("scan")) {
-            const std::vector<unsigned long long> scanList =
-                    _PM.get_vector<unsigned long long>("scan");
-            for (unsigned long i = 0; i < scanList.size(); i++) {
-                stringStream << scanList[i];
-                if (i == scanList.size() - 1) {
-                    stringStream << "";
-                } else {
-                    stringStream << ", ";
-                }
-            }
-
-            stringStream << "\n\t(Set the data size on the subscriber"
-                         << " to the maximum data size to achieve best performance)"
-                         << std::endl;
-        } else {
-            stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
-        }
+        stringStream << _PM.get<unsigned long long>("dataLen") << "\n";
 
       #ifdef PERFTEST_RTI_PRO
         // Batching
@@ -795,11 +745,6 @@ void perftest_cpp::print_configuration()
                 "\n[Warning] CPU consumption feature is not available in this OS.\n");
     }
 
-    if (_PM.is_set("scan")) {
-        fprintf(stderr,
-                "'-scan' is deprecated and will not be supported in future versions.\n");
-    }
-
     // We want to expose if we are using or not the unbounded type
     if (_PM.get<int>("unbounded")) {
         stringStream << "\n[IMPORTANT]: Using the Unbounded Sequence Type.";
@@ -875,7 +820,6 @@ class ThroughputListener : public IMessagingCB
     std::vector<int> _finished_publishers;
     CpuMonitor cpu;
     bool _useCft;
-    bool change_size;
 
 
     ThroughputListener(
@@ -890,7 +834,6 @@ class ThroughputListener : public IMessagingCB
         bytes_received = 0;
         missing_packets = 0;
         end_test = false;
-        change_size = false;
         last_data_length = -1;
         interval_data_length = -1;
         interval_packets_received = 0;
@@ -931,8 +874,7 @@ class ThroughputListener : public IMessagingCB
       #ifdef DEBUG_PING_PONG
         printf("-- ProcessMessage ...\n");
       #endif
-        if (message.entity_id >= _num_publishers ||
-            message.entity_id < 0) {
+        if (message.entity_id >= _num_publishers || message.entity_id < 0) {
             printf("ProcessMessage: message content no valid. message.entity_id out of bounds\n");
             return;
         }
@@ -986,15 +928,6 @@ class ThroughputListener : public IMessagingCB
             _writer->flush();
         }
 
-        // Always check if need to reset internals
-        if (message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
-        {
-            print_summary_throughput(message);
-            change_size = true;
-            return;
-        }
-
-        // case where not running a scan
         if (message.size != last_data_length) {
             packets_received = 0;
             bytes_received = 0;
@@ -1098,8 +1031,6 @@ class ThroughputListener : public IMessagingCB
         packets_received = 0;
         bytes_received = 0;
         missing_packets = 0;
-        // length changed only used in scan mode in which case
-        // there is only 1 publisher with ID 0
         _last_seq_num[0] = 0;
         begin_time = now;
     }
@@ -1240,15 +1171,15 @@ int perftest_cpp::Subscriber()
      * to send information to the Publisher. This message size will indicate
      * different things.
      *
-     * We will use 3 sizes: INITIALIZE_SIZE, LENGTH_CHANGED_SIZE and FINISHED_SIZE,
+     * We will use 2 sizes: INITIALIZE_SIZE and FINISHED_SIZE,
      * msg.data will be used as the payload of such messages, so we choose the
      * greatest size:
      */
     TestMessage announcement_msg;
     announcement_msg.entity_id = subID;
     announcement_msg.size = perftest_cpp::INITIALIZE_SIZE;
-    announcement_msg.data = new char[LENGTH_CHANGED_SIZE];
-    memset(announcement_msg.data, 0, LENGTH_CHANGED_SIZE);
+    announcement_msg.data = new char[FINISHED_SIZE];
+    memset(announcement_msg.data, 0, FINISHED_SIZE);
 
     // Send announcement message
     do {
@@ -1289,14 +1220,6 @@ int perftest_cpp::Subscriber()
         prev_time = now;
         PerftestClock::milliSleep(PERFTEST_DISCOVERY_TIME_MSEC);
         now = PerftestClock::getInstance().getTime();
-
-        if (reader_listener->change_size) { // ACK change_size
-            announcement_msg.entity_id = subID;
-            announcement_msg.size =  LENGTH_CHANGED_SIZE;
-            announcement_writer->send(announcement_msg);
-            announcement_writer->flush();
-            reader_listener->change_size = false;
-        }
 
         if (reader_listener->end_test) { // ACK end_test
             announcement_msg.entity_id = subID;
@@ -1435,8 +1358,7 @@ class AnnouncementListener : public IMessagingCB
          *   being changed.
          * - If all the subscribers are notified that the test has finished.
          */
-        if ((message.size == perftest_cpp::INITIALIZE_SIZE
-                || message.size == perftest_cpp::LENGTH_CHANGED_SIZE)
+        if (message.size == perftest_cpp::INITIALIZE_SIZE 
                 && std::find(
                         subscriber_list.begin(),
                         subscriber_list.end(),
@@ -1773,10 +1695,6 @@ public:
             // Test finished message
             case perftest_cpp::FINISHED_SIZE:
                 return;
-            // Data length is changing size
-            case perftest_cpp::LENGTH_CHANGED_SIZE:
-                print_summary_latency();
-                return;
             default:
                 break;
         }
@@ -2090,12 +2008,12 @@ int perftest_cpp::Publisher()
     } else {
         message.data = new char[(std::max)(
                 (int) _PM.get<unsigned long long>("dataLen"),
-                (int) LENGTH_CHANGED_SIZE)];
+                (int) FINISHED_SIZE)];
         memset(message.data,
                0,
                (std::max)(
                        (int) _PM.get<unsigned long long>("dataLen"),
-                       (int) LENGTH_CHANGED_SIZE));
+                       (int) FINISHED_SIZE));
     }
 
     if (showCpu && _PM.get<int>("pidMultiPubTest") == 0) {
@@ -2154,7 +2072,6 @@ int perftest_cpp::Publisher()
     PerftestClock::milliSleep(1000);
 
     int num_pings = 0;
-    unsigned int scan_count = 0;
     int pingID = -1;
     int current_index_in_batch = 0;
     int ping_index_in_batch = 0;
@@ -2182,10 +2099,8 @@ int perftest_cpp::Publisher()
                 / 100;
     }
 
-    if (_PM.get<unsigned long long>("executionTime") > 0
-            && !_PM.is_set("scan")) {
-        executionTimeoutThread =
-            PerftestTimer::getInstance().setTimeout(schedInfo);
+    if (_PM.get<unsigned long long>("executionTime") > 0) {
+        executionTimeoutThread = PerftestTimer::getInstance().setTimeout(schedInfo);
         if (executionTimeoutThread == NULL) {
             fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
             return -1;
@@ -2204,8 +2119,6 @@ int perftest_cpp::Publisher()
      * - pubRateMethodSpin
      * - pubRate
      * - cacheStats
-     * - isScan
-     * - scanList
      * - isSetPubRate
      */
     const unsigned long long numIter = _PM.get<unsigned long long>("numIter");
@@ -2220,15 +2133,7 @@ int perftest_cpp::Publisher()
     const unsigned long pubRate =
             (unsigned long)_PM.get_pair<unsigned long long, std::string>("pubRate").first;
     const bool cacheStats = _PM.get<bool>("cacheStats");
-    const bool isScan = _PM.is_set("scan");
-    const std::vector<unsigned long long> scanList =
-            _PM.get_vector<unsigned long long>("scan");
     const bool isSetPubRate = _PM.is_set("pubRate");
-
-    struct PerftestTimer::ScheduleInfo schedInfo_scan = {
-            (unsigned int)_PM.get<unsigned long long>("executionTime"),
-            Timeout_scan
-    };
     const bool useDatafromFile = _PM.is_set("loadDataFromFile");
 
 
@@ -2252,7 +2157,7 @@ int perftest_cpp::Publisher()
      *  Main sending loop
      */
     unsigned long long loop = 0;
-    for (loop = 0; (isScan || (loop < numIter)) && (!_testCompleted); ++loop) {
+    for (loop = 0; (loop < numIter) && (!_testCompleted); ++loop) {
 
         /* This if has been included to perform the control loop
            that modifies the publication rate according to -pubRate */
@@ -2316,66 +2221,6 @@ int perftest_cpp::Publisher()
              * always. And the if() is always true.
              */
             if (current_index_in_batch == ping_index_in_batch && !sentPing) {
-                // If running in scan mode, dataLen under test is changed
-                // after executionTime
-                if (isScan && _testCompleted_scan) {
-                    _testCompleted_scan = false;
-
-                    // flush anything that was previously sent
-                    writer->flush();
-                    writer->wait_for_ack(
-                            timeout_wait_for_ack_sec,
-                            timeout_wait_for_ack_nsec);
-
-                    if (scan_count == scanList.size()) {
-                        break; // End of scan test
-                    } else {
-                        // Delete any previous thread
-                        if (executionTimeoutThread != NULL) {
-                            PerftestThread_delete(executionTimeoutThread);
-                        }
-
-                        // Launch new schedule function
-                        executionTimeoutThread =
-                            PerftestTimer::getInstance().setTimeout(schedInfo_scan);
-                        if (executionTimeoutThread == NULL) {
-                            fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
-                            return -1;
-                        }
-                    }
-
-                    message.size = LENGTH_CHANGED_SIZE;
-                    // must set latency_ping so that a subscriber sends us
-                    // back the LENGTH_CHANGED_SIZE message
-                    message.latency_ping = num_pings % numSubscribers;
-
-                    /*
-                     * If the Throughput topic is reliable, we can send the packet and do
-                     * a wait for acknowledgements. However, if the Throughput topic is
-                     * Best Effort, wait_for_acknowledgments() will return inmediately.
-                     * This would cause that the send() would be exercised too many times,
-                     * in some cases causing the network to be flooded, a lot of packets being
-                     * lost, and potentially CPU starbation for other processes.
-                     * We can prevent this by adding a small sleep() if the test is best
-                     * effort.
-                     */
-                    announcement_reader_listener->subscriber_list.clear();
-                    while ((int)announcement_reader_listener->subscriber_list.size()
-                            < numSubscribers) {
-                        writer->send(message, true);
-                        writer->flush();
-                        writer->wait_for_ack(
-                            timeout_wait_for_ack_sec,
-                            timeout_wait_for_ack_nsec);
-                    }
-
-                    message.size = (int)scanList[scan_count++] - OVERHEAD_BYTES;
-                    /* Reset _SamplePerBatch */
-                    samplesPerBatch = get_samples_per_batch();
-
-                    ping_index_in_batch = 0;
-                    current_index_in_batch = 0;
-                }
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
@@ -2569,8 +2414,4 @@ const ThreadPriorities perftest_cpp::get_thread_priorities()
 
 void perftest_cpp::Timeout() {
     _testCompleted = true;
-}
-
-void perftest_cpp::Timeout_scan() {
-    _testCompleted_scan = true;
 }

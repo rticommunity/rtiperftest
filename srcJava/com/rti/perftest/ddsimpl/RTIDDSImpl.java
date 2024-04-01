@@ -113,7 +113,6 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _latencyTest = false;
     private boolean _isLargeData = false;
     private long _maxSynchronousSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
-    private boolean _isScan = false;
     private boolean _isPublisher = false;
     private boolean _isPubRateSet = false;
     private boolean _IsAsynchronous = false;
@@ -370,7 +369,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 } else {
                     _batchSize = -2;
                 }
-            } else if ((_batchSize < _dataLen * 2) && !_isScan) {
+            } else if ((_batchSize < _dataLen * 2)) {
                 /*
                  * We don't want to use batching if the batch size is not large
                  * enough to contain at least two samples (in this case we avoid the
@@ -1397,38 +1396,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     private boolean parseConfig(int argc, String[] argv) {
-        long minScanSize = MAX_PERFTEST_SAMPLE_SIZE.VALUE;
 
         for (int i = 0; i < argc; ++i) {
 
-            if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _isScan = true;
-                /*
-                * Check if we have custom scan values. In such case we are just
-                * interested in the minimum one.
-                */
-                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
-                    ++i;
-                    long auxScan = 0;
-                    StringTokenizer st = new StringTokenizer(argv[i], ":", true);
-                    while (st.hasMoreTokens()) {
-                        String s = st.nextToken();
-                        if (!s.equals(":")) {
-                            auxScan = Long.parseLong(s);
-                            if (auxScan < minScanSize) {
-                                minScanSize = auxScan;
-                            }
-                        }
-                    }
-                /*
-                 * If we do not specify any custom value for the -scan, we would
-                 * set minScanSize to the minimum size in the default set for -scan.
-                 */
-                } else {
-                    minScanSize = 32;
-                }
-            }
-            else if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
+            if ("-pub".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 _isPublisher = true;
             }
             else if ( "-pubRate".toLowerCase().startsWith(argv[i].toLowerCase()))
@@ -1881,12 +1852,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             }
         }
 
-        /* If we are using scan, we get the minimum and set it in Datalen */
-        if (_isScan) {
-            _dataLen = minScanSize;
-        }
-
-        /* Check if we need to enable Large Data. This works also for -scan */
+        /* Check if we need to enable Large Data. */
         if (_dataLen > MAX_BOUNDED_SEQ_SIZE.VALUE) {
             _isLargeData = true;
             if (_useUnbounded == 0) {

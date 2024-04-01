@@ -377,10 +377,6 @@ namespace PerformanceTest
 
         public bool ParseConfig()
         {
-            if (parameters.Scan)
-            {
-                Console.Error.WriteLine("Scan has been deprecated in this version of perftest");
-            }
 
             if (parameters.Durability > 3)
             {
@@ -539,7 +535,7 @@ namespace PerformanceTest
                 SecureUseSecure = true;
             }
 
-            /* Check if we need to enable Large Data. This works also for -scan */
+            /* Check if we need to enable Large Data. */
             if (parameters.DataLen > MAX_BOUNDED_SEQ_SIZE.Value)
             {
                 isLargeData = true;

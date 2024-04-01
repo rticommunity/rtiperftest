@@ -70,10 +70,7 @@ public final class PerfTest {
     /*package*/ static final int INITIALIZE_SIZE = 1234;
 
     // Flag used to indicate end of test
-    /*package*/ static final int FINISHED_SIZE = 1235;
-
-    // Flag used to indicate end of test
-    public static final int LENGTH_CHANGED_SIZE = 1236;
+    public static final int FINISHED_SIZE = 1235;
 
     // Value used to compare against to check if the latency_min has
     // been reset.
@@ -100,8 +97,6 @@ public final class PerfTest {
     private long     _dataLen = 100;
     private long    _numIter = 100000000;
     private boolean _isPub = false;
-    private boolean _isScan = false;
-    private ArrayList<Long> _scanDataLenSizes = new ArrayList<Long>();
     private boolean _useReadThread = false;
     private long     _spinLoopCount = 0;
     private long    _sleepNanosec = 0;
@@ -123,24 +118,7 @@ public final class PerfTest {
     private PerftestTimerTask timertask = new PerftestTimerTask(this);
     /* Indicates when the test should exit due to timeout */
     private boolean testCompleted = false;
-    private boolean testCompletedScan = true;
 
-    // Set the default values into the array _scanDataLenSizes vector
-    public void set_default_scan_values(){
-        _scanDataLenSizes.add((long)32);
-        _scanDataLenSizes.add((long)64);
-        _scanDataLenSizes.add((long)128);
-        _scanDataLenSizes.add((long)256);
-        _scanDataLenSizes.add((long)512);
-        _scanDataLenSizes.add((long)1024);
-        _scanDataLenSizes.add((long)2048);
-        _scanDataLenSizes.add((long)4096);
-        _scanDataLenSizes.add((long)8192);
-        _scanDataLenSizes.add((long)16384);
-        _scanDataLenSizes.add((long)32768);
-        _scanDataLenSizes.add((long)64900);
-
-    }
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
@@ -159,10 +137,6 @@ public final class PerfTest {
 
     public void finishTest() {
         testCompleted = true;
-    }
-
-    public void finishTestScan() {
-        testCompletedScan = true;
     }
 
     static public int getMaxPerftestSampleSizeJava(){
@@ -326,13 +300,6 @@ public final class PerfTest {
             "\t                          default 1\n" +
             "\t-numPublishers <count>  - Number of publishers running in test,\n"+
             "\t                          default 1\n" +
-            "\t-scan <size1>:<size2>:...:<sizeN> - (Deprecated). Run test in scan mode, traversing\n" +
-            "\t                                    a range of sample data sizes from\n" +
-            "\t                                    [32,63000] or [63001,2147482620] bytes,\n" +
-            "\t                                    in the case that you are using large data or not.\n" +
-            "\t                                    The list of sizes is optional.\n" +
-            "\t                                    Default values are '32:64:128:256:512:1024:2048:4096:8192:16384:32768:64900'\n" +
-            "\t                                    Default: Not set\n" +
             "\t-noPrintIntervals       - Don't print statistics at intervals during\n" +
             "\t                          test\n" +
             "\t-useReadThread          - Use separate thread instead of callback to\n"+
@@ -544,40 +511,6 @@ public final class PerfTest {
                     return false;
                 }
             }
-            else if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase()))
-            {
-                _isScan = true;
-                _messagingArgv[_messagingArgc++] = argv[i];
-                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
-                    ++i;
-                    _messagingArgv[_messagingArgc++] = argv[i];
-                    StringTokenizer st = new StringTokenizer(argv[i], ":", true);
-                    while (st.hasMoreTokens()) {
-                        String s = st.nextToken();
-                        if (!s.equals(":")) {
-                            _scanDataLenSizes.add(Long.parseLong(s));
-                        }
-                    }
-                    if (_scanDataLenSizes.size() < 2) {
-                        System.err.print("'-scan <size1>:<size2>:...:<sizeN>' the number of size should be equal or greater then two.\n");
-                        return false;
-                    }
-                    Collections.sort(_scanDataLenSizes);
-                    if (_scanDataLenSizes.get(0) < OVERHEAD_BYTES) {
-                        System.err.println("-scan sizes must be >= " +
-                                OVERHEAD_BYTES);
-                        return false;
-                    }
-                    if (_scanDataLenSizes.get(_scanDataLenSizes.size() - 1) >
-                            MAX_PERFTEST_SAMPLE_SIZE.VALUE) {
-                        System.err.println("-scan sizes must be <= " +
-                                MAX_PERFTEST_SAMPLE_SIZE.VALUE);
-                        return false;
-                    }
-                } else {
-                    set_default_scan_values();
-                }
-            }
             else if ("-noPrintIntervals".toLowerCase().startsWith(argv[i].toLowerCase()))
             {
                 printIntervals = false;
@@ -774,7 +707,7 @@ public final class PerfTest {
         }
 
         //manage the parameter: -pubRate -sleep -spin
-        if (_isPub && _pubRate >0) {
+        if (_isPub && _pubRate > 0) {
             if (_spinLoopCount > 0) {
                 System.err.printf( "'-spin' is not compatible with -pubRate. " +
                     "Spin/Sleep value will be set by -pubRate.");
@@ -784,24 +717,6 @@ public final class PerfTest {
                 System.err.printf("'-sleep' is not compatible with -pubRate. " +
                     "Spin/Sleep value will be set by -pubRate.");
                 _sleepNanosec = 0;
-            }
-        }
-
-        if (_isScan) {
-            _dataLen = _scanDataLenSizes.get(_scanDataLenSizes.size() - 1); // Max size
-            if (_executionTime == 0){
-                _executionTime = 60;
-            }
-            // Check if large data or small data
-            if (_scanDataLenSizes.get(0) < MAX_BOUNDED_SEQ_SIZE.VALUE
-                    && _scanDataLenSizes.get(_scanDataLenSizes.size() - 1) > MAX_BOUNDED_SEQ_SIZE.VALUE) {
-                System.err.printf("The sizes of -scan [");
-                for (int i = 0; i < _scanDataLenSizes.size(); i++) {
-                    System.err.printf(_scanDataLenSizes.get(i) + " ");
-                }
-                System.err.printf("] should be either all smaller or all bigger than " +
-                        MAX_BOUNDED_SEQ_SIZE.VALUE + "\n");
-                return false;
             }
         }
 
@@ -859,21 +774,10 @@ public final class PerfTest {
             sb.append(_latencyCount);
             sb.append("\n");
 
-            // Scan/Data Sizes
+            // Data Size
             sb.append("\tData Size: ");
-            if (_isScan) {
-                for (int i = 0; i < _scanDataLenSizes.size(); i++ ) {
-                    sb.append(_scanDataLenSizes.get(i));
-                    if (i == _scanDataLenSizes.size() - 1) {
-                        sb.append("\n");
-                    } else {
-                        sb.append(", ");
-                    }
-                }
-            } else {
-                sb.append(_dataLen);
-                sb.append("\n");
-            }
+            sb.append(_dataLen);
+            sb.append("\n");
 
             // Batching
             int batchSize = _messagingImpl.getBatchSize();
@@ -1006,7 +910,14 @@ public final class PerfTest {
 
         TestMessage announcement_msg = new TestMessage();
         announcement_msg.entity_id = subID;
-        announcement_msg.data = new byte[LENGTH_CHANGED_SIZE];
+        // Announcement message that will be used by the announcement_writer
+        // to send information to the Publisher. This message size will indicate
+        // different things.
+        //
+        // We will use 2 sizes: INITIALIZE_SIZE and FINISHED_SIZE,
+        // msg.data will be used as the payload of such messages, so we choose the
+        // greatest size.
+        announcement_msg.data = new byte[FINISHED_SIZE];
         announcement_msg.size = INITIALIZE_SIZE;
 
         // Send announcement message
@@ -1038,13 +949,6 @@ public final class PerfTest {
             sleep(1000);
             now = getTimeUsec();
 
-            if (reader_listener.change_size) { // ACK change_size
-                announcement_msg.entity_id = subID;
-                announcement_msg.size = LENGTH_CHANGED_SIZE;
-                announcement_writer.send(announcement_msg, false);
-                announcement_writer.flush();
-                reader_listener.change_size = false;
-            }
             if (reader_listener.end_test) {
                 announcement_msg.entity_id = subID;
                 announcement_msg.size = FINISHED_SIZE;
@@ -1234,7 +1138,7 @@ public final class PerfTest {
         // Allocate data and set size
         TestMessage message = new TestMessage();
         message.entity_id = pubID;
-        message.data = new byte[Math.max((int)_dataLen,LENGTH_CHANGED_SIZE)];
+        message.data = new byte[Math.max((int)_dataLen,FINISHED_SIZE)];
 
         message.size = INITIALIZE_SIZE;
 
@@ -1281,7 +1185,6 @@ public final class PerfTest {
         sleep(1000);
 
         int num_pings = 0;
-        int scan_count = 0;
         int pingID = -1;
         int current_index_in_batch = 0;
         int ping_index_in_batch = 0;
@@ -1300,15 +1203,10 @@ public final class PerfTest {
             pubRate_sample_period = _pubRate / 100;
         }
 
-        if (_executionTime > 0 && !_isScan) {
-          timertask.setTimeout(_executionTime, _isScan);
-        }
-
         /********************
          *  Main sending loop
          */
-        for (long loop=0; ((_isScan) || (loop < _numIter)) &&
-                           (!testCompleted) ; ++loop ) {
+        for (long loop=0; (loop < _numIter) && (!testCompleted) ; ++loop ) {
 
             /* This if has been included to perform the control loop
                that modifies the publication rate according to -pubRate */
@@ -1374,55 +1272,6 @@ public final class PerfTest {
                  */
                 if ( current_index_in_batch == ping_index_in_batch && !sentPing )
                 {
-                    // If running in scan mode, dataLen under test is changed
-                    // after _executionTime
-                    if (_isScan && testCompletedScan) {
-                        testCompletedScan = false;
-                        timertask = new PerftestTimerTask(this);
-                        timertask.setTimeout(_executionTime, _isScan);
-
-                        // flush anything that was previously sent
-                        writer.flush();
-                        writer.waitForAck(
-                            timeout_wait_for_ack_sec,
-                            timeout_wait_for_ack_nsec);
-
-                        if (scan_count == _scanDataLenSizes.size()) {
-                            break; // End of scan test
-                        }
-
-                        message.size = LENGTH_CHANGED_SIZE;
-                        // must set latency_ping so that a subscriber sends us
-                        // back the LENGTH_CHANGED_SIZE message
-                        message.latency_ping = num_pings % _numSubscribers;
-
-                        /*
-                         * If the Throughput topic is reliable, we can send the packet and do
-                         * a wait for acknowledgements. However, if the Throughput topic is
-                         * Best Effort, waitForAck() will return inmediately.
-                         * This would cause that the Send() would be exercised too many times,
-                         * in some cases causing the network to be flooded, a lot of packets being
-                         * lost, and potentially CPU starbation for other processes.
-                         * We can prevent this by adding a small sleep() if the test is best
-                         * effort.
-                         */
-
-                        announcement_reader_listener.subscriber_list.clear();
-                        while (announcement_reader_listener.subscriber_list.size()
-                                < _numSubscribers) {
-                            writer.send(message, true);
-                            writer.waitForAck(
-                                timeout_wait_for_ack_sec,
-                                timeout_wait_for_ack_nsec);
-                        }
-
-                        message.size = (int)(_scanDataLenSizes.get(scan_count++) - OVERHEAD_BYTES);
-                        /* Reset _SamplePerBatch */
-                        samplesPerBatch = getSamplesPerBatch();
-                        ping_index_in_batch = 0;
-                        current_index_in_batch = 0;
-                    }
-
                     // Each time ask a different subscriber to echo back
                     pingID = num_pings % _numSubscribers;
                     long now = getTimeUsec();   // may be negative!

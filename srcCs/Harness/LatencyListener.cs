@@ -72,14 +72,6 @@ namespace PerformanceTest
             {
                 return;
             }
-            else if (message.Size == Perftest.LENGTH_CHANGED_SIZE)
-            {
-                Console.Error.WriteLine(
-                        "[Error]: Received command to change size,"
-                        + "this is not supported in C#");
-                PrintSummaryLatency();
-                return;
-            }
 
             sec = message.timestampSec;
             usec = message.timestampUsec;

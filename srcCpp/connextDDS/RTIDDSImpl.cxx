@@ -378,8 +378,7 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
                 _PM->set<long>("batchSize", -2);
             }
         } else if (((unsigned long)_PM->get<long>("batchSize")
-                        < _PM->get<unsigned long long>("dataLen") * 2)
-                    && !_PM->is_set("scan")) {
+                        < _PM->get<unsigned long long>("dataLen") * 2)) {
             /*
             * We don't want to use batching if the batch size is not large
             * enough to contain at least two samples (in this case we avoid the
@@ -419,25 +418,6 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
         } if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             _PM->set<bool>("enableTurboMode", false);
-        }
-    }
-
-    // Manage the parameter: -scan
-    if (_PM->is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                _PM->get_vector<unsigned long long>("scan");
-
-        // Check if scan is large data or small data
-        if (scanList[0] <= (unsigned long long) _maxSynchronousSize
-                && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
-            fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < scanList.size(); i++) {
-                fprintf(stderr, "%llu ", scanList[i]);
-            }
-            fprintf(stderr,
-                    "] should be either all smaller or all bigger than %lld.\n",
-                    _maxSynchronousSize);
-            return false;
         }
     }
 
@@ -710,7 +690,6 @@ class RTIPublisherBase : public IMessagingWriter
     bool is_sentinel_size(int size) {
         return size == perftest_cpp::INITIALIZE_SIZE
                 || size == perftest_cpp::FINISHED_SIZE
-                || size == perftest_cpp::LENGTH_CHANGED_SIZE
                 || size == 0;
     }
   #endif
