@@ -85,7 +85,7 @@ bool perftest_cpp::_testCompleted_scan = true; // In order to enter into the sca
 
 const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
-const Perftest_ProductVersion_t perftest_cpp::_version = {4, 1, 1, 0};
+const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
 ThreadPriorities _threadPriorities;
 
 /*

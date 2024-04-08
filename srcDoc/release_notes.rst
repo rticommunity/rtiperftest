@@ -30,7 +30,7 @@ match the new names used in *RTI Connext DDS 7.3.0*.
 Release Notes 4.1
 ---------------------
 
-What's New in 4.1
+What's New in Master
 ~~~~~~~~~~~~~~~~~~~~~
 
 Support for the LightWeight Security library |newTag|
@@ -96,16 +96,25 @@ test.
 Find more information in the :ref:`Test Parameters only for Publishing Applications` section.
 
 
-What's Fixed in 4.1
+What's Fixed in Master
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Issue when using multicast in rawTransport mode |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+<<<<<<< HEAD
 In previous releases, when using multicast and raw transport in a multi-subscriber scenario,
 only the subscriber with ID 0 would receive the packets correctly since the receive port was
 incorrectly calculated. This issue has been fixed.
 
+=======
+In previous releases, when using multicast and raw transport in a multi-subscriber scenario, 
+only the subscriber with ID 0 would receive the packets correctly since the receive port was 
+incorrectly calculated. This issue has been fixed.
+
+
+
+>>>>>>> 272986a6ce701aebb0a8e4320ea6135814d04f23
 Error in C++11, C#, and Java when using security |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
