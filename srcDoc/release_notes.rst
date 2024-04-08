@@ -3,15 +3,10 @@
 Release Notes
 =============
 
-Release Notes develop
----------------------
+Release Notes 4.1.1
+-------------------
 
-What's New in develop
-~~~~~~~~~~~~~~~~~~~~~
-
-<- Nothing new yet ->
-
-What's Fixed in develop
+What's Fixed in 4.1.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Terminated connection in VxWorks after finishing test for *Traditional* and *Modern* C++ |fixedTag|
