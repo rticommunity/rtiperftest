@@ -704,51 +704,5 @@ and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
 
     </qos_profile>
 
-    <!--
-    Base QoS Profile (Out of the Box):
-    Used by the rest of the profiles. Participants will be created using this profile.
-    -->
-    <qos_profile name="BaseProfileQosOOB">
-
-      <base_name>
-        <!-- Settings related to Transport -->
-        <element>PerftestQosLibrary::Perftest.Transport.TCPv4.BaseConfiguration</element>
-        <!-- Load the flow controllers for asynchronous publishing-->
-        <element>PerftestQosLibrary::Perftest.FlowController.1Gbps</element>
-        <element>PerftestQosLibrary::Perftest.FlowController.10Gbps</element>
-      </base_name>
-
-      <participant_qos>
-        <participant_name>
-          <name>Perftest Participant</name>
-        </participant_name>
-
-        <!--
-        Some of the properties we set may not be recognized if we are not 
-        loading all the libraries (e.g: the tcp transport settings), in order to
-        avoid errors in the application we just skip their validation.
-        -->
-        <property>
-          <value>
-            <element>
-              <name>dds.participant.property_validation_action</name>
-              <value>1</value>
-            </element>
-          </value>
-        </property>
-      </participant_qos>
-    </qos_profile>
-
-    <!-- Throughput profile without QoS changes -->
-    <qos_profile name="ThroughputQosOOB" base_name="BaseProfileQosOOB">
-      <base_name>
-        <element>PerftestQosLibrary::Perftest.Throughput.BatchingConfig</element>
-      </base_name>
-    </qos_profile>
-
-    <!-- Latency profile without QoS changes -->
-    <qos_profile name="LatencyQosOOB" base_name="BaseProfileQosOOB">
-    </qos_profile>
-
   </qos_library>
 </dds>
