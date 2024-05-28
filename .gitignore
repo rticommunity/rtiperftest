@@ -69,3 +69,4 @@ srcCs/NuGet.Config
 srcCs/README*
 srcCs/ConnextDDS/GeneratedCode/*
 srcDoc/output
+.venv

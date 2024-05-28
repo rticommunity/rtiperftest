@@ -1719,8 +1719,19 @@ function clean_documentation()
     rm -rf ${generate_doc_folder}
 }
 
-function build_documentation()
+function build_documentation() 
 {
+
+    # Create virtual environment
+    echo ""
+    echo -e "${INFO_TAG} Creating virtual environment"
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+    # Upgrade pip and install requirements
+    echo -e "${INFO_TAG} Upgrading pip and installing requirements"
+    pip3 install --upgrade pip
+    pip3 install -r srcDoc/requirements.txt
 
     # Generate HTML
     echo ""
@@ -1731,8 +1742,8 @@ function build_documentation()
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating HTML documentation"
         echo -e "${ERROR_TAG} You will need to install:
-            sudo pip install -U sphinx
-            sudo pip install sphinx_rtd_theme"
+            srcDoc/requirements.txt"
+        deactivate
         exit -1
     fi
 
@@ -1748,12 +1759,15 @@ function build_documentation()
     sphinx-build -b pdf ${doc_folder} ${generate_doc_folder}/pdf
     if [ "$?" != 0 ]; then
         echo -e "${ERROR_TAG} Failure generating PDF documentation"
+        deactivate
         exit -1
     fi
 
     echo -e "${INFO_TAG} PDF Generation successful. You will find it under:
         ${generate_doc_folder}/pdf"
 
+    # Deactivate virtual environment
+    deactivate
 }
 
 ################################################################################
