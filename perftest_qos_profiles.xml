@@ -111,6 +111,24 @@ and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
       </participant_qos>
     </qos_profile>
 
+
+    <qos_profile name="Perftest.Transport.TCPv4.IncreaseSendReceiveBuffers">
+      <participant_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.transport.TCPv4.tcp1.send_socket_buffer_size</name>
+              <value>1048576</value>
+            </element>
+            <element>
+              <name>dds.transport.TCPv4.tcp1.recv_socket_buffer_size</name>
+              <value>2097152</value>
+            </element>
+          </value>
+        </property>
+      </participant_qos>
+    </qos_profile>
+
     <qos_profile name="Perftest.Transport.UDPv4.IncreaseSendReceiveBuffers">
       <!-- 
         The default values for the send and receive socket buffer sizes are 131072 bytes.
@@ -612,6 +630,7 @@ and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
         <!-- Settings related to Transport -->
         <element>PerftestQosLibrary::Perftest.Transport.UDPv4.IncreaseSendReceiveBuffers</element>
         <element>PerftestQosLibrary::Perftest.Transport.TCPv4.BaseConfiguration</element>
+        <element>PerftestQosLibrary::Perftest.Transport.TCPv4.IncreaseSendReceiveBuffers</element>
 
         <!-- Some Resource Limits had to be increased in order to run our application -->
         <element>PerftestQosLibrary::Perftest.IncreaseResourceLimits</element>
