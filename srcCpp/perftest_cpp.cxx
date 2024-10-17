@@ -1,5 +1,5 @@
 /*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -14,6 +14,8 @@
   #include "RTIDDSImpl.h"
 #elif defined(PERFTEST_RTI_MICRO)
   #include "RTIDDSImpl.h"
+#elif defined(PERFTEST_CERT)
+  #include "RTICertImpl.h"
 #endif
 #include "CpuMonitor.h"
 #include "Infrastructure_common.h"
@@ -265,6 +267,45 @@ int perftest_cpp::Run(int argc, char *argv[])
         }
       #endif /* RTI_PERF_TSS */
     }
+  #elif defined(PERFTEST_CERT)
+
+    mask = _PM.get<bool>("keyed") << 0;
+    #ifdef RTI_ZEROCOPY_AVAILABLE
+    mask += _PM.get<bool>("zerocopy") << 1;
+    #endif
+
+    switch (mask)
+        {
+            case 0: // = 0000 (Not keyed)
+                _MessagingImpl = new RTICertImpl<TestData_t, TestData_tSeq>(
+                        TestData_tTypeSupport_get_type_name(),
+                        TestData_tTypePlugin_get());
+                break;
+
+            case 1: // Keyed = 0001
+                _MessagingImpl = new RTICertImpl<TestDataKeyed_t, TestDataKeyed_tSeq>(
+                        TestDataKeyed_tTypeSupport_get_type_name(),
+                        TestDataKeyed_tTypePlugin_get());
+                break;
+
+    #ifdef RTI_ZEROCOPY_AVAILABLE
+
+            case 2: // = 0010 (zerocopy + Not keyed)
+                _MessagingImpl = new RTICertImpl_ZCopy<TestData_Cert_ZCopy_t, TestData_Cert_ZCopy_tSeq>(
+                        TestData_Cert_ZCopy_tTypeSupport_get_type_name(),
+                        TestData_Cert_ZCopy_tTypePlugin_get());
+                break;
+
+            case 3: // zerocopy + Keyed = 0011
+                _MessagingImpl = new RTICertImpl_ZCopy<TestDataKeyed_Cert_ZCopy_t, TestDataKeyed_Cert_ZCopy_tSeq>(
+                        TestDataKeyed_Cert_ZCopy_tTypeSupport_get_type_name(),
+                        TestDataKeyed_Cert_ZCopy_tTypePlugin_get());
+                break;
+
+    #endif
+            default:
+                break;
+        }
   #else // No middleware is passed as -DPERFTEST_...
 
     fprintf(stderr,
@@ -373,6 +414,8 @@ perftest_cpp::perftest_cpp()
     : _PM(Middleware::RTITSSPRO)
 #elif defined(RTI_PERF_TSS_MICRO)
     : _PM(Middleware::RTITSSMICRO)
+#elif defined(PERFTEST_CERT)
+    : _PM(Middleware::RTICERT)
 #else
     : _PM()
 #endif
@@ -2355,9 +2398,11 @@ int perftest_cpp::Publisher()
     _printer->print_final_output();
     if (_testCompleted) {
         // Delete timeout thread
+#if !defined(PERFTEST_CERT)
         if (executionTimeoutThread != NULL) {
             PerftestThread_delete(executionTimeoutThread);
         }
+#endif
 
         fprintf(stderr,"Finishing test due to timer...\n");
     } else {
@@ -2392,7 +2437,9 @@ bool perftest_cpp::finalize_read_thread(
                 return false;
             }
         }
+#if !defined(PERFTEST_CERT)
         PerftestThread_delete(thread);
+#endif
     }
     return true;
 }

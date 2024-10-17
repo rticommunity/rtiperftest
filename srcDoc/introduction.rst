@@ -34,8 +34,8 @@ APIs), C#, and Java.
 Middleware
 ----------
 
-*RTI Perftest* can be built against *RTI Connext DDS Professional* and *RTI Connext
-DDS Micro* 3.0.0 (also 2.4.11 with some limitations).
+*RTI Perftest* can be built against *RTI Connext DDS Professional*, *RTI Connext
+DDS Micro* and *RTI Connext DDS Cert*.
 
 *RTI Perftest* can also be used to test raw ``UDPv4`` or ``SHMEM`` performance.
 To do this, *RTI Perftest* uses the *RTI Connext DDS Professional* internal

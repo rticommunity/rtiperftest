@@ -25,6 +25,14 @@ by default. However if explicitly set via command line, batching will still be e
 The ``-scan`` command-line option was previously available in the *Traditional C++*,
 *Modern C++*, and *Java API*, it was deprecated in 4.0 and now it has been removed.
 
+Support for **RTI Connext Cert 2.4.15** |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+We have added support for **RTI Connext Cert 2.4.15** for *Linux* and *QNX*.
+
+Examples of how to compile *Perftest* for *RTI Connext Cert 2.4.15* can be found
+in section :ref:`section-linux_compilation_examples`.
+
 
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~

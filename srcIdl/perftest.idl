@@ -1,5 +1,5 @@
 /*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -19,7 +19,7 @@ const unsigned long DEFAULT_THROUGHPUT_BATCH_SIZE = 8192; // 8kB
 /*
  * Topic Names for the different channel RTI Perftest will use
  */
-#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
+#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(RTI_CERT)
 const string THROUGHPUT_TOPIC_NAME = "Throughput";
 const string LATENCY_TOPIC_NAME = "Latency";
 const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";

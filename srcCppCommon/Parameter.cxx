@@ -1,7 +1,7 @@
 
 
 /*
- * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -16,7 +16,8 @@ const MiddlewareMask Middleware::RTIDDSPRO = 1 << 0;
 const MiddlewareMask Middleware::RTIDDSMICRO = 1 << 1;
 const MiddlewareMask Middleware::RTITSSPRO = 1 << 2;
 const MiddlewareMask Middleware::RTITSSMICRO = 1 << 3;
-const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 4;
+const MiddlewareMask Middleware::RTICERT = 1 << 4;
+const MiddlewareMask Middleware::RAWTRANSPORT = 1 << 5;
 
 const MiddlewareMask Middleware::RTITSS =
         Middleware::RTITSSPRO
@@ -25,6 +26,7 @@ const MiddlewareMask Middleware::RTITSS =
 const MiddlewareMask Middleware::RTIDDS =
         Middleware::RTIDDSPRO
         | Middleware::RTIDDSMICRO
+        | Middleware::RTICERT
         | Middleware::RTITSS;
 
 const MiddlewareMask Middleware::ALLDDS =

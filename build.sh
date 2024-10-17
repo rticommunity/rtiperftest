@@ -26,6 +26,16 @@ BUILD_TSS=0
 BUILD_TSS_PRO=0
 FACE_COMPLIANCE="None"
 
+# By default we will not build Micro Cert
+BUILD_CERT=0
+BUILD_CERT_WITH_REGULAR_MICRO=0
+
+# Default ZC dataLen
+CERT_ZC_DATALEN=1024
+
+# Overhead Bytes for the ZC size
+CERT_ZC_OVERHEAD=28
+
 # By default we will build pro, not micro
 BUILD_MICRO=0
 
@@ -199,10 +209,18 @@ function usage()
     echo "    --tss                        Build against Connext TSS (pro and micro)      "
     echo "                                 For the Classic C++ Implementation only.       "
     echo "                                 Default is not enabled.                        "
+    echo "    --cert                       Build RTI Perftest for Connext CERT            "
+    echo "                                 For the Classic C++ Implementation only.       "
+    echo "    --micro-use-cert-code        [Experimental] Build RTI Perftest for Connext  "
+    echo "                                 Micro using the same Perftest code used for    "
+    echo "                                 Connext CERT.                                  "
+    echo "    --cert-zc-datalen <size>  Size of the array for the ZeroCopy Type in CERT"
+    echo "                                 Default is 1024.                               "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
     echo ""
+
 }
 
 function clean_custom_type_files()
@@ -230,6 +248,7 @@ function clean()
     rm -f  "${script_location}"/srcC*/README_*.txt
     rm -f  "${script_location}"/srcC*/perftest.*
     rm -f  "${script_location}"/srcC*/perftest_ZeroCopy*
+    rm -f  "${script_location}"/srcC*/perftest_cert_zc*
     rm -f  "${script_location}"/srcC*/perftestPlugin.*
     rm -f  "${script_location}"/srcC*/perftestSupport.*
     rm -f  "${script_location}"/srcC*/perftest_publisher.*
@@ -271,8 +290,15 @@ function executable_checking()
         exit -1
     fi
 
-    # If we are Building MICRO
-    if [ "${BUILD_TSS}" -eq "1" ]; then
+    if [ "${BUILD_CERT}" -eq "1" ]; then
+
+        if [ -z "${RTIMEHOME}" ]; then
+            echo -e "${ERROR_TAG} The RTIMEHOME variable is not set or the path does not exist"
+            usage
+            exit -1
+        fi
+
+    elif [ "${BUILD_TSS}" -eq "1" ]; then
         if [ -z "${RTITSSHOME}" ]; then
             echo -e "${ERROR_TAG} The RTITSSHOME variable is not set or the path does not exist"
             usage
@@ -567,7 +593,9 @@ function library_sufix_calculation()
     if [ "${library_sufix}" == "" ]; then
         rtiddsgen_extra_options="-sharedLib"
     else
-        rtiddsgen_extra_options="-libSuffix ${library_sufix}"
+        if [ "${BUILD_CERT}" == "" ]; then
+            rtiddsgen_extra_options="-libSuffix ${library_sufix}"
+        fi
     fi
 }
 
@@ -878,6 +906,8 @@ function copy_src_cpp_connextDDS()
     src_specific_folder="pro"
     if [ ${BUILD_MICRO} != 0 ]; then
         src_specific_folder="micro"
+    elif [ ${BUILD_CERT} != 0 ]; then
+        src_specific_folder="cert"
     fi
 
     for file in ${classic_cpp_folder}/connextDDS/${src_specific_folder}/*
@@ -916,6 +946,8 @@ function clean_copied_files()
     src_specific_folder="pro"
     if [ ${BUILD_MICRO} != 0 ]; then
         src_specific_folder="micro"
+    elif [ ${BUILD_CERT} != 0 ]; then
+        src_specific_folder="cert"
     fi
 
     for file in ${classic_cpp_folder}/connextDDS/${src_specific_folder}/*
@@ -1379,6 +1411,197 @@ function build_tss_cpp()
     clean_copied_files
 }
 
+function calculate_cert_zerocopy_defines()
+{
+    additional_rtiddsgen_defines="-DRTI_CERT"
+
+    # Determine ZeroCopy availability
+    if [ "${SKIP_ZEROCOPY}" == "1" ]; then
+        echo -e "${INFO_TAG} Skipping ZeroCopy build for CERT"
+        ZEROCOPY_AVAILABLE="0"
+    else
+        echo -e "${INFO_TAG} ZeroCopy enabled for CERT"
+        ZEROCOPY_AVAILABLE="1"
+    fi
+    # Set defines and additional libraries for ZeroCopy
+    if [ "${SKIP_ZEROCOPY}" ==  "1" ]; then
+        export ZEROCOPY_AVAILABLE="0"
+    fi
+
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        additional_defines=${additional_defines}" -DRTI_ZEROCOPY_AVAILABLE"
+    fi
+}
+# Build the Cert Implementation
+function build_cert_cpp()
+{
+    # Copy common files (srcCppCommon)
+    copy_src_cpp_common
+    # Copy RTICertImpl files (srcCpp/connextDDS/cert)
+    for file in ${classic_cpp_folder}/connextDDS/cert/*
+    do
+        if [ -f $file ]; then
+            cp -rf "$file" "${classic_cpp_folder}"
+        fi
+    done
+
+    if [[ $platform == *"Darwin"* ]]; then
+        additional_defines=" -DRTI_DARWIN"
+        additional_included_libraries="dl\;m\;pthread"
+    elif [[ $platform == *"Linux"* ]]; then
+        additional_defines=" -DRTI_LINUX"
+        additional_included_libraries="dl\;m\;pthread\;nsl\;rt"
+    elif [[ $platform == *"qcc"* ]]; then
+        additional_defines=" -DRTI_QNX"
+        additional_included_libraries="m\;socket"
+    fi
+    additional_defines="-DPERFTEST_CERT -DRTI_LANGUAGE_CPP_TRADITIONAL -DO3"${additional_defines}
+
+    # Copy the CMakeLists.txt file and system file to the srcCpp folder.
+    cp "${resource_folder}/cert/CMakeLists.txt" "${classic_cpp_folder}/CMakeLists.txt"
+    cp "${resource_folder}/cert/perftest_micro.tc" "${classic_cpp_folder}/perftest_micro.tc"
+
+    calculate_cert_zerocopy_defines
+
+    # generate C typefiles from defualt idl
+    rtiddsgen_command="\"${rtiddsgen_executable}\" ${additional_rtiddsgen_defines} \
+            -micro -language C \
+            -replace -create typefiles \
+            ${rtiddsgen_extra_options} \
+            -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
+
+    echo ""
+    echo -e "${INFO_TAG} Generating types for C."
+    echo -e "${INFO_TAG} Command: $rtiddsgen_command"
+
+    # Executing RTIDDSGEN command here.
+    eval $rtiddsgen_command
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure generating code for C."
+        exit -1
+    fi
+
+    # Generate CERT ZeroCopy types
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        if [ "${CERT_ZC_DATALEN}" -lt "$((CERT_ZC_OVERHEAD + 1))" ]; then
+            echo -e "${ERROR_TAG} The value of --cert-zc-datalen has to be "
+            echo -e "greater or equal than the overhead of the sample, which "
+            echo -e "is ${CERT_ZC_OVERHEAD} B + 1 B because the bin_data "
+            echo -e "array needs to have a length of at least 1"
+            exit -1
+        fi
+
+        echo -e "${INFO_TAG} The data length for the Zero Copy Type is: ${CERT_ZC_DATALEN}"
+
+        echo -e "${INFO_TAG} Generating Cert Zero Copy TypeFiles"
+        rtiddsgen_command="\"${rtiddsgen_executable}\" -language C \
+        ${additional_rtiddsgen_defines} \
+        -replace -create typefiles  -DCERT_ZC_DATALEN=${CERT_ZC_DATALEN} \
+        -DCERT_ZC_OVERHEAD=${CERT_ZC_OVERHEAD} -d \"${classic_cpp_folder}\" \
+        \"${idl_location}/perftest_cert_zc.idl\""
+
+        echo -e "${INFO_TAG} Command (Generating Cert Zero Copy TypeFiles): $rtiddsgen_command"
+        eval $rtiddsgen_command
+        if [ "$?" != 0 ]; then
+            echo -e "${ERROR_TAG} Failure generating code for Cert Zero Copy TypeFiles."
+            clean_copied_files
+            exit -1
+        fi
+    fi
+
+    ##############################################################################
+    # Compile srcCpp code
+
+    perfest_executable_name="perftest_cpp_cert"
+
+    if [ "${BUILD_CERT_WITH_REGULAR_MICRO}" == "1" ]; then
+        additional_defines="-DBUILD_CERT_WITH_REGULAR_MICRO ${additional_defines}"
+        perfest_executable_name="perftest_cpp_micro"
+    fi
+
+    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+        perfest_executable_name="${perfest_executable_name}_${CERT_ZC_DATALEN}"
+    fi
+
+    # rtime-make has some limitations when it comes to passing string defines
+    # with spaces in it to cmake. Because of this reason, additional_defines
+    # will not be directly passed to rtime-make, but instead written to a file,
+    # which is later on directly read from our CMakelists.txt for Cert
+
+    touch ${classic_cpp_folder}/additional_defines.txt
+    echo "${additional_defines}" > ${classic_cpp_folder}/additional_defines.txt
+
+    echo ""
+    echo -e "${INFO_TAG} Compiling ${perfest_executable_name}"
+    cd "${classic_cpp_folder}"
+
+    resource_folder="${RTIMEHOME}/../resource.1.0"
+    if [[ ! -d ${resource_folder} ]]; then
+        resource_folder="${RTIMEHOME}/resource"
+        if [[ ! -d ${resource_folder} ]]; then
+            echo "${ERROR_TAG} Failed to find a valid Micro resource folder"
+            exit -1
+        fi
+    fi
+
+    cert_flag="-DRTI_CERT=1"
+    if [ "${BUILD_CERT_WITH_REGULAR_MICRO}" == "1" ]; then
+        cert_flag=""
+    fi
+
+    path_to_rtimemake="${resource_folder}/scripts/rtime-make"
+    if [[ ! -f ${path_to_rtimemake} ]]; then
+        echo "${ERROR_TAG} Failed to find rtime-make script inside the resource folder"
+        exit -1
+    fi
+
+    rtimemake_command="${path_to_rtimemake} \
+        -DRTIME_RESOURCE_ROOT=${resource_folder} \
+        --tcfile ${classic_cpp_folder}/perftest_micro.tc \
+        --config ${RELEASE_DEBUG} ${cert_flag} \
+        ${cmake_c_compiler_string} \
+        -G \"Unix Makefiles\" --name ${platform} \
+        --source-dir ${classic_cpp_folder} \
+        --build -DRTIME_ZEROCOPY_AVAILABLE=${ZEROCOPY_AVAILABLE} \
+        -DPLATFORM_LIBS=${additional_included_libraries} \
+        -DPERFTEST_EXECUTABLE_NAME=${perfest_executable_name} \
+        ${ADDITIONAL_CMAKE_ARGS} --delete"
+
+	echo -e "${INFO_TAG} rtime-make Command: $rtimemake_command"
+    eval $rtimemake_command
+    rtimemake_retcode=$?
+    rm ${classic_cpp_folder}/additional_defines.txt
+    if [ "$rtimemake_retcode" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure building using rtime-make."
+        cd ..
+        exit -1
+    fi
+
+    echo -e "${INFO_TAG} Compilation successful"
+    cd ..
+
+    # Copy executables to bin
+    echo ""
+    echo -e "${INFO_TAG} Copying executable into: \"bin/${platform}/${RELEASE_DEBUG}\" folder"
+
+    # Create bin folder if not exists and copy executables
+    destination_folder="${bin_folder}/${platform}/${RELEASE_DEBUG}"
+    mkdir -p "${bin_folder}/${platform}/${RELEASE_DEBUG}"
+    cp -f "${classic_cpp_folder}/objs/${platform}/${perfest_executable_name}" "${destination_folder}"
+
+    # This will remove the srcCppCommon copied files.
+    if [ "$?" != 0 ]; then
+        echo -e "${ERROR_TAG} Failure copying code for CERT C."
+        clean_copied_files
+        exit -1
+    else
+        echo -e "${INFO_TAG} Copy successful for CERT C."
+        clean_copied_files
+        rm ${classic_cpp_folder}/CMakeLists.txt
+        rm ${classic_cpp_folder}/perftest_micro.tc
+    fi
+}
+
 function build_cpp11()
 {
     copy_src_cpp_common
@@ -1804,6 +2027,11 @@ while [ "$1" != "" ]; do
             BUILD_MICRO=1
             BUILD_MICRO_24x_COMPATIBILITY=1
             ;;
+        --cert)
+            BUILD_CERT=1
+            # Force use cpp 11 infrastructure
+            RTI_USE_CPP_11_INFRASTRUCTURE=0
+            ;;
         --skip-java-build)
             BUILD_JAVA=0
             ;;
@@ -2025,7 +2253,18 @@ while [ "$1" != "" ]; do
             FAST_QUEUE=1
             ;;
         --no-zeroCopy)
-            SKIP_ZEROCOPY="1"
+            SKIP_ZEROCOPY=1
+            ;;
+        --cert-zc-datalen)
+            CERT_ZC_DATALEN=$2
+            shift
+            ;;
+        --micro-use-cert-code)
+            BUILD_CERT_WITH_REGULAR_MICRO=1
+            BUILD_CERT=1
+            # Do not use C++11 infrastructure
+            RTI_USE_CPP_11_INFRASTRUCTURE=0
+            shift
             ;;
         # These options are not exposed to the user (yet)
         --just-generate)
@@ -2056,6 +2295,15 @@ if [ "${BUILD_TSS}" -eq "1" ]; then
     if [ "${BUILD_CPP}" -eq "1" ]; then
         library_sufix_calculation
         build_tss_cpp
+    fi
+
+elif [ "${BUILD_CERT}" -eq "1" ]; then
+    rtiddsgen_executable="$RTIMEHOME/rtiddsgen/scripts/rtiddsgen"
+
+    classic_cpp_lang_string=C++
+    if [ "${BUILD_CPP}" -eq "1" ]; then
+        library_sufix_calculation
+        build_cert_cpp
     fi
 
 elif [ "${BUILD_MICRO}" -eq "1" ]; then

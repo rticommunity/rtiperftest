@@ -1,12 +1,12 @@
 /*
- * (c) 2005-2020 Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024 Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
 #ifndef INFRASTRUCTURE_COMMON_H_
 #define INFRASTRUCTURE_COMMON_H_
 
-#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO)
+#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(RTI_CERT) || defined(BUILD_CERT_WITH_REGULAR_MICRO)
   #include "perftest.h"
 #elif defined(RTI_PERF_TSS)
   #include "gen/perftest.h"
@@ -58,9 +58,13 @@
   #include "Infrastructure_pro.h"
 #elif defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS_MICRO)
   #include "Infrastructure_micro.h"
+#elif defined(PERFTEST_CERT)
+  #include "Infrastructure_cert.h"
+#else
+  #define PERFTEST_NO_INFRASTRUCTURE_AVAILABLE=1
 #endif
 
-#if defined(RTI_USE_CPP_11_INFRASTRUCTURE) || (!defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO))
+#if defined(RTI_USE_CPP_11_INFRASTRUCTURE) || defined(PERFTEST_NO_INFRASTRUCTURE_AVAILABLE)
 
 #include <chrono>
 #include <condition_variable>
@@ -73,7 +77,7 @@
  * generated variable for a string is different. We need to move it to a generic
  * place and remove it from here in the future.
  */
-#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS)
+#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS) && !defined(PERFTEST_CERT)
 static const char *const THROUGHPUT_TOPIC_NAME = "Throughput";
 static const char *const LATENCY_TOPIC_NAME = "Latency";
 static const char *const ANNOUNCEMENT_TOPIC_NAME = "Announcement";
@@ -107,7 +111,7 @@ public:
         try {
             std::unique_lock<std::mutex> lock(mutex);
             condition.wait(lock, [&]() -> bool { return count > 0; });
-            --count;
+            count = count == 0 ? 0 : count - 1;
             return true;
         } catch (std::exception& e) {
             std::cerr << "[Exception]: "<<  e.what() << std::endl;
@@ -117,11 +121,16 @@ public:
 
     bool take(int timeout_millisec)
     {
+        if (timeout_millisec == PERFTEST_SEMAPHORE_TIMEOUT_INFINITE)
+        {
+          return take();
+        }
+
         try {
             std::chrono::milliseconds timeout(timeout_millisec);
             std::unique_lock<std::mutex> lock(mutex);
             condition.wait_for(lock, timeout, [&]() -> bool { return count > 0; });
-            --count;
+            count = count == 0 ? 0 : count - 1;
             return true;
         } catch (std::exception& e) {
             std::cerr << "[Exception]: "<<  e.what() << std::endl;
@@ -194,14 +203,14 @@ PerftestThread *PerftestThread_new(
 
 void PerftestThread_delete(PerftestThread *thread);
 
-#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS)
+#ifdef PERFTEST_NO_INFRASTRUCTURE_AVAILABLE
 struct DDS_Duration_t {
     int sec;
     unsigned int nanosec;
 };
 #endif
 
-#if !defined(PERFTEST_RTI_PRO) && !defined(PERFTEST_RTI_MICRO) && !defined(RTI_PERF_TSS_PRO)
+#ifdef PERFTEST_NO_INFRASTRUCTURE_AVAILABLE
 class NDDSUtility {
 public:
     /*e \dref_Utility_sleep */

@@ -1,7 +1,7 @@
 
 
 /*
- * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -52,7 +52,12 @@ void ParameterManager::initialize()
     verbosity->set_extra_argument(YES);
     verbosity->set_range(0, 3);
     verbosity->set_group(GENERAL);
-    verbosity->set_supported_middleware(Middleware::ALL);
+    // Everything but CERT
+    verbosity->set_supported_middleware(
+                Middleware::RTIDDSPRO
+                | Middleware::RTIDDSMICRO
+                | Middleware::RTITSS
+                | Middleware::RAWTRANSPORT);
     create("verbosity", verbosity);
 
     Parameter<bool> *dynamicData = new Parameter<bool>(false);
@@ -314,7 +319,9 @@ void ParameterManager::initialize()
     threadPriorities->set_extra_argument(YES);
     threadPriorities->set_group(GENERAL);
     threadPriorities->set_supported_middleware(
-            Middleware::RTIDDS
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO
+            | Middleware::RTITSS
             | Middleware::RAWTRANSPORT);
     create("threadPriorities", threadPriorities);
 
@@ -358,18 +365,25 @@ void ParameterManager::initialize()
     flatData->set_group(GENERAL);
     flatData->set_supported_middleware(Middleware::RTIDDSPRO);
     create("flatdata", flatData);
+  #endif
 
-    #if RTI_ZEROCOPY_AVAILABLE
+  #if RTI_ZEROCOPY_AVAILABLE
+    #if(defined(RTI_CERT) || defined(RTI_FLATDATA_AVAILABLE))
     Parameter<bool> *zerocopy = new Parameter<bool>(false);
     zerocopy->set_command_line_argument("-zeroCopy", "");
     zerocopy->set_description(
-            "Use Zero Copy transfer mode. FlatData must be used too\nDefault: Not set");
+            "Use Zero Copy transfer mode. If not Connext CERT,\n"
+            "FlatData must be used too\nDefault: Not set");
     zerocopy->set_type(T_BOOL);
     zerocopy->set_extra_argument(NO);
     zerocopy->set_group(GENERAL);
-    zerocopy->set_supported_middleware(Middleware::RTIDDSPRO);
+    zerocopy->set_supported_middleware(
+        Middleware::RTIDDSPRO
+        | Middleware::RTICERT);
     create("zerocopy", zerocopy);
+    #endif
 
+    #ifdef RTI_FLATDATA_AVAILABLE
     Parameter<bool> *checkconsistency = new Parameter<bool>(false);
     checkconsistency->set_command_line_argument("-checkConsistency", "");
     checkconsistency->set_description(
@@ -479,9 +493,38 @@ void ParameterManager::initialize()
     receiveQueueSize->set_type(T_NUMERIC_D);
     receiveQueueSize->set_extra_argument(YES);
     receiveQueueSize->set_group(GENERAL);
-    receiveQueueSize->set_supported_middleware(Middleware::ALL);
+    receiveQueueSize->set_supported_middleware(
+        Middleware::RTIDDSPRO
+        | Middleware::RTIDDSMICRO
+        | Middleware::RTITSS
+        | Middleware::RAWTRANSPORT);
     receiveQueueSize->set_range(1, INT_MAX);
     create("receiveQueueSize", receiveQueueSize);
+
+    Parameter<int> *receiveBufferSize = new Parameter<int>(2097152);
+    receiveBufferSize->set_command_line_argument("-receiveBufferSize", "<number>");
+    receiveBufferSize->set_description(
+            "Sets size of the receive buffer in B\n");
+    receiveBufferSize->set_type(T_NUMERIC_D);
+    receiveBufferSize->set_extra_argument(YES);
+    receiveBufferSize->set_group(GENERAL);
+    receiveBufferSize->set_supported_middleware(
+        Middleware::RTIDDSMICRO
+        | Middleware::RTICERT);
+    receiveBufferSize->set_range(1, INT_MAX);
+    create("receiveBufferSize", receiveBufferSize);
+
+    Parameter<int> *sendBufferSize = new Parameter<int>(524288);
+    sendBufferSize->set_command_line_argument("-sendBufferSize", "<number>");
+    sendBufferSize->set_description("Sets size of the send buffer in B\n");
+    sendBufferSize->set_type(T_NUMERIC_D);
+    sendBufferSize->set_extra_argument(YES);
+    sendBufferSize->set_group(GENERAL);
+    sendBufferSize->set_supported_middleware(
+        Middleware::RTIDDSMICRO
+        | Middleware::RTICERT);
+    sendBufferSize->set_range(1, INT_MAX);
+    create("sendBufferSize", sendBufferSize);
 
     Parameter<bool> *showResourceLimits = new Parameter<bool>(false);
     showResourceLimits->set_command_line_argument("-showResourceLimits", "");
@@ -659,11 +702,7 @@ void ParameterManager::initialize()
     pub->set_type(T_BOOL);
     pub->set_extra_argument(NO);
     pub->set_group(PUB);
-    pub->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::RTITSS);
+    pub->set_supported_middleware(Middleware::ALL);
     create("pub", pub);
 
     Parameter<unsigned long long> *latencyCount =
@@ -882,11 +921,7 @@ void ParameterManager::initialize()
     writeInstance->set_extra_argument(YES);
     writeInstance->set_range(0, LONG_MAX);
     writeInstance->set_group(PUB);
-    writeInstance->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::RTITSS);
+    writeInstance->set_supported_middleware(Middleware::ALL);
     create("writeInstance", writeInstance);
 
   #ifdef RTI_LANGUAGE_CPP_TRADITIONAL
@@ -1054,11 +1089,7 @@ void ParameterManager::initialize()
     peer->set_type(T_VECTOR_STR);
     peer->set_extra_argument(YES);
     peer->set_group(TRANSPORT);
-    peer->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::RTITSS);
+    peer->set_supported_middleware(Middleware::ALL);
     create("peer", peer);
 
     Parameter<std::string> *transport = new Parameter<std::string>("Use XML");
@@ -1083,16 +1114,21 @@ void ParameterManager::initialize()
           #elif defined(PERFTEST_RTI_MICRO)
             "\nValues:\n\tUDPv4\n\tSHMEM\n"
             "Default: UDPv4"
+          #elif defined(RTI_CERT)
+            "\nValues:\n"
+            #ifdef RTI_ZEROCOPY_AVAILABLE
+            "\tUDPv4 & SHMEM\n"
+            "Default: UDPv4 & SHMEM"
+            #else
+            "\tUDPv4\n"
+            "Default: UDPv4"
+            #endif
           #endif
           );
     transport->set_type(T_STR);
     transport->set_extra_argument(YES);
     transport->set_group(TRANSPORT);
-    transport->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::RTITSS);
+    transport->set_supported_middleware(Middleware::ALL);
     transport->add_valid_str_value("UDPv4");
     transport->add_valid_str_value("SHMEM");
   #if defined(PERFTEST_RTI_PRO)
@@ -1122,11 +1158,7 @@ void ParameterManager::initialize()
     multicast->set_type(T_BOOL);
     multicast->set_extra_argument(NO);
     multicast->set_group(TRANSPORT);
-    multicast->set_supported_middleware(
-            Middleware::RTIDDSPRO
-            | Middleware::RAWTRANSPORT
-            | Middleware::RTIDDSMICRO
-            | Middleware::RTITSS);
+    multicast->set_supported_middleware(Middleware::ALL);
     create("multicast", multicast);
 
     Parameter<std::string> *multicastAddr = new Parameter<std::string>();

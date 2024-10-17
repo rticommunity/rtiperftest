@@ -455,6 +455,49 @@ Modify ``-dataLen <bytes>`` to see latencies for different data sizes.
 Set ``-executionTime <seconds>`` to be >=100 for statistically better
 results.
 
+RTI Connext DDS Cert
+---------------------
+
+1-to-1, Unicast, Best-Effort, UDPv4, Throughput
+-----------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp_cert -pub -noPrint -nic <ipaddr> -peer <peer IP> -domain <ID> -dataLen <length> -executionTime 100
+
+-  Subscriber:
+
+::
+
+    bin/<arch>/release/perftest_cpp_cert -sub -noPrint -nic <ipaddr> -peer <peer IP> -domain <ID>
+
+Modify ``-dataLen <bytes>`` to see latencies for different data sizes.
+Set ``-executionTime <seconds>`` to be >=100 for statistically better
+results.
+
+1-to-1, Unicast, Reliable, ZeroCopy, Latency
+-----------------------------------------------------------
+
+-  Publisher:
+
+::
+
+    bin/<arch>/release/perftest_cpp_cert_<ZC data length> -pub -noPrint -nic <ipaddr> -peer <peer IP> -domain <ID> -zeroCopy -reliable -executionTime 100
+
+-  Subscriber:
+
+::
+
+    bin/<arch>/release/perftest_cpp_cert -sub -noPrint -nic <ipaddr> -peer <peer IP> -domain <ID> -zeroCopy -reliable
+
+Note how no ``-dataLen`` argument was specified. That's because, in the case of
+Cert ZeroCopy, the length of the array has to be set at build time through the build script.
+That size is appended to the name of the executable, such that executables with different ZC data lengths can coexist.
+Set ``-executionTime <seconds>`` to be >=100 for statistically better
+results.
+
 Use-Cases
 =========
 

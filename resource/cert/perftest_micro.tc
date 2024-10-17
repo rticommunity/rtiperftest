@@ -1,0 +1,70 @@
+###############################################################################
+# (c) Copyright, Real-Time Innovations 2024
+#
+# All rights reserved.
+# No duplications, whole or partial, manual or electronic, may be made
+# without express written permission.  Any such copies, or
+# revisions thereof, must display this notice unaltered.
+# This code contains trade secrets of Real-Time Innovations, Inc.
+################################################################################
+
+# This file includes basic platform dependencies for self-hosted builds
+IF (DEFINED RTIME_TARGET_NAME)
+    STRING(REGEX MATCH "(.*)-(.*)" pil_match ${RTIME_TARGET_NAME})
+    IF (pil_match)
+        SET(RTIME_PSL TRUE)
+        ADD_DEFINITIONS(-DRTI_PSL=1)
+        IF (${RTIME_TARGET_NAME} MATCHES ".*gcc.*")
+            ADD_DEFINITIONS(-DOSAPI_CC_DEF_H=osapi/osapi_cc_gcc.h)
+            SET(RTIME_OSAPI_COMPILER osapi/osapi_cc_gcc.h)
+        ELSEIF (${RTIME_TARGET_NAME} MATCHES ".*clang.*")
+            ADD_DEFINITIONS(-DOSAPI_CC_DEF_H=osapi/osapi_cc_clang.h)
+            SET(RTIME_OSAPI_COMPILER osapi/osapi_cc_clang.h)
+        ELSEIF (${RTIME_TARGET_NAME} MATCHES ".*qcc.*")
+            ADD_DEFINITIONS(-DOSAPI_CC_DEF_H=osapi/osapi_cc_qcc.h)
+            SET(RTIME_OSAPI_COMPILER osapi/osapi_cc_qcc.h)
+        ELSEIF (${RTIME_TARGET_NAME} MATCHES ".*PEvs.*")
+            ADD_DEFINITIONS(-DOSAPI_CC_DEF_H=osapi/osapi_cc_msvsc.h)
+            SET(RTIME_OSAPI_COMPILER osapi/osapi_cc_msvsc.h)
+        ELSE()
+            MESSAGE(FATAL_ERROR "Unknown PSL architecture #{RTIME_TARGET_NAME}")
+        ENDIF()
+        SET(OSAPI_CC_DEF_H_SET TRUE)
+    ENDIF()
+    IF (${RTIME_TARGET_NAME} MATCHES ".*qcc.*")
+        INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Platform/qnx.tc)
+        INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Compiler/qcc.tc)
+        IF (pil_match)
+            INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Compiler/qcc_pi.tc)
+        ENDIF()
+        INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/${RTIME_TARGET_NAME}.tc)
+    ELSE()
+    IF(NOT DEFINED RTIME_SYSTEM_FILE AND DEFINED RTIME_RESOURCE_ROOT)
+        # Check for knowns defaults
+        IF (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
+            INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Platform/linux.tc)
+        ELSEIF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
+            INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Platform/windows.tc)
+        ELSEIF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin")
+            INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Platform/darwin.tc)
+        ELSEIF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "VOS")
+            INCLUDE(${RTIME_RESOURCE_ROOT}/cmake/architectures/Platform/vos.tc)
+        ELSE()
+            MESSAGE(FATAL_ERROR "${CMAKE_HOST_SYSTEM_NAME} is an unknown host system, aborting.")
+        ENDIF()
+    ELSEIF(NOT ${RTIME_SYSTEM_FILE} STREQUAL "")
+        # A non-emty value has been defined, check if the file exists
+        IF (NOT EXISTS ${RTIME_SYSTEM_FILE})
+            MESSAGE(FATAL_ERROR "Could not locate file ${RTIME_SYSTEM_FILE} as the system file, aborting.")
+        ELSEIF(IS_DIRECTORY ${RTIME_SYSTEM_FILE})
+            MESSAGE(FATAL_ERROR "${RTIME_SYSTEM_FILE} is a directory, not a valid system definition file.")
+        ENDIF()
+
+        MESSAGE(STATUS "Using ${RTIME_SYSTEM_FILE} as the system file for ${CMAKE_HOST_SYSTEM_NAME}.")
+        INCLUDE(${RTIME_SYSTEM_FILE})
+    ELSE()
+        # RTIME_SYSTEM_FILE="", ignore any defaults
+        MESSAGE(WARNING "${RTIME_SYSTEM_FILE} defined as \"\", using cmake system defaults for ${CMAKE_HOST_SYSTEM_NAME}.")
+    ENDIF()
+    ENDIF()
+ENDIF()

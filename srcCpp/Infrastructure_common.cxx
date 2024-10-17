@@ -1,5 +1,5 @@
 /*
- * (c) 2005-2020  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -17,7 +17,7 @@
  * which will make us compatible with less OSs. In other cases we do need a
  * implementation for these classes.
  */
-#if defined(RTI_USE_CPP_11_INFRASTRUCTURE) || (!defined(PERFTEST_RTI_MICRO) && !defined(PERFTEST_RTI_PRO))
+#if defined(RTI_USE_CPP_11_INFRASTRUCTURE) || defined(PERFTEST_NO_INFRASTRUCTURE_AVAILABLE)
 
 /********************************************************************/
 /* Perftest Semaphore class */

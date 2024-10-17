@@ -124,6 +124,32 @@
             "intelliSenseMode": "clang-x64"
         },
         {
+            "name": "Linux Cert (macOS)",
+            "includePath": [
+                "${workspaceFolder}/srcCpp",
+                "${workspaceFolder}/srcCpp/connextDDS",
+                "${workspaceFolder}/srcCpp/connextDDS/cert",
+                "${workspaceFolder}/srcCppCommon",
+                "${env.RTIMEHOME}/include",
+                "${env.RTIMEHOME}/include/rti_me",
+                "${env.RTIMEHOME}/include/rti_me/dds_c"
+            ],
+            "defines": [
+                "PERFTEST_CERT=1",
+                "PERFTEST_RTI_MICRO_24x_COMPATIBILITY=1",
+                "RTI_LANGUAGE_CPP_TRADITIONAL=1",
+                "RTI_ZEROCOPY_AVAILABLE=1"
+            ],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        },
+        {
             "name": "Micro (OSX)",
             "includePath": [
                 "${workspaceFolder}/srcCpp",
