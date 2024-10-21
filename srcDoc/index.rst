@@ -175,6 +175,12 @@ Table of Contents
 =================
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Contents   
+
+   copyright.rst
+
+.. toctree::
     :maxdepth: 2
     :numbered:
 

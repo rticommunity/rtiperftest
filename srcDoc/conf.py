@@ -91,7 +91,7 @@ def setup(app):
 # documentation.
 #
 # html_theme_options = {}
-html_logo = "_static/RTI_Launcher_Icon_Perftest_150x150.png"
+html_logo = "_static/RTI_Launcher_Icon_Perftest_64x64.png"
 html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
