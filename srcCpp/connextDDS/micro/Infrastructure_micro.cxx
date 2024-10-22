@@ -184,10 +184,7 @@ bool configureUDPv4Transport(
     udp_property->max_send_buffer_size = 524288;
 
     /* Configure UDP transport's allowed interfaces */
-    if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
-        fprintf(stderr, "[Error] Micro failed to unregister udp\n");
-        return false;
-    }
+    registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL);
 
     /* use only interface supplied by command line? */
     if (!_PM->get<std::string>("allowInterfaces").empty()) {
@@ -315,6 +312,20 @@ bool configureUDPv4Transport(
         *DDS_StringSeq_get_reference(&qos.user_traffic.enabled_transports, 0) =
                 DDS_String_dup("_udp://239.255.0.1");
     }
+    else
+    {
+        DDS_StringSeq_set_maximum(&qos.user_traffic.enabled_transports,1);
+        DDS_StringSeq_set_length(&qos.user_traffic.enabled_transports,1);
+        *DDS_StringSeq_get_reference(&qos.user_traffic.enabled_transports,0) = DDS_String_dup("_udp://");
+    }
+
+    DDS_StringSeq_set_maximum(&qos.transports.enabled_transports,1);
+    DDS_StringSeq_set_length(&qos.transports.enabled_transports,1);
+    *DDS_StringSeq_get_reference(&qos.transports.enabled_transports,0) = DDS_String_dup("_udp");
+
+    DDS_StringSeq_set_maximum(&qos.discovery.enabled_transports,1);
+    DDS_StringSeq_set_length(&qos.discovery.enabled_transports,1);
+    *DDS_StringSeq_get_reference(&qos.discovery.enabled_transports,0) = DDS_String_dup("_udp://");
 
     /* if there are more remote or local endpoints, you may need to increase these limits */
     qos.resource_limits.max_destination_ports = 32;
@@ -348,10 +359,7 @@ bool configureShmemTransport(
     NETIO_SHMEMInterfaceFactoryProperty shmem_property;
 
     /* We don't need UDP transport. Unregister it */
-    if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
-        printf("Micro: Failed to unregister udp\n");
-        return false;
-    }
+    registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL);
 
     /* In order to avoid MICRO-2191 */
   #if RTIME_DDS_VERSION_MAJOR >= 3 && RTIME_DDS_VERSION_MINOR > 0

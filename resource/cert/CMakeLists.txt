@@ -15,24 +15,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.4)
 
-# This funtion returns the directory name where the Core library can be found
-# based on the provided <full_arch_name>.
-# The function produces <core_lib_dir_name> output containing the Core's
-# directory name
-function(get_core_lib_dir_name full_arch_name)
-    string(REPLACE "-" ";" split_arch_name ${full_arch_name})
-    list(GET split_arch_name 0 core_lib_dir_name)
-    list(LENGTH split_arch_name split_arch_name_length)
-    # Set function outputs
-    set(core_lib_dir_name ${core_lib_dir_name} PARENT_SCOPE)
-    # If there's text following the "-" in the arch name, we are working with a
-    # Platform Independent architecture, hence a Platform Independent Cert
-    if(split_arch_name_length GREATER 1)
-        set(cert_is_pi ON PARENT_SCOPE)
-    else()
-        set(cert_is_pi OFF PARENT_SCOPE)
-    endif()
-endfunction()
+INCLUDE(../resource/cmake/common_utils.cmake)
 
 function(remove_unwanted_flags)
     function(remove_warning_flags_from var_name)
@@ -132,11 +115,11 @@ IF (DEFINED RTI_CERT OR cert_match)
     IF (RTIME_ZEROCOPY_AVAILABLE)
         list(APPEND MICRO_C_LIBS rti_me_netiozcopy${RTI_LIB_SUFFIX})
     ENDIF()
-    IF(cert_is_pi)
+    IF(arch_is_pi)
         list(APPEND MICRO_C_LIBS rti_me_psl${RTI_LIB_SUFFIX})
     ENDIF()
     list(APPEND MICRO_C_LIBS rti_me${RTI_LIB_SUFFIX})
-    IF(cert_is_pi)
+    IF(arch_is_pi)
         list(APPEND MICRO_C_LIBS rti_me_psl${RTI_LIB_SUFFIX})
     ENDIF()
     add_definitions(${ADDITIONAL_DEFINES} -DRTI_CERT -DPERFTEST_CERT)
@@ -152,7 +135,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(gen/ $ENV{RTIMEHOME}/include $ENV{RTIMEHOME}/include/rti_me)
 
-IF (${cert_is_pi})
+IF (${arch_is_pi})
     INCLUDE_DIRECTORIES($ENV{RTIMEHOME}/../rti_me_psl.1.0/include
         $ENV{RTIMEHOME}/../rti_me_psl.1.0/include/rti_me_psl)
 ENDIF()
@@ -160,7 +143,7 @@ ENDIF()
 LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${RTIME_TARGET_NAME})
 # If ${core_lib_dir_name} is not empty, we are working with a
 # Platform Independent Cert
-IF (${cert_is_pi})
+IF (${arch_is_pi})
     LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${core_lib_dir_name})
 ENDIF()
 
@@ -183,7 +166,7 @@ LIST(REMOVE_ITEM MyCSources
         ${CMAKE_CURRENT_SOURCE_DIR}/perftest_publisher.${SOURCE_EXTENSION}
         ${CMAKE_CURRENT_SOURCE_DIR}/perftest_cpp.cxx)
 
-if(${cert_is_pi})
+if(${arch_is_pi})
     add_compile_definitions(RTI_CERT_IS_PI)
 ENDIF()
 

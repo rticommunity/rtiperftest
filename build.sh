@@ -765,31 +765,31 @@ function additional_defines_calculation()
 
 function additional_defines_calculation_micro()
 {
-    additional_rtiddsgen_defines="-D PERFTEST_RTI_MICRO"
+    additional_rtiddsgen_defines="-DPERFTEST_RTI_MICRO"
 
     if [[ $platform == *"Darwin"* ]]; then
-        additional_defines=" RTI_DARWIN"
+        additional_defines="-DRTI_DARWIN"
         additional_included_libraries="dl;m;pthread;"
     elif [[ $platform == *"Linux"* ]]; then
-        additional_defines=" RTI_LINUX"
+        additional_defines="-DRTI_LINUX"
         additional_included_libraries="dl;m;pthread;nsl;rt;"
     elif [[ $platform == *"QNX"* ]]; then
-        additional_defines=" RTI_QNX"
+        additional_defines="-DRTI_QNX"
         additional_included_libraries="m;socket;"
     fi
-    additional_defines="RTI_LANGUAGE_CPP_TRADITIONAL PERFTEST_RTI_MICRO O3"${additional_defines}
+    additional_defines="-DRTI_LANGUAGE_CPP_TRADITIONAL -DPERFTEST_RTI_MICRO -DO3 "${additional_defines}
 
     if [ "${RTI_PERFTEST_NANO_CLOCK}" == "1" ]; then
-        additional_defines=${additional_defines}" DRTI_PERFTEST_NANO_CLOCK"
+        additional_defines=${additional_defines}" -DRTI_PERFTEST_NANO_CLOCK"
     fi
 
     if [ "${RTI_USE_CPP_11_INFRASTRUCTURE}" == "1" ]; then
         echo -e "${INFO_TAG} Force using C++11 and C++11 Infrastructure."
-        additional_defines=${additional_defines}" DRTI_USE_CPP_11_INFRASTRUCTURE"
+        additional_defines=${additional_defines}" -DRTI_USE_CPP_11_INFRASTRUCTURE"
     fi
 
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
-        additional_defines="${additional_defines} RTI_SECURE_PERFTEST"
+        additional_defines="${additional_defines} -DRTI_SECURE_PERFTEST"
 
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
             echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
@@ -1215,7 +1215,7 @@ function build_micro_cpp()
     ##############################################################################
     # Generate files for srcCpp
     if [ "${BUILD_MICRO_24x_COMPATIBILITY}" -eq "1" ]; then
-        additional_defines=${additional_defines}" PERFTEST_RTI_MICRO_24x_COMPATIBILITY"
+        additional_defines=${additional_defines}" -DPERFTEST_RTI_MICRO_24x_COMPATIBILITY"
     else
         rtiddsgen_extra_options="${rtiddsgen_extra_options} -sequenceSize ${MICRO_UNBOUNDED_SEQUENCE_SIZE}"
 
@@ -1267,7 +1267,6 @@ function build_micro_cpp()
             -replace -create typefiles -create makefiles \
             -additionalHeaderFiles \"$additional_header_files\" \
             -additionalSourceFiles \"$additional_source_files\" \
-            -additionalDefines \"${additional_defines}\" \
             ${rtiddsgen_extra_options} -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
@@ -1283,6 +1282,7 @@ function build_micro_cpp()
     cp "${classic_cpp_folder}/perftest_cpp.cxx" "${classic_cpp_folder}/perftest_publisher.cxx"
     cp "${classic_cpp_folder}/perftest_cpp.cxx" "${classic_cpp_folder}/perftest_subscriber.cxx"
     cp "${idl_location}/perftest.idl" "${classic_cpp_folder}/perftest.idl"
+    cp "${resource_folder}/micro/CMakeLists.txt" "${classic_cpp_folder}/CMakeLists.txt"
     touch "${classic_cpp_folder}/perftestApplication.cxx"
     touch "${classic_cpp_folder}/perftestApplication.h"
 
@@ -1296,7 +1296,7 @@ function build_micro_cpp()
         echo -e "${INFO_TAG} Compiler: ${COMPILER_EXE}."
         cmake_c_compiler_string="-DCMAKE_C_COMPILER=${COMPILER_EXE} -DCMAKE_CXX_COMPILER=${COMPILER_EXE}"
     fi
-    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} ${cmake_c_compiler_string} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"${additional_included_libraries}\" ${ADDITIONAL_CMAKE_ARGS}"
+    cmake_generate_command="${CMAKE_EXE} -DCMAKE_BUILD_TYPE=${RELEASE_DEBUG} ${cmake_c_compiler_string} -G \"Unix Makefiles\" -B./perftest_build -H. -DRTIME_TARGET_NAME=${platform} -DPLATFORM_LIBS=\"${additional_included_libraries}\" -DADDITIONAL_DEFINES=\"${additional_defines}\" ${ADDITIONAL_CMAKE_ARGS}"
     echo -e "${INFO_TAG} Cmake Generate Command: $cmake_generate_command"
     eval $cmake_generate_command
     if [ "$?" != 0 ]; then
