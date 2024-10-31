@@ -38,14 +38,14 @@ Features
 
 *RTI Perftest* supports the following functionality:
 
-- *RTI Connext DDS Professional*, *RTI Connext DDS Micro* and *RTI Connext DDS Cert*.
-  *Perftest* also supports *RTI Connext TSS* over *RTI Connext DDS Professional*
-  or over *RTI Connext DDS Micro*.
+- *RTI Connext Professional*, *RTI Connext Micro*, and *RTI Connext Cert*.
+  *Perftest* also supports *RTI Connext TSS* over *RTI Connext Professional*
+  or over *RTI Connext Micro*.
 - Multiple platforms, including Windows®, Linux®, macOS®, VxWorks®, and Android™.
 - Multiple test setups: multicast, one-to-many communication (Pub -> Sub),
   latency test, throughput test, and latency vs. throughput test.
 - Raw transports (UDPv4 sockets and shared memory segments).
-- Benchmarking of *RTI Connext DDS Professional* and *RTI Connext DDS Micro*
+- Benchmarking of *RTI Connext Professional* and *RTI Connext Micro*
   features such as *FlatData™ language binding* and *Zero Copy transfer over shared
   memory.*
 
@@ -83,8 +83,8 @@ Prerequisites
 If you need to compile *RTI Perftest*, there are a few prerequisites; however,
 if you downloaded the executables already compiled, you can skip these steps:
 
-- *RTI Connext DDS Professional*, *RTI Connext DDS Micro* or *RTI Connext DDS Cert*
-  should be installed in the system where the ``build.sh`` script is going to
+- *RTI Connext Professional*, *RTI Connext Micro*, or *RTI Connext Cert*
+  must be installed in the system where the ``build.sh`` script is going to
   run. The target libraries for the platform to be generated should also be installed.
 - The ``$NDDSHOME`` environment variable should be set correctly. Or, pass
   ``$NDDSHOME`` directly to the ``build.sh`` script by using the ``--nddshome <PATH>``

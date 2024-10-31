@@ -15,14 +15,14 @@ information about the environment:
    |                  NIC: 100Mbps - IP1: 10.45.3.119 / IP2: 10.45.3.120
    |                  Software: RTI Perftest 3.0, C++ Implementation.
    |                            RTI Connext DDS Professional 6.0.0
-   |                            RTI Connext DDS Micro 3.0.0
+   |                            RTI Connext Micro 3.0.0
    | Switch: 1Gbps switch
 
 Prepare the tools
 ~~~~~~~~~~~~~~~~~
 
 To run this test, we will need *RTI Perftest 3.1* (Perftest). We will compile it against
-*RTI Connext DDS Professional 6.0.0* and *RTI Connext DDS Micro 3.0.0*.
+*RTI Connext DDS Professional 6.0.0* and *RTI Connext Micro 3.0.0*.
 
 Get Perftest
 ^^^^^^^^^^^^
@@ -84,17 +84,17 @@ because we are going to use only the C++ executable to test with.
 After executing this command, you should have a statically linked binary in `./bin/armv6vfphLinux3.xgcc4.7.2/release`.
 This is all you should need for your testing.
 
-Compile against Connext DDS Micro 3.0.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Compile against Connext Micro 3.0.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This process should be equivalent to the one described in the previous step, and it is also covered
 in the `compilation <https://github.com/rticommunity/rtiperftest/blob/release/3.0/srcDoc/compilation.rst>`__
 section of the *RTI Perftest* documentation.
 
 **Note:** Although you will need to call the build script two times for compiling for *Connext DDS Professional*
-and *Connext DDS Micro*, you don't need to use two different directories, since the executables will be stored
+and *Connext Micro*, you don't need to use two different directories, since the executables will be stored
 with different names. It is also worth mentioning that cross-testing (using a *RTI Perftest* Publisher from *Connext DDS Professional*
-and a Subscriber from *Connext DDS Micro* or vice-versa) is supported.
+and a Subscriber from *Connext Micro* or vice-versa) is supported.
 
 Therefore, the command we will need to execute should look like this:
 
@@ -121,7 +121,7 @@ differences).
 
 Once that is done, we will have a baseline, which is going to tell us the minimum latency we can expect
 and the maximum throughput achievable in the system when not using *RTPS* and *DDS*. The next step
-is to execute *RTI Perftest* using DDS with *Connext DDS Professional* and *Connext DDS Micro* and see the equivalent results.
+is to execute *RTI Perftest* using DDS with *Connext DDS Professional* and *Connext Micro* and see the equivalent results.
 
 UDPv4 Communication (Raw Transport)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -434,11 +434,11 @@ Latency Results -- Connext DDS Professional (UDPv4)
         63000,7073,214.1,6772,9722,7041,7260,7694,9722,9722
 
 
-Connext DDS Micro 3.0.0 (UDPv4)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Connext Micro 3.0.0 (UDPv4)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We will now repeat the same tests we did for *Connext DDS Professional* but for
-*Connext DDS Micro*.
+*Connext Micro*.
 
 Throughput Test
 ---------------
@@ -456,13 +456,13 @@ Throughput Test
         bin/armv6vfphLinux3.xgcc4.7.2/release/perftest_cpp_micro -sub -nic eth0 -noPrint;
 
 Note that we don't use the `-batchSize` option, because this option is not yet available
-in *Connext DDS Micro* 3.0.0.
+in *Connext Micro* 3.0.0.
 
 The initial summary *RTI Perftest* shows is the following:
 
     .. code::
 
-        RTI Perftest 3.0.0 (RTI Connext DDS Micro 3.0.0)
+        RTI Perftest 3.0.0 (RTI Connext Micro 3.0.0)
 
         Mode: THROUGHPUT TEST
             (Use "-latencyTest" for Latency Mode)
@@ -487,8 +487,8 @@ The initial summary *RTI Perftest* shows is the following:
 See below the output results of executing this test. Again, the information displayed here is
 only what the subscriber side showed.
 
-Throughput Results -- Connext DDS Micro (UDPv4)
-:::::::::::::::::::::::::::::::::::::::::::::::
+Throughput Results -- Connext Micro (UDPv4)
+:::::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -527,7 +527,7 @@ The initial summary *RTI Perftest* shows is the following:
 
     .. code::
 
-        RTI Perftest 3.0.0 (RTI Connext DDS Micro 3.0.0)
+        RTI Perftest 3.0.0 (RTI Connext Micro 3.0.0)
 
         Mode: LATENCY TEST (Ping-Pong test)
 
@@ -550,8 +550,8 @@ The initial summary *RTI Perftest* shows is the following:
 
 And these are the results (taken from the Publisher side):
 
-Latency Results -- Connext DDS Micro (UDPv4)
-::::::::::::::::::::::::::::::::::::::::::::
+Latency Results -- Connext Micro (UDPv4)
+::::::::::::::::::::::::::::::::::::::::
 
     .. csv-table::
         :align: center
@@ -593,8 +593,8 @@ Now we can extract more information about the graphs:
 1. If we take out the test where we make use of *batching* we can see that using
    Raw Transport (plain sockets) gives us the best performance.
 
-2. *Connext DDS Professional* and *Connext DDS Micro* behave similarly,
-   with *Connext DDS Micro* performing slightly faster.
+2. *Connext DDS Professional* and *Connext Micro* behave similarly,
+   with *Connext Micro* performing slightly faster.
 
 3. The use of *batching* really makes a difference for small samples sizes.
 
@@ -613,11 +613,11 @@ stated in 3 and 4: The advantage of *Plain Sockets* is only noticeable when the 
 is quite small, and even in those cases, by using certain features, *Connext DDS* can
 keep up, or even improve, the performance provided by Raw Sockets.
 
-Another important point is if we choose *Connext DDS Micro* instead of
-*Connext DDS Professional* based on the performance you want to achieve. Although *Connext DDS Micro*  
+Another important point is if we choose *Connext Micro* instead of
+*Connext DDS Professional* based on the performance you want to achieve. Although *Connext Micro*  
 will achieve better performance for simple scenarios like the
-one given in this tutorial, *Connext DDS Professional* offers more features than *Connext DDS Micro* (like batching or
-*ContentFilteredTopics*). On the other hand, *Connext DDS Micro* is ideal for running in resource-constrained devices where *Connext DDS Professional* may not fit.
+one given in this tutorial, *Connext DDS Professional* offers more features than *Connext Micro* (like batching or
+*ContentFilteredTopics*). On the other hand, *Connext Micro* is ideal for running in resource-constrained devices where *Connext DDS Professional* may not fit.
 
 Let's continue now by plotting the latency results (we will plot the linear and logarithmic
 scale graphs):
@@ -626,12 +626,12 @@ scale graphs):
 
 .. image:: performance_validation_files/Latency_log.svg
 
-As we saw with the throughput test, *Connext DDS Professional* and *Connext DDS Micro*
+As we saw with the throughput test, *Connext DDS Professional* and *Connext Micro*
 have pretty similar performance results, the latter being slightly better (mainly
 because the code complexity is smaller).
 
 It is also interesting to note that the difference in terms of microseconds
-between Raw Sockets, *Connext DDS Professional*, and *Connext DDS Micro* remains
+between Raw Sockets, *Connext DDS Professional*, and *Connext Micro* remains
 constant across the different data sizes. The reason is that the
 difference in time is due to the extra logic we use to send and receive (send and
 receive queues, etc.); however, that extra logic is independent of the data size.

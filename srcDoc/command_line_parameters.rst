@@ -23,7 +23,7 @@ application. If you do not specify ``-pub``, then ``-sub`` is
 assumed.
 
 Some of these parameters are valid when using *RTI Connext DDS Professional*, 
-*RTI Connext DDS Micro*, and the Raw Transport feature; some of them are 
+*RTI Connext Micro*, and the Raw Transport feature; some of them are 
 available for just some of these implementations. Whether or not a parameter is available 
 is stated in the descriptions of the parameters and in the ``-help`` 
 information displayed by the application. 
@@ -52,7 +52,7 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:** ``false`` (use reliable communication)
 
    For an introduction to the RTI reliability model, see
-   `Reliable Communications, in the RTI Connext DDS Core Libraries User’s Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/reliable.htm>`__.
+   `Reliable Communications, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/reliable.htm>`__.
 
 -  ``-dataLen <bytes>``
 
@@ -69,7 +69,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    If ``<bytes>`` is bigger than 64900, *RTI Perftest* will enable the
    use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
-   *RTI Connext DDS Micro*, the type is not really unbounded; the size is
+   *RTI Connext Micro*, the type is not really unbounded; the size is
    given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
    modified in the ``build.bat`` and ``build.sh`` scripts.
 
@@ -103,7 +103,7 @@ Test Parameters for Publishing and Subscribing Applications
    Use the FlatData language binding API to build samples where the
    in-memory representation matches the wire representation.
 
-   This parameter is not available when compiling against *Connext DDS
+   This parameter is not available when compiling against *Connext
    Micro* or a *Connext DDS* version prior to 6.0.0.
 
    **Default:** ``false``
@@ -121,7 +121,7 @@ Test Parameters for Publishing and Subscribing Applications
    This parameter can only be used along with ``-flatData`` and the SHMEM builtin
    transport.
 
-   This parameter is not available when compiling against *Connext DDS
+   This parameter is not available when compiling against *Connext
    Micro* or a *Connext DDS* version prior to 6.0.0.
 
    **Default:** ``false``
@@ -165,9 +165,9 @@ Test Parameters for Publishing and Subscribing Applications
    For an introduction to the RTI durability model, see
    `Basic QoS, in the RTI Connext DDS Getting Started Guide <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/getting_started_guide/cpp11/intro_qos.html>`__. 
    See also: 
-   `Mechanisms for Achieving Information Durability and Persistence, in the RTI Connext DDS Core Libraries User’s Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/MechanismsForDurabilityAndPersistence.htm>`__.
+   `Mechanisms for Achieving Information Durability and Persistence, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/MechanismsForDurabilityAndPersistence.htm>`__.
 
-   ``PERSISTENT`` is not available when compiling against *Connext DDS Micro*.
+   ``PERSISTENT`` is not available when compiling against *Connext Micro*.
 
 -  ``-domain <ID>``
 
@@ -180,7 +180,7 @@ Test Parameters for Publishing and Subscribing Applications
    | **Range:** ``0 - 200``
 
    See 
-   `Choosing a Domain ID and Creating Multiple Domains, in the RTI Connext DDS Core Libraries User’s Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/ChoosingDomainID.htm>`__. 
+   `Choosing a Domain ID and Creating Multiple Domains, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/ChoosingDomainID.htm>`__. 
 
 
 -  ``-help``
@@ -228,7 +228,7 @@ Test Parameters for Publishing and Subscribing Applications
    The <address> will be used by the three *Perftest* topics **Latency**,
    **Throughput**, and **Announcement**.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Do not use multicast
 
@@ -249,7 +249,7 @@ Test Parameters for Publishing and Subscribing Applications
    gets samples from *Persistence Service*. This brokered communication pattern
    provides a way to guarantee eventual consistency.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Not enabled (use direct communication)
 
@@ -257,7 +257,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Disable use of positive ACKs in the reliable protocol.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Not enabled (use positive ACKs)
 
@@ -283,7 +283,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Path to the XML file containing DDS QoS profiles.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** ``perftest_qos_profiles.xml``
 
@@ -293,16 +293,16 @@ Test Parameters for Publishing and Subscribing Applications
 
    .. note::
 
-       Some QoS values are ‘hard-coded’ in the application.
+       Some QoS values are 'hard-coded' in the application.
        Therefore, setting them in the XML file has no effect.
        See comments in ``perftest_qos_profiles.xml``, as well as in 
-       `Configuring QoS with XML, in the RTI Connext DDS Core Libraries User’s Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/XMLConfiguration.htm>`__. 
+       `Configuring QoS with XML, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/XMLConfiguration.htm>`__. 
 
 -  ``-qosLibrary <library name>``
 
    Name of the QoS Library for DDS Qos profiles.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** ``PerftestQosLibrary``
 
@@ -313,7 +313,7 @@ Test Parameters for Publishing and Subscribing Applications
    will not be used. This parameter is recommended for operating systems without
    a file-system.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    .. note::
 
@@ -342,7 +342,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    See :ref:`WaitSet Event Count and Delay`.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** ``100``
    | **Range:** ``>= 0``
@@ -362,7 +362,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    See :ref:`WaitSet Event Count and Delay`.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** ``5``
    | **Range:** ``>= 1``
@@ -371,7 +371,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Enable asynchronous publishing in the *DataWriter* QoS.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Not set
 
@@ -385,7 +385,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    There are several flow controllers predefined: ['default','10Gbps','1Gbps'].
 
-   This parameter is not available when compiling against *Connext DDS
+   This parameter is not available when compiling against *Connext
    Micro*; in this case, *RTI Perftest* will use the default FlowController.
 
    | **Default:** ``default``
@@ -401,7 +401,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    Use unbounded sequences in the data type of the IDL.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** ``2 * dataLen up to 1 MB``
    **Range:** ``28 B - 1 MB``
@@ -423,9 +423,9 @@ Test Parameters for Publishing and Subscribing Applications
 
     - **X** for the main thread, which is the one sending the data, or 
       for the asynchronous publishing thread if that one is used.
-    - **Y** for the receive threads created by *Connext DDS* or, if ``-useReadThread`` is used, for
+    - **Y** for the receive threads created by *Connext* or, if ``-useReadThread`` is used, for
       the *Perftest* thread that is created to receive and process data.
-    - **Z** for the rest of the threads created by *Connext DDS*: event and database threads.
+    - **Z** for the rest of the threads created by *Connext*: event and database threads.
 
    This parameter accepts either three numeric values (whichever numeric values you choose) 
    representing the priority of each of the threads or three characters representing 
@@ -440,7 +440,7 @@ Test Parameters for Publishing and Subscribing Applications
     - "Thread-Priority Definitions for Windows Platforms" table
     - "Thread-Priority Definitions for QNX Platforms" table
 
-   This parameter is not available when compiling against *RTI Connext DDS
+   This parameter is not available when compiling against *RTI Connext
    Micro* or when using the Raw Transport feature.
 
    **Default:**
@@ -569,32 +569,32 @@ by using the transport-specific command-line parameters.
 
    Set the transport to be used. The rest of the transports will be disabled.
 
-   | **Options in Connext DDS Professional:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS``, ``WAN`` and ``UDPv4_WAN``
-   | **Default in Connext DDS Professional:** Transport defined in the XML profile (``UDPv4`` and ``SHMEM`` if the XML profile is not changed)
+   | **Options in Connext Professional:** ``UDPv4``, ``UDPv6``, ``SHMEM``, ``TCP``, ``TLS``, ``DTLS``, ``WAN`` and ``UDPv4_WAN``
+   | **Default in Connext Professional:** Transport defined in the XML profile (``UDPv4`` and ``SHMEM`` if the XML profile is not changed)
 
-   | **Options in Connext DDS Micro:** ``UDPv4``, ``SHMEM``
-   | **Default in Connext DDS Micro:** ``UDPv4``
+   | **Options in Connext Micro:** ``UDPv4``, ``SHMEM``
+   | **Default in Connext Micro:** ``UDPv4``
 
    | **Options for Raw Transport:** ``UDPv4``, ``SHMEM``
    | **Default for Raw Transport:** ``UDPv4``
 
 -  ``-allowInterfaces <ipaddr> / -nic <ipaddr>``
 
-   Restrict *Connext DDS* to sending output through this interface.
+   Restrict *Connext* to sending output through this interface.
    The value should be the IP address assigned to any of the available network
    interfaces on the machine. On Windows systems, use the name of the
    interface. This command-line parameter is mapped to the **allow_interfaces_list**
-   property in *Connext DDS*.
+   property in *Connext*.
 
-   By default, *Connext DDS* will attempt to contact all possible
+   By default, *Connext* will attempt to contact all possible
    subscribing nodes on all available network interfaces. Even on a
    multi-NIC machine, the performance over one NIC vs. another may be
    different (e.g., Gbit vs. 100 Mbit), so choosing the correct NIC is
    critical for a proper test.
 
-   When compiling against *Connext DDS Micro*, this option should always use
+   When compiling against *Connext Micro*, this option should always use
    the name of the interface, not the IP address (which is valid when compiling
-   against *Connext DDS Professional*).
+   against *Connext Professional*).
 
    .. note::
 
@@ -604,7 +604,7 @@ by using the transport-specific command-line parameters.
 
    Verbosity of the transport plugin.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** ``0`` (errors only)
 
@@ -612,7 +612,7 @@ by using the transport-specific command-line parameters.
 
    For TCP and TLS. Port used by the transport to accept TCP/TLS connections.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** ``7400``
 
@@ -620,7 +620,7 @@ by using the transport-specific command-line parameters.
 
    For TCP and TLS. Use TCP across LANs and firewalls.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** Not set (LAN mode)
 
@@ -633,7 +633,7 @@ by using the transport-specific command-line parameters.
    For UDPv4_WAN: public address of the UDPv4_WAN transport instantiation. Format is
    ``<public_ip>:<public_port>``.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** Not set
 
@@ -642,7 +642,7 @@ by using the transport-specific command-line parameters.
    For UDPv4_WAN. Internal host port
    associated with the transport instantiation.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** public port specified as part of ``-transportPublicAddress``
   
@@ -651,7 +651,7 @@ by using the transport-specific command-line parameters.
 
    For WAN transport. Address where to find the WAN server.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** Not set
 
@@ -659,7 +659,7 @@ by using the transport-specific command-line parameters.
 
    For WAN transport. Port where to find the WAN server.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** ``Not set``
 
@@ -667,7 +667,7 @@ by using the transport-specific command-line parameters.
 
    For WAN transport. ID to be used for the WAN transport. Required when using WAN.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** Not set
 
@@ -675,7 +675,7 @@ by using the transport-specific command-line parameters.
 
    For WAN transport. Use DTLS security over WAN.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** Not set
 
@@ -683,7 +683,7 @@ by using the transport-specific command-line parameters.
 
    For TLS, DTLS, and Secure WAN. Certificate authority file to be used by TLS.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default for Publisher:** ``./resource/secure/pub.pem``
    | **Default for Subscriber:** ``./resource/secure/sub.pem``
@@ -692,7 +692,7 @@ by using the transport-specific command-line parameters.
 
    For TLS, DTLS, and Secure WAN. Certificate file to be used by TLS.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default:** ``./resource/secure/cacert.pem``
 
@@ -700,7 +700,7 @@ by using the transport-specific command-line parameters.
 
    For TLS, DTLS, and Secure WAN. Private key file to be used by TLS.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    | **Default for Publisher:** ``./resource/secure/pubkey.pem``
    | **Default for Subscriber:** ``./resource/secure/subkey.pem``
@@ -722,16 +722,16 @@ Test Parameters only for Publishing Applications
    **High Throughput for Streaming Data** design pattern in the *RTI Connext DDS Core
    Libraries Getting Started Guide*. See also: **How to Measure Latency
    for a Given Throughput** and the **BATCH QosPolicy** section in
-   the *RTI Connext DDS Core Libraries User’s Manual*.
+   the *RTI Connext DDS Core Libraries User's Manual*.
 
-   This parameter is not available when compiling against *RTI Connext DDS
+   This parameter is not available when compiling against *RTI Connext
    Micro*.
 
 -  ``-enableAutoThrottle``
 
    Enable the Auto Throttling feature. See :ref:`Auto-tuning and turbo mode`.
 
-   This parameter is not available when compiling against *RTI Connext DDS
+   This parameter is not available when compiling against *RTI Connext
    Micro*.
 
    **Default:** feature is disabled.
@@ -742,7 +742,7 @@ Test Parameters only for Publishing Applications
    When turbo mode is enabled, See ``-batchSize <bytes>`` is ignored.
    Disabled automatically if using large data or asynchronous.
 
-   This parameter is not available when compiling against *RTI Connext DDS
+   This parameter is not available when compiling against *RTI Connext
    Micro*.
 
    **Default:** feature is disabled.
@@ -1002,7 +1002,7 @@ Test Parameters only for Subscribing Applications
    key in that range. Specify one parameter to receive samples with
    that exact key.
 
-   This parameter is not available when compiling against *Connext DDS
+   This parameter is not available when compiling against *Connext
    Micro*.
 
    **Default:** Not set
@@ -1017,11 +1017,11 @@ Test Parameters only for Subscribing Applications
    Inconsistent samples will be reported as lost.
 
    See information about checking data consistency in
-   `Using Zero Copy Transfer Over Shared Memory, in the RTI Connext DDS Core Libraries User’s Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/SendingLDZeroCopyUsing.htm>`__.
+   `Using Zero Copy Transfer Over Shared Memory, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/SendingLDZeroCopyUsing.htm>`__.
 
    This parameter can only be used along with ``-zeroCopy``.
 
-   This parameter is not available when compiling against *Connext DDS
+   This parameter is not available when compiling against *Connext
    Micro* or a *Connext DDS* release before 6.0.0.
 
    **Default:** Not set
@@ -1112,7 +1112,7 @@ UDPv4 and shared memory communications.
    ``UDPv4`` and shared memory (``SHMEM``).
    Some of the *Connext DDS* parameters are not supported when using sockets.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Not set
 
@@ -1121,7 +1121,7 @@ UDPv4 and shared memory communications.
    Control blocking behavior of send sockets to never block.
    CHANGING THIS FROM THE DEFAULT CAN CAUSE SIGNIFICANT PERFORMANCE PROBLEMS.
 
-   This parameter is not available when compiling against *Connext DDS Micro*.
+   This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Not set. Always block.
 

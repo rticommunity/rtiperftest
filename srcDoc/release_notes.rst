@@ -3,21 +3,18 @@
 Release Notes
 =============
 
-Release Notes develop
----------------------
+Release Notes 4.2
+-----------------
 
-What's New in develop
-~~~~~~~~~~~~~~~~~~~~~
+What's New in 4.2
+~~~~~~~~~~~~~~~~~
 
-Using `-pubRate` will disable batching by default  |newTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+`-pubRate` parameter disables batching by default  |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In previous releases, using `-pubRate` would not modify the batching behavior
-of *Perftest* (enabled by default for a throughput test). This would lead to
-confusion and scenarios difficult to understand.
-
-This behavior has been modified and now using `-pubRate` will disable batching
-by default. However if explicitly set via command line, batching will still be enabled.
+When the `-pubRate` parameter is used, batching is now disabled by default to
+avoid possible confusion. However, if `-pubRate` is explicitly set via 
+command line, batching will remain enabled.
 
 ``-scan`` option is now removed
 +++++++++++++++++++++++++++++++
@@ -34,8 +31,8 @@ Examples of how to compile *Perftest* for *RTI Connext Cert 2.4.15* can be found
 in section :ref:`section-linux_compilation_examples`.
 
 
-What's Fixed in develop
-~~~~~~~~~~~~~~~~~~~~~~~
+What's Fixed in 4.2
+~~~~~~~~~~~~~~~~~~~
 
 <- Nothing new yet ->
 
@@ -57,11 +54,11 @@ results of the test.
 
 This issue has been fixed.
 
-Updated property names for *RTI Connext DDS LightWeight Security* PSK |fixedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Updated property names for *RTI Connext LightWeight Security* PSK |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-The property names for the *RTI Connext DDS LightWeight Security* PSK have been updated to
-match the new names used in *RTI Connext DDS 7.3.0*.
+The property names for the *RTI Connext LightWeight Security* PSK have been updated to
+match the new names used in *RTI Connext 7.3.0*.
 
 Release Notes 4.1
 ---------------------
@@ -91,7 +88,7 @@ Provide `ssl` version |newTag|
 ++++++++++++++++++++++++++++++
 
 If more than one set of cryptography libraries or versions (`openSSL` or `wolfSSL`) are found
-in the *RTI Connext DDS* Middleware installation, by using the the `--openssl-version`
+in the *RTI Connext* Middleware installation, by using the the `--openssl-version`
 parameter, you can select the desired one.
 
 Secure parameters have been simplified |newTag|
@@ -186,10 +183,10 @@ sending samples, instead of the pure TSS approach that's followed
 by default. Find more information on this argument in section
 :ref:`section-pubsub_command_line_parameters`.
 
-Support for *RTI Connext DDS 7.0.0* |newTag|
-++++++++++++++++++++++++++++++++++++++++++++
+Support for *RTI Connext 7.0.0* |newTag|
+++++++++++++++++++++++++++++++++++++++++
 
-We modified *RTI Perftest* to add support for *RTI Connext DDS 7.0.0*, since we
+We modified *RTI Perftest* to add support for *RTI Connext 7.0.0*, since we
 were using some internal APIs to retrieve certain information that have changed
 from the previous version.
 
@@ -278,11 +275,11 @@ an unhandled exception might be raised if a sample wasn't answered before a cert
 level, stopping the flow of the program, however it should simply be ignored (and treat the failure as a sample lost).
 This issue has been corrected.
 
-Issue compiling Connext DDS Micro on Windows |fixedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Issue compiling Connext Micro on Windows |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The build scripts for *Windows* (``build.bat``) failed with the following error when trying to compile *Perftest*
-against *RTI Connext DDS Micro*. The error displayed was:
+against *RTI Connext Micro*. The error displayed was:
 
 .. code-block:: console
 

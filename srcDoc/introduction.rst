@@ -7,7 +7,7 @@ Testing Performance
 -------------------
 
 This section describes the combined latency and throughput
-test application for *RTI Connext DDS*.
+test application for *RTI Connext*.
 
 The test measures what is sometimes called loaded latency—latency at
 a given throughput level. It can help you answer questions such as:
@@ -34,14 +34,14 @@ APIs), C#, and Java.
 Middleware
 ----------
 
-*RTI Perftest* can be built against *RTI Connext DDS Professional*, *RTI Connext
-DDS Micro* and *RTI Connext DDS Cert*.
+*RTI Perftest* can be built against *RTI Connext Professional*, *RTI Connext
+Micro*, and *RTI Connext Cert*.
 
 *RTI Perftest* can also be used to test raw ``UDPv4`` or ``SHMEM`` performance.
-To do this, *RTI Perftest* uses the *RTI Connext DDS Professional* internal
+To do this, *RTI Perftest* uses the *RTI Connext Professional* internal
 transport layer to interact with sockets. In this mode, *RTI Perftest* skips
 the DDS protocol to directly send the data, which is serialized using the same
-functions that *RTI Connext DDS Professional* uses.
+functions that *RTI Connext Professional* uses.
 
 Overview
 --------
