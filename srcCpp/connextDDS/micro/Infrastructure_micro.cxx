@@ -7,6 +7,8 @@
 
 #include "Infrastructure_common.h"
 
+#include "dds_cpp/dds_cpp_netio.hxx"
+
 #ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
 /********************************************************************/

@@ -171,8 +171,7 @@ IF (NOT RTIME_CERT)
             LIST(APPEND MICRO_C_LIBS
                 rti_me_netiopsl_cpp${RTI_LIB_SUFFIX}
                 rti_me_netiopsl${RTI_LIB_SUFFIX}
-                rti_me_ospsl${RTI_LIB_SUFFIX}
-                rti_me_psl${RTI_LIB_SUFFIX})
+                rti_me_ospsl${RTI_LIB_SUFFIX})
         ENDIF()
 
         LIST(APPEND MICRO_C_LIBS
