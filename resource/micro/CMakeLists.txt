@@ -38,10 +38,10 @@ SET(24x_COMPATIBILITY_SPECIFIED -1)
 STRING(FIND "${ADDITIONAL_DEFINES}" "PERFTEST_RTI_MICRO_24x_COMPATIBILITY" 24x_COMPATIBILITY_SPECIFIED)
 
 IF (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    SET(PLATFORM_LIBS dl nsl m pthread rt)
+    SET(PLATFORM_LIBS nsl m pthread rt)
     ADD_DEFINITIONS(-DRTI_LINUX)
 ELSEIF (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-    SET(PLATFORM_LIBS dl m pthread )
+    SET(PLATFORM_LIBS m pthread )
     ADD_DEFINITIONS(-DRTI_DARWIN)
 ELSEIF (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     SET(PLATFORM_LIBS netapi32.lib advapi32.lib user32.lib winmm.lib WS2_32.lib)
@@ -170,13 +170,17 @@ IF (NOT RTIME_CERT)
         IF(arch_is_pi)
             LIST(APPEND MICRO_C_LIBS
                 rti_me_netiopsl_cpp${RTI_LIB_SUFFIX}
-                rti_me_netiopsl${RTI_LIB_SUFFIX}
-                rti_me_ospsl${RTI_LIB_SUFFIX})
+                rti_me_netiopsl${RTI_LIB_SUFFIX})
         ENDIF()
 
         LIST(APPEND MICRO_C_LIBS
             rti_me${RTI_LIB_SUFFIX}
             )
+
+        IF(arch_is_pi)
+            LIST(APPEND MICRO_C_LIBS
+                rti_me_ospsl${RTI_LIB_SUFFIX})
+        ENDIF()
     ENDIF()
 ELSE()
     SET(MICRO_C_LIBS rti_me${RTI_LIB_SUFFIX}
