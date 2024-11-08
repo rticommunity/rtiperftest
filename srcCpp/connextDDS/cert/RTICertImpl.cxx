@@ -2539,8 +2539,26 @@ namespace {
             ParameterManager *_PM)
     {
         RTI_BOOL brc;
-        Udpv4_TransportProperties_T *udp_property = UDPv4_TransportProperties_new();
-        CHECK_PTR(udp_property, "Udpv4_TransportProperties_new");
+        UDPv4_TransportProperty_T *udp_property = UDPv4_TransportProperty_new();
+        CHECK_PTR(udp_property, "UDPv4_TransportProperty_new");
+
+        if (!UDPv4_TransportProperty_set_max_message_size(
+                    udp_property,
+                    65536)) {
+            printf("failed to set max message size\n");
+        }
+
+        if (!UDPv4_TransportProperty_set_max_receive_buffer_size(
+                    udp_property,
+                    _PM->get<int>("receiveBufferSize"))) {
+            printf("failed to set max receive buffer size\n");
+        }
+
+        if (!UDPv4_TransportProperty_set_max_send_buffer_size(
+                    udp_property,
+                    _PM->get<int>("sendBufferSize"))) {
+            printf("failed to set max send buffer size\n");
+        }
 
         /* Set interface to use if provided */
         if (!_PM->get<std::string>("allowInterfaces").empty()) {
@@ -2581,7 +2599,7 @@ namespace {
         }
 
         /* Re-register UDP under its default name */
-        brc = Udpv4_Interface_register(registry, NETIO_DEFAULT_UDP_NAME,
+        brc = UDPv4_Interface_register(registry, NETIO_DEFAULT_UDP_NAME,
                 udp_property);
 
         CHECK_BOOL(brc, "RT_Registry_register");
