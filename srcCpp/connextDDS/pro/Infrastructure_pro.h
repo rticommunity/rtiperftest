@@ -40,8 +40,13 @@
     #define PERFTEST_CONNEXT_PRO_720
   #endif
   #if RTI_DDS_VERSION_MINOR >= 3
-    #define PERFTEST_CONNEXT_PRO_720
     #define PERFTEST_CONNEXT_PRO_730
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 4
+    #define PERFTEST_CONNEXT_PRO_740
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 5
+    #define PERFTEST_CONNEXT_PRO_750
   #endif
 #endif
 

@@ -363,26 +363,54 @@ bool PerftestTransport::increase_address_by_one(
     return true;
 }
 
+bool PerftestTransport::get_number_of_addresses_in_string(
+        unsigned int *number,
+        const char *input_string)
+{
+    #ifdef PERFTEST_CONNEXT_PRO_750
+        return NDDS_Transport_get_number_of_addresses_in_string(
+                number,
+                input_string);
+    #else
+        return NDDS_Transport_get_number_of_addresses_in_string(
+                input_string,
+                number);
+    #endif
+}
+
+bool PerftestTransport::get_address(
+    char *output_address,
+    size_t output_buffer_size,
+    const char *input_string,
+    int index)
+{
+  #ifdef PERFTEST_CONNEXT_PRO_750
+    return NDDS_Transport_get_address(output_address, output_buffer_size, input_string, index);
+  #else
+    return NDDS_Transport_get_address(input_string, index, output_address);
+  #endif
+}
+
 bool PerftestTransport::parse_multicast_addresses(const char *arg)
 {
     char throughput[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
     char latency[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
-    char annonuncement[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
-    unsigned int numberOfAddressess = 0;
+    char announcement[NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE];
+    unsigned int numberOfAddresses = 0;
 
     /* Get number of addresses on the string */
-    if (!NDDS_Transport_get_number_of_addresses_in_string(
-            arg,
-            &numberOfAddressess)) {
+    if (!get_number_of_addresses_in_string(
+            &numberOfAddresses,
+            arg)) {
         fprintf(stderr, "Error parsing Address for -multicastAddr option\n");
         return false;
     }
 
     /* If three addresses are given */
-    if (numberOfAddressess == 3) {
-        if (!NDDS_Transport_get_address(arg, 0, throughput)
-                || !NDDS_Transport_get_address(arg, 1, latency)
-                || !NDDS_Transport_get_address(arg, 2, annonuncement)){
+    if (numberOfAddresses == 3) {
+        if (!get_address(throughput, NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE, arg, 0)
+                || !get_address(latency, NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE, arg, 1)
+                || !get_address(announcement, NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE, arg, 2)) {
             fprintf(stderr,
                     "Error parsing Address for -multicastAddr option\n");
             return false;
@@ -390,11 +418,11 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
 
         multicastAddrMap[THROUGHPUT_TOPIC_NAME] = throughput;
         multicastAddrMap[LATENCY_TOPIC_NAME] = latency;
-        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = annonuncement;
+        multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = announcement;
 
-    } else if (numberOfAddressess == 1) {
+    } else if (numberOfAddresses == 1) {
         /* If only one address is given */
-        if (!NDDS_Transport_get_address(arg, 0, throughput)) {
+        if (!get_address(throughput, NDDS_TRANSPORT_ADDRESS_STRING_BUFFER_SIZE, arg, 0)) {
             fprintf(stderr,
                     "Error parsing Address for -multicastAddr option\n");
             return false;
@@ -435,7 +463,7 @@ bool PerftestTransport::parse_multicast_addresses(const char *arg)
         fprintf(stderr,
                 "Error parsing the address/es '%s' for -multicastAddr option\n",
                 arg);
-        if (numberOfAddressess == 1) {
+        if (numberOfAddresses == 1) {
             fprintf(stderr,
                     "\tThe calculated addresses are outsite of multicast range.\n");
         } else {

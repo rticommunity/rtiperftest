@@ -22,6 +22,32 @@
 #define MESSAGE_SIZE_MAX_NOT_SET LONG_MAX
 
 /*
+ * The way in which we do this is the following: If the minor version is == X
+ * we will define *_PRO_7X0 and every other version below X.
+ */
+#if RTI_DDS_VERSION_MAJOR >= 7
+  // 6.1.X features are also in 7.0.0
+  #define PERFTEST_CONNEXT_PRO_610
+  #define PERFTEST_CONNEXT_PRO_700
+  #if RTI_DDS_VERSION_MINOR >= 1
+    #define PERFTEST_CONNEXT_PRO_710
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 2
+    #define PERFTEST_CONNEXT_PRO_720
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 3
+    #define PERFTEST_CONNEXT_PRO_730
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 4
+    #define PERFTEST_CONNEXT_PRO_740
+  #endif
+  #if RTI_DDS_VERSION_MINOR >= 5
+    #define PERFTEST_CONNEXT_PRO_750
+  #endif
+#endif
+
+
+/*
  * This const is used to calculate the maximum size that a packet can have. This
  * number has to be substracted to the message_size_max.
  * We calculate this as:
@@ -138,6 +164,12 @@ private:
 
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
+    bool get_number_of_addresses_in_string(unsigned int *number, const char *input_string);
+    bool get_address(
+        char *output_address,
+        size_t output_buffer_size,
+        const char *input_string,
+        int index);
     bool parse_multicast_addresses(const char *arg);
     bool increase_address_by_one(const std::string addr, std::string &nextAddr);
 };
