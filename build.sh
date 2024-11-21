@@ -612,6 +612,11 @@ function additional_defines_calculation()
         additional_defines=${additional_defines}" O3"
     else
         additional_defines=${additional_defines}" O0"
+        export DEBUG=1
+    fi
+
+    if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
+        export SHAREDLIB=1
     fi
 
     if [ "${RTI_MONITORING_2}" == "1" ]; then
@@ -633,6 +638,7 @@ function additional_defines_calculation()
         if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
             additional_defines=${additional_defines}" DRTI_PERFTEST_DYNAMIC_LINKING"
             echo -e "${INFO_TAG} Linking Dynamically."
+
 
         else # Linking Statically.
 
