@@ -1044,6 +1044,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
             PropertyQosPolicyHelper.add_property(
                     dwQos.property, "dds.data_writer.history.memory_manager.java_stream.trim_to_size",
                     "1", false);
+        } else  {
+            PropertyQosPolicyHelper.add_property(
+                    dwQos.property, "dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator",
+                    "fast_buffer_pool", false);
         }
 
         if (_isLargeData || _IsAsynchronous)

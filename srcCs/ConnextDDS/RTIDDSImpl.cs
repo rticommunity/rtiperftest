@@ -1271,6 +1271,10 @@ namespace PerformanceTest
                 dataWriterQos = dataWriterQos.WithProperty(policy =>
                             policy.Add("dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                             parameters.UnboundedSize.ToString()));
+            } else {
+                dataWriterQos = dataWriterQos.WithProperty(policy =>
+                            policy.Add("dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator",
+                            "fast_buffer_pool"));
             }
 
             return dataWriterQos;

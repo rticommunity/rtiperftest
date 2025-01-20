@@ -2638,6 +2638,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::configure_reader_qos(
                 : _PM->get<int>("unbounded")));
         properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
                 buf;
+    } else {
+        properties["dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator"] =
+                "fast_buffer_pool";
     }
 
     #ifdef RTI_FLATDATA_AVAILABLE
