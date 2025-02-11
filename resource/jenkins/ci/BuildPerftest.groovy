@@ -22,13 +22,14 @@ pipeline {
                     }
                     axis {
                         name 'LANGUAGE_FLAG'
-                        values '--cpp-build', '--cpp11-build', '--java-build'
+                        values '--cpp-build', '--cpp11-build', '--java-build', '--cs-build'
                     }
                 }
                 agent {
-                    docker {
-                        image "repo.rti.com/connext-containers/connext-sdk:BUILD_7.3.0.0_20240308T000000Z_RTI_REL-20240521"
-                        args CONNEXT_ARCH == 'x64Linux4gcc7.3.0' ? '--platform linux/amd64' : '--platform linux/arm64'
+                    dockerfile {
+                        filename 'resource/jenkins/docker/Dockerfile'
+                        additionalBuildArgs "--build-arg PLATFORM=${CONNEXT_ARCH == 'x64Linux4gcc7.3.0' ? 'amd64' : 'arm64'} --build-arg TAG=7.3.0-20240812"
+                        args "${CONNEXT_ARCH == 'x64Linux4gcc7.3.0' ? '--platform linux/amd64' : '--platform linux/arm64'}"
                     }
                 }
                 stages {
