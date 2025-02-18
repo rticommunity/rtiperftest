@@ -96,6 +96,26 @@ Test Parameters for Publishing and Subscribing Applications
 
        Not yet supported in the C# API implementation.
 
+-  ``-receiveBufferSize``
+
+   Size of the buffer of the UDP socket used to receive samples.
+
+   **Default:** ``2097152``
+
+   .. note::
+
+       Only supported for Cert.
+
+-  ``-sendBufferSize``
+
+   Size of the buffer of the UDP socket used to send samples.
+
+   **Default:** ``524288``
+
+   .. note::
+
+       Only supported for Cert.
+
 .. _FlatData:
 
 -  ``-flatData``
