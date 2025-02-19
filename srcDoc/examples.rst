@@ -538,27 +538,27 @@ de-allocating memory to accommodate the actual size of the unbounded
 member. Unbounded sequences and strings are also supported with
 DynamicData (command-line parameter ``-DynamicData``).
 
-Apart from the switch from bounded to unbounded sequences, there is another
-important behavior that occurs when setting a message size greater than the
-`message_size_max` (by default ~64KB except for `SHMEM`): By setting a sample
-size bigger than the `message_size_max`, *RTI Perftest* will enable the use of
-Asynchronous Publishing, and set the *RTI Connext* default FlowController.
+In releases prior to 7.4.0, asynchronous publishing must be enabled
+to send reliable data when the sample size is bigger than ``message_size_max``.
+In releases 7.4.0 and higher, this adjustment is not required because reliable
+fragmented data can be sent synchronously. `Perftest` does not enable asynchronous
+publishing by default, so you must enable it as needed.
 
-For `SHMEM` (shared memory), this is not the case. When
-explicitly specifying `-transport SHMEM`, *RTI Perftest* will try to set the
-`message_size_max` to a value big enough so it can fit samples of the size
-specified by the `-datalen <Size>` command-line option. This way, the
-application does not need to use Asynchronous Publishing, which helps improve
-the performance. If this behavior is not the desired one, you can change it by
-setting in `perftest_qos_profiles.xml` a fixed value for the `SHMEM`
-`message_size_max`.
+Nonetheless, *RTI Perftest* will automatically calculate the minimum value for the
+``message_size_max`` across all the enabled transport and indicate if samples
+will be fragmented or not.
 
-You can force the use of Asynchronous Publishing, or specify a flow controller that
-is different than the default, for any sample size, by using the command-line
+You can still force the use of asynchronous publishing, or specify a flow controller that
+is different from the default, for any sample size, by using the command-line
 parameters ``-asynchronous`` and ``-flowController``.
 See the :ref:`section-command_line_parameters` section for more details.
 
---------------
+For ``SHMEM`` (shared memory), *Perftest* manages large samples differently. When
+the transport is limited to just shared memory (``-transport SHMEM``), and the
+``-messageSizeMax <value>`` option is not explicitly set, `Perftest` will try to 
+set the ``message_size_max`` property  to a value large enough to fit the sample
+size specified by the ``-datalen <size>`` command-line option. Using this approach,
+the application does not need to fragment samples, which helps improve performance.
 
 Adjusting the configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -601,12 +601,12 @@ throughput numbers.
 By using a flow controller ``-flowController <default,1Gbps,10Gbps>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Since the sample size is bigger than 63000 Bytes, *RTI Perftest* will
-enable Asynchronous Publishing. By enabling Asynchronous Publishing, you also
-make use of the default FlowController, which might not be optimal.
-Therefore, it is a good practice to also specify a FlowController that fits
-with the characteristics (bandwidth, latency, etc.) of the network where the
-*RTI Perftest* applications are going to run.
+In certain networks, sending data too fast may result in lost samples and/or network
+congestion (for example, in Wi-Fi networks). Using a flow controller can limit the
+amount of data sent per second. Flow controllers are only available when using asynchronous
+publishing. When the ``-asynchronous`` command-line option is added, the default flow controller
+tries to send data as fast as possible.
+To select other flow controllers, use the ``-flowController`` parameter.
 
 *RTI Perftest* provides options to use a flow controller designed for a
 10Gbps network and a 1Gbps one. However, by accessing the
@@ -647,9 +647,7 @@ requirements.
         </participant_qos>
     </qos_profile>
 
-The specific values for the flow controller and the Send Queue will
-highly depend on the scenario and machines performing the test, but as a
-general suggestion, these changes are recommended:
+For example, to limit the publication rate to 1Gbps, the following commands can be used:
 
 -  Publisher:
 

@@ -151,6 +151,29 @@ and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
       </participant_qos>
     </qos_profile>
 
+
+    <qos_profile name="Perftest.Transport.UDPv4_WAN.IncreaseSendReceiveBuffers">
+      <!-- 
+        The default values for the send and receive socket buffer sizes are 131072 bytes.
+        We increase them to 1MB and 2MB respectively to be able to receive and store
+        more packets in the buffers before processing them and avoid packet losses.
+      -->
+      <participant_qos>
+        <property>
+          <value>
+            <element>
+              <name>dds.transport.UDPv4_WAN.builtin.send_socket_buffer_size</name>
+              <value>1048576</value>
+            </element>
+            <element>
+              <name>dds.transport.UDPv4_WAN.builtin.recv_socket_buffer_size</name>
+              <value>2097152</value>
+            </element>
+          </value>
+        </property>
+      </participant_qos>
+    </qos_profile>
+
     <qos_profile name="Perftest.FlowController.1Gbps">
       <participant_qos>
         <property>
@@ -629,6 +652,7 @@ and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
 
         <!-- Settings related to Transport -->
         <element>PerftestQosLibrary::Perftest.Transport.UDPv4.IncreaseSendReceiveBuffers</element>
+        <element>PerftestQosLibrary::Perftest.Transport.UDPv4_WAN.IncreaseSendReceiveBuffers</element>
         <element>PerftestQosLibrary::Perftest.Transport.TCPv4.BaseConfiguration</element>
         <element>PerftestQosLibrary::Perftest.Transport.TCPv4.IncreaseSendReceiveBuffers</element>
 
@@ -658,6 +682,10 @@ and Utilities User's Manual in the chapter titled "Configuring QoS with XML."
             <element>
               <name>dds.participant.property_validation_action</name>
               <value>1</value>
+            </element>
+            <element>
+                <name>dds.type_consistency.ignore_sequence_bounds</name>
+                <value>false</value>
             </element>
           </value>
         </property>

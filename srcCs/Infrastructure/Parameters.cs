@@ -27,6 +27,7 @@ namespace PerformanceTest
         private bool noMulticast;
         private string multicastAddr;
         private ulong unboundedSize;
+        private ulong messageSizeMax;
         private string configureTransportCertAuthority;
         private int verbosity;
         private bool latencyTest;
@@ -47,6 +48,7 @@ namespace PerformanceTest
         public bool NoMulticastSet { get; set; }
         public bool MulticastAddrSet { get; set; }
         public bool UnboundedSizeSet { get; set; }
+        public bool messageSizeMaxSet { get; set; }
         public bool ConfigureTransportCertAuthoritySet { get; set; }
         public bool ConfigureTransportCertFileSet { get; set; }
         public bool ConfigureTransportPrivateKeySet { get; set; }
@@ -132,6 +134,11 @@ namespace PerformanceTest
         {
             get => unboundedSize;
             set { unboundedSize = value; UnboundedSizeSet = true; }
+        }
+        public ulong MessageSizeMax
+        {
+            get => messageSizeMax;
+            set { messageSizeMax = value; messageSizeMaxSet = true; }
         }
         public int Domain { get; set; }
         public string Transport

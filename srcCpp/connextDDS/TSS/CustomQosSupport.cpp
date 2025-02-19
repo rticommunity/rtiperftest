@@ -106,9 +106,8 @@ RTI_TSS_participant_qos(struct DDS_DomainParticipantQos *dp_qos, void *data)
 
     /*
      * At this point, and not before is when we know the transport message size.
-     * Now we can decide if we need to use asynchronous or not.
      */
-    *ctx->maxSynchronousSize = ctx->transport->minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
+    *ctx->maxUnfragmentedRTPSPayloadSize = ctx->transport->minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     if (!data_size_related_calculations(ctx)) {
         fprintf(stderr, "Failed to configure the data size settings\n");
@@ -138,12 +137,8 @@ bool data_size_related_calculations(QoSBundle* ctx)
         return false;
     }
 
-    // If the user wants to use asynchronous we enable it
-    if (ctx->pm->get<bool>("asynchronous")) {
-        *ctx->isLargeData = true;
-    } else { //If the message size max is lower than the datalen
-        *ctx->isLargeData = (ctx->pm->get<unsigned long long>("dataLen") > *ctx->maxSynchronousSize);
-    }
+    // If the message size max is lower than the datalen
+    *ctx->isLargeData = (ctx->pm->get<unsigned long long>("dataLen") > *ctx->maxUnfragmentedRTPSPayloadSize);
 
     // Manage parameter -batchSize
     if (ctx->pm->get<long>("batchSize") > 0) {

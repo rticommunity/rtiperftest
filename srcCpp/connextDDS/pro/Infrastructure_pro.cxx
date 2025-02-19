@@ -141,9 +141,9 @@ bool assertPropertyToParticipantQos(
 bool setAllowInterfacesList(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
-    if (!_PM->get<std::string>("allowInterfaces").empty()) {
+    if (!parameterManager->get<std::string>("allowInterfaces").empty()) {
 
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
@@ -165,7 +165,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    _PM->get<std::string>("allowInterfaces"))) {
+                    parameterManager->get<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -175,7 +175,7 @@ bool setAllowInterfacesList(
             if (!addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    _PM->get<std::string>("allowInterfaces"))) {
+                    parameterManager->get<std::string>("allowInterfaces"))) {
                 return false;
             }
 
@@ -191,7 +191,7 @@ bool setAllowInterfacesList(
             return addPropertyToParticipantQos(
                     qos,
                     propertyName,
-                    _PM->get<std::string>("allowInterfaces"));
+                    parameterManager->get<std::string>("allowInterfaces"));
         }
     }
 
@@ -201,9 +201,9 @@ bool setAllowInterfacesList(
 bool setTransportVerbosity(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
-    if (!_PM->get<std::string>("transportVerbosity").empty()) {
+    if (!parameterManager->get<std::string>("transportVerbosity").empty()) {
         if (transport.transportConfig.kind == TRANSPORT_NOT_SET) {
             fprintf(stderr,
                     "%s Ignoring -transportVerbosity option\n",
@@ -232,7 +232,7 @@ bool setTransportVerbosity(
         return addPropertyToParticipantQos(
                 qos,
                 propertyName,
-                _PM->get<std::string>("transportVerbosity"));
+                parameterManager->get<std::string>("transportVerbosity"));
     }
     return true;
 }
@@ -240,34 +240,34 @@ bool setTransportVerbosity(
 bool configureSecurityFiles(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
 
-    if (!_PM->get<std::string>("transportCertAuthority").empty()) {
+    if (!parameterManager->get<std::string>("transportCertAuthority").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".tls.verify.ca_file",
-                _PM->get<std::string>("transportCertAuthority"))) {
+                parameterManager->get<std::string>("transportCertAuthority"))) {
             return false;
         }
     }
 
-    if (!_PM->get<std::string>("transportCertFile").empty()) {
+    if (!parameterManager->get<std::string>("transportCertFile").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".tls.identity.certificate_chain_file",
-                _PM->get<std::string>("transportCertFile"))) {
+                parameterManager->get<std::string>("transportCertFile"))) {
             return false;
         }
     }
 
-    if (!_PM->get<std::string>("transportPrivateKey").empty()) {
+    if (!parameterManager->get<std::string>("transportPrivateKey").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".tls.identity.private_key_file",
-                _PM->get<std::string>("transportPrivateKey"))) {
+                parameterManager->get<std::string>("transportPrivateKey"))) {
             return false;
         }
     }
@@ -278,7 +278,7 @@ bool configureSecurityFiles(
 bool configureTcpTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
 
@@ -289,16 +289,16 @@ bool configureTcpTransport(
         return false;
     }
 
-    if (!_PM->get<std::string>("transportServerBindPort").empty()) {
+    if (!parameterManager->get<std::string>("transportServerBindPort").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_bind_port",
-                _PM->get<std::string>("transportServerBindPort"))) {
+                parameterManager->get<std::string>("transportServerBindPort"))) {
             return false;
         }
     }
 
-    if (_PM->get<bool>("transportWan")) {
+    if (parameterManager->get<bool>("transportWan")) {
         if (!assertPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
@@ -307,13 +307,13 @@ bool configureTcpTransport(
             return false;
         }
 
-        if (_PM->get<std::string>("transportServerBindPort") != "0") {
-            if (!_PM->get<std::string>("transportPublicAddress").empty()) {
+        if (parameterManager->get<std::string>("transportServerBindPort") != "0") {
+            if (!parameterManager->get<std::string>("transportPublicAddress").empty()) {
                 if (!addPropertyToParticipantQos(
                         qos,
                         transport.transportConfig.prefixString
                                 + ".public_address",
-                        _PM->get<std::string>("transportPublicAddress"))) {
+                        parameterManager->get<std::string>("transportPublicAddress"))) {
                     return false;
                 }
             } else {
@@ -327,7 +327,7 @@ bool configureTcpTransport(
     }
 
     if (transport.transportConfig.kind == TRANSPORT_TLSv4) {
-        if (_PM->get<bool>("transportWan")) {
+        if (parameterManager->get<bool>("transportWan")) {
             if (!assertPropertyToParticipantQos(
                     qos,
                     transport.transportConfig.prefixString
@@ -345,7 +345,7 @@ bool configureTcpTransport(
             }
         }
 
-        if (!configureSecurityFiles(transport, qos, _PM)) {
+        if (!configureSecurityFiles(transport, qos, parameterManager)) {
             return false;
         }
     }
@@ -356,7 +356,7 @@ bool configureTcpTransport(
 bool configureDtlsTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
 
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
@@ -382,7 +382,7 @@ bool configureDtlsTransport(
         return false;
     }
 
-    if (!configureSecurityFiles(transport, qos, _PM)) {
+    if (!configureSecurityFiles(transport, qos, parameterManager)) {
         return false;
     }
 
@@ -392,7 +392,7 @@ bool configureDtlsTransport(
 bool configureWanTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
 
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_MASK_NONE;
@@ -418,11 +418,11 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!_PM->get<std::string>("transportWanServerAddress").empty()) {
+    if (!parameterManager->get<std::string>("transportWanServerAddress").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server",
-                _PM->get<std::string>("transportWanServerAddress"))) {
+                parameterManager->get<std::string>("transportWanServerAddress"))) {
             return false;
         }
     } else {
@@ -432,21 +432,21 @@ bool configureWanTransport(
         return false;
     }
 
-    if (!_PM->get<std::string>("transportWanServerPort").empty()) {
+    if (!parameterManager->get<std::string>("transportWanServerPort").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".server_port",
-                _PM->get<std::string>("transportWanServerPort"))) {
+                parameterManager->get<std::string>("transportWanServerPort"))) {
             return false;
         }
     }
 
-    if (!_PM->get<std::string>("transportWanId").empty()) {
+    if (!parameterManager->get<std::string>("transportWanId").empty()) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString
                         + ".transport_instance_id",
-                _PM->get<std::string>("transportWanId"))) {
+                parameterManager->get<std::string>("transportWanId"))) {
             return false;
         }
     } else {
@@ -454,7 +454,7 @@ bool configureWanTransport(
         return false;
     }
 
-    if (_PM->get<bool>("transportSecureWan")) {
+    if (parameterManager->get<bool>("transportSecureWan")) {
         if (!addPropertyToParticipantQos(
                 qos,
                 transport.transportConfig.prefixString + ".enable_security",
@@ -462,7 +462,7 @@ bool configureWanTransport(
             return false;
         }
 
-        if (!configureSecurityFiles(transport, qos, _PM)) {
+        if (!configureSecurityFiles(transport, qos, parameterManager)) {
             return false;
         }
     }
@@ -473,16 +473,16 @@ bool configureWanTransport(
 bool configureUdpv4WanTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
 
     qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4_WAN;
 
-    if (!_PM->get<std::string>("transportPublicAddress").empty()) {
+    if (!parameterManager->get<std::string>("transportPublicAddress").empty()) {
 
 
         std::string publicAddress
-                = _PM->get<std::string>("transportPublicAddress");
+                = parameterManager->get<std::string>("transportPublicAddress");
         std::string delimiter = ":";
 
         size_t pos = publicAddress.find(delimiter);
@@ -499,10 +499,10 @@ bool configureUdpv4WanTransport(
         std::string publicAddressPort
                 = publicAddress.substr(pos+1, std::string::npos);
 
-        // If transportRWTHostPort is defined use transportPort
+        // If transportHostPort is defined use that port for the transport
         std::string publicAddressHostPort;
-        if (!_PM->get<std::string>("transportHostPort").empty()) {
-            std::string transportHostPort = _PM->get<std::string>("transportHostPort");
+        if (!parameterManager->get<std::string>("transportHostPort").empty()) {
+            std::string transportHostPort = parameterManager->get<std::string>("transportHostPort");
             publicAddressHostPort = transportHostPort;
         } else {  // Use Internal Port as external port
             publicAddressHostPort = publicAddressPort;
@@ -538,7 +538,7 @@ bool configureUdpv4WanTransport(
 bool configureShmemTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
   /**
    * OSAPI do not support SHMEM for Android yet
@@ -548,7 +548,7 @@ bool configureShmemTransport(
             DDSPropertyQosPolicyHelper::lookup_property(qos.property,
                     "dds.transport.shmem.builtin.parent.message_size_max");
 
-    unsigned long long datalen = _PM->get<unsigned long long>("dataLen");
+    unsigned long long datalen = parameterManager->get<unsigned long long>("dataLen");
 
     long parentMsgSizeMax = transport.minimumMessageSizeMax;
     std::ostringstream ss;
@@ -557,8 +557,12 @@ bool configureShmemTransport(
     /*
      * If the property defining the message_size_max for shared memory is not
      * set and we are using exclusively SHMEM, then we will calculate
-     * automatically the message_size_max to accomodate the sample in a single
+     * automatically the message_size_max to accommodate the sample in a single
      * packet and avoid fragmentation.
+     *
+     * Note that if we have set message_size_max via the command line argument
+     * we will not change it and we will use that value, because we call this 
+     * function after setting the message_size_max for shmem.
      */
     if (parentProp != NULL && parentProp->value != NULL) {
         parentMsgSizeMax = atoi(parentProp->value);
@@ -569,7 +573,7 @@ bool configureShmemTransport(
                     > (unsigned long long) parentMsgSizeMax) {
                 parentMsgSizeMax = datalen + MESSAGE_OVERHEAD_BYTES;
 
-                if (_PM->get<bool>("flatdata")) {
+                if (parameterManager->get<bool>("flatdata")) {
                     /*
                      * This 17 is due to the incorrecty setting OVERHEAD_BYTES in
                      * perftest_cpp: In the case of Flat Data is not right.
@@ -697,7 +701,7 @@ bool configureShmemTransport(
 
   #ifdef RTI_FLATDATA_AVAILABLE
     // Zero Copy sends 16-byte references
-    if (_PM->get<bool>("zerocopy")) {
+    if (parameterManager->get<bool>("zerocopy")) {
         datalen = 16;
     }
   #endif
@@ -714,7 +718,7 @@ bool configureShmemTransport(
             1ull, (datalen / fragmentSize) + 1);
 
     unsigned long long receivedMessageCountMax =
-            2 * (_PM->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
+            2 * (parameterManager->get<int>("sendQueueSize") + 1) * rtpsMessagesPerSample;
 
     unsigned long long receiveBufferSize = (std::min)(
         (unsigned long long) maxBufferSize,
@@ -795,58 +799,153 @@ long getTransportMessageSizeMax(
 }
 
 /*
- * Configures the minimumMessageSizeMax value in the PerftestTransport object with
- * the minimum value for all the enabled transports in the XML configuration.
+ * Sets the MessageSizeMax property given the name (String) of a transport in a
+ * DDS_DomainParticipantQos object.
  */
-void getTransportMinimumMessageSizeMax(
+bool setTransportMessageSizeMax(
+        std::string targetTransportName,
+        PerftestTransport &transport,
+        DDS_DomainParticipantQos& qos,
+        long messageSizeMax)
+{
+    std::string propertyName =
+            transport.transportConfigMap[targetTransportName].prefixString
+            + ".parent.message_size_max";
+
+    return assertPropertyToParticipantQos(
+            qos,
+            propertyName,
+            std::to_string(messageSizeMax).c_str());
+}
+
+
+/*
+ * Setup the transport minimumMessageSize max. If the message_size_max is set via
+ * command line, then we will use that and set the properties for every transport.
+ * Otherwise, what we will do is get the minimum value for all the enabled transports
+ * in the XML configuration.
+ */
+bool setupTransportMinimumMessageSizeMax(
+        ParameterManager *parameterManager,
         PerftestTransport &transport,
         DDS_DomainParticipantQos& qos)
 {
     long qosConfigurationMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
     long transportMessageSizeMax = MESSAGE_SIZE_MAX_NOT_SET;
-    if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM) != 0) {
-        transportMessageSizeMax = getTransportMessageSizeMax("SHMEM", transport, qos);
-        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+
+    if (parameterManager->is_set("messageSizeMax")) {
+
+        transportMessageSizeMax = parameterManager->get<int>("messageSizeMax");
+        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        transport.loggingString += ("\tmessage_size_max: "
+                + std::to_string(transportMessageSizeMax)
+                + " (set via command line)\n");
+
+        if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM) != 0) {
+            if (!setTransportMessageSizeMax("SHMEM", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to SHMEM\n");
+                return false;
+            }
         }
-    }
-    if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv4) != 0) {
-        transportMessageSizeMax = getTransportMessageSizeMax("UDPv4", transport, qos);
-        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv4) != 0) {
+            if (!setTransportMessageSizeMax("UDPv4", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to UDPv4\n");
+                return false;
+            }
         }
-    }
-    if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv6) != 0) {
-        transportMessageSizeMax = getTransportMessageSizeMax("UDPv6", transport, qos);
-        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv6) != 0) {
+            if (!setTransportMessageSizeMax("UDPv6", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to UDPv6\n");
+                return false;
+            }
         }
-    }
-    if (transport.transportConfig.kind == TRANSPORT_TCPv4
-            || transport.transportConfig.kind == TRANSPORT_TLSv4) {
-        transportMessageSizeMax = getTransportMessageSizeMax("TCP", transport, qos);
-        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transport.transportConfig.kind == TRANSPORT_TCPv4
+                || transport.transportConfig.kind == TRANSPORT_TLSv4) {
+            if (!setTransportMessageSizeMax("TCP", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to TCP\n");
+                return false;
+            }
         }
-    } else if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
-        transportMessageSizeMax = getTransportMessageSizeMax("DTLS", transport, qos);
-        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
+            if (!setTransportMessageSizeMax("DTLS", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to DTLS\n");
+                return false;
+            }
         }
-    } else if (transport.transportConfig.kind == TRANSPORT_WANv4) {
-        transportMessageSizeMax = getTransportMessageSizeMax("WAN", transport, qos);
-        if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
-            qosConfigurationMessageSizeMax = transportMessageSizeMax;
+        if (transport.transportConfig.kind == TRANSPORT_WANv4) {
+            if (!setTransportMessageSizeMax("WAN", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to WAN\n");
+                return false;
+            }
         }
+      #ifdef PERFTEST_CONNEXT_PRO_610
+        if (transport.transportConfig.kind == TRANSPORT_UDPv4_WAN) {
+            if (!setTransportMessageSizeMax("UDPv4_WAN", transport, qos, transportMessageSizeMax)){
+                printf("[Error]: error in setupTransportMinimumMessageSizeMax setting message_size_max to UDPv4_WAN\n");
+                return false;
+            }
+        }
+      #endif
+
+    } else {
+        if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM) != 0) {
+            transportMessageSizeMax = getTransportMessageSizeMax("SHMEM", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+        if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv4) != 0) {
+            transportMessageSizeMax = getTransportMessageSizeMax("UDPv4", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+        if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_UDPv6) != 0) {
+            transportMessageSizeMax = getTransportMessageSizeMax("UDPv6", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+        if (transport.transportConfig.kind == TRANSPORT_TCPv4
+                || transport.transportConfig.kind == TRANSPORT_TLSv4) {
+            transportMessageSizeMax = getTransportMessageSizeMax("TCP", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+        if (transport.transportConfig.kind == TRANSPORT_DTLSv4) {
+            transportMessageSizeMax = getTransportMessageSizeMax("DTLS", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+        if (transport.transportConfig.kind == TRANSPORT_WANv4) {
+            transportMessageSizeMax = getTransportMessageSizeMax("WAN", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+      #ifdef PERFTEST_CONNEXT_PRO_610
+        if (transport.transportConfig.kind == TRANSPORT_UDPv4_WAN) {
+            transportMessageSizeMax = getTransportMessageSizeMax("UDPv4_WAN", transport, qos);
+            if (transportMessageSizeMax < qosConfigurationMessageSizeMax) {
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+            }
+        }
+      #endif
+        transport.loggingString += ("\tmessage_size_max: "
+                + std::to_string(qosConfigurationMessageSizeMax)
+                + " (minimum across all transports)\n");
     }
 
-    transport.minimumMessageSizeMax = transportMessageSizeMax;
+    transport.minimumMessageSizeMax = qosConfigurationMessageSizeMax;
+    return true;
 }
 
 bool PerftestConfigureTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
 
     /*
@@ -901,6 +1000,14 @@ bool PerftestConfigureTransport(
                     "UDPv4 & UDPv6 & SHMEM",
                     "dds.transport.UDPv4.builtin");
                 break;
+          #ifdef PERFTEST_CONNEXT_PRO_610
+            case DDS_TRANSPORTBUILTIN_UDPv4_WAN:
+                transport.transportConfig = TransportConfig(
+                    TRANSPORT_UDPv4_WAN,
+                    "UDPv4_WAN",
+                    "dds.transport.UDPv4_WAN.builtin");
+                break;
+          #endif
             default:
                 /*
                  * This would mean that the mask is either empty or a
@@ -930,11 +1037,12 @@ bool PerftestConfigureTransport(
     };
 
     /*
-     * Once the configurations have been stablished, we can get the
+     * Once the configurations have been established, we can get the
      * MessageSizeMax for the Transport, which should be the minimum of
-     * all the enabled transports
+     * all the enabled transports, unless the message size max has been
+     * provided, which will be used instead.
      */
-    getTransportMinimumMessageSizeMax(transport, qos);
+    setupTransportMinimumMessageSizeMax(parameterManager, transport, qos);
 
     switch (transport.transportConfig.kind) {
 
@@ -943,7 +1051,7 @@ bool PerftestConfigureTransport(
             break;
 
         case TRANSPORT_SHMEM:
-            if (!configureShmemTransport(transport, qos, _PM)) {
+            if (!configureShmemTransport(transport, qos, parameterManager)) {
                 fprintf(stderr,
                         "%s Failed to configure SHMEM plugin\n",
                         classLoggingString.c_str());
@@ -952,7 +1060,7 @@ bool PerftestConfigureTransport(
             break;
 
         case TRANSPORT_TCPv4:
-            if (!configureTcpTransport(transport, qos, _PM)) {
+            if (!configureTcpTransport(transport, qos, parameterManager)) {
                 fprintf(stderr,
                         "%s Failed to configure TCP plugin\n",
                         classLoggingString.c_str());
@@ -961,7 +1069,7 @@ bool PerftestConfigureTransport(
             break;
 
         case TRANSPORT_TLSv4:
-            if (!configureTcpTransport(transport, qos, _PM)) {
+            if (!configureTcpTransport(transport, qos, parameterManager)) {
                 fprintf(stderr,
                         "%s Failed to configure TCP + TLS plugin\n",
                         classLoggingString.c_str());
@@ -970,7 +1078,7 @@ bool PerftestConfigureTransport(
             break;
 
         case TRANSPORT_DTLSv4:
-            if (!configureDtlsTransport(transport, qos, _PM)) {
+            if (!configureDtlsTransport(transport, qos, parameterManager)) {
                 fprintf(stderr,
                         "%s Failed to configure DTLS plugin\n",
                         classLoggingString.c_str());
@@ -979,7 +1087,7 @@ bool PerftestConfigureTransport(
             break;
 
         case TRANSPORT_WANv4:
-            if (!configureWanTransport(transport, qos, _PM)) {
+            if (!configureWanTransport(transport, qos, parameterManager)) {
                 fprintf(stderr,
                         "%s Failed to configure WAN plugin\n",
                         classLoggingString.c_str());
@@ -988,7 +1096,7 @@ bool PerftestConfigureTransport(
             break;
       #ifdef PERFTEST_CONNEXT_PRO_610
         case TRANSPORT_UDPv4_WAN:
-            if (!configureUdpv4WanTransport(transport, qos, _PM)) {
+            if (!configureUdpv4WanTransport(transport, qos, parameterManager)) {
                 fprintf(stderr,
                         "%s Failed to configure UDPv4_WAN plugin\n",
                         classLoggingString.c_str());
@@ -1004,7 +1112,7 @@ bool PerftestConfigureTransport(
              */
             if ((qos.transport_builtin.mask & DDS_TRANSPORTBUILTIN_SHMEM)
                     != 0) {
-                if (!configureShmemTransport(transport, qos, _PM)) {
+                if (!configureShmemTransport(transport, qos, parameterManager)) {
                     fprintf(stderr,
                             "%s Failed to configure SHMEM plugin\n",
                             classLoggingString.c_str());
@@ -1021,15 +1129,15 @@ bool PerftestConfigureTransport(
      */
     if (transport.transportConfig.kind != TRANSPORT_NOT_SET
             && transport.transportConfig.kind != TRANSPORT_SHMEM) {
-        if (!setAllowInterfacesList(transport, qos, _PM)) {
+        if (!setAllowInterfacesList(transport, qos, parameterManager)) {
             return false;
         }
     } else {
         // We are not using the allow interface string, so it is clean
-        _PM->set<std::string>("allowInterfaces", std::string(""));
+        parameterManager->set<std::string>("allowInterfaces", std::string(""));
     }
 
-    if (!setTransportVerbosity(transport, qos, _PM)) {
+    if (!setTransportVerbosity(transport, qos, parameterManager)) {
         return false;
     }
 
@@ -1040,7 +1148,7 @@ bool PerftestConfigureTransport(
 bool PerftestConfigureSecurity(
         PerftestSecurity &security,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
 
     if (!addPropertyToParticipantQos(
@@ -1067,7 +1175,7 @@ bool PerftestConfigureSecurity(
     if (!addPropertyToParticipantQos(
             qos,
             "com.rti.serv.secure.library",
-            _PM->get<std::string>("secureLibrary"))) {
+            parameterManager->get<std::string>("secureLibrary"))) {
         return false;
     }
 
@@ -1106,14 +1214,14 @@ bool PerftestConfigureSecurity(
 
     // In the case where we are dynamic, we should not set these properties if
     // we are using the lightweight security library.
-    if (!_PM->is_set("lightWeightSecurity")
-            && !_PM->is_set("secureRtpsHmacOnly")) {
+    if (!parameterManager->is_set("lightWeightSecurity")
+            && !parameterManager->is_set("secureRtpsHmacOnly")) {
         // check if governance file provided
-        if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
+        if (!parameterManager->get<std::string>("secureGovernanceFile").empty()) {
             if (!addPropertyToParticipantQos(
                     qos,
                     "com.rti.serv.secure.access_control.governance_file",
-                    _PM->get<std::string>("secureGovernanceFile"))) {
+                    parameterManager->get<std::string>("secureGovernanceFile"))) {
                 return false;
             }
         } else {
@@ -1126,7 +1234,7 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.access_control.permissions_file",
-                _PM->get<std::string>("securePermissionsFile"))) {
+                parameterManager->get<std::string>("securePermissionsFile"))) {
             return false;
         }
 
@@ -1134,7 +1242,7 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.access_control.permissions_authority_file",
-                _PM->get<std::string>("secureCertAuthority"))) {
+                parameterManager->get<std::string>("secureCertAuthority"))) {
             return false;
         }
 
@@ -1142,7 +1250,7 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.authentication.ca_file",
-                _PM->get<std::string>("secureCertAuthority"))) {
+                parameterManager->get<std::string>("secureCertAuthority"))) {
             return false;
         }
 
@@ -1150,7 +1258,7 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.authentication.certificate_file",
-                _PM->get<std::string>("secureCertFile"))) {
+                parameterManager->get<std::string>("secureCertFile"))) {
             return false;
         }
 
@@ -1165,15 +1273,15 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.authentication.private_key_file",
-                _PM->get<std::string>("securePrivateKey"))) {
+                parameterManager->get<std::string>("securePrivateKey"))) {
             return false;
         }
 
-        if (_PM->is_set("secureEncryptionAlgo")) {
+        if (parameterManager->is_set("secureEncryptionAlgo")) {
             if (!addPropertyToParticipantQos(
                     qos,
                     "com.rti.serv.secure.cryptography.encryption_algorithm",
-                    _PM->get<std::string>("secureEncryptionAlgo"))) {
+                    parameterManager->get<std::string>("secureEncryptionAlgo"))) {
                 return false;
             }
         }
@@ -1181,20 +1289,20 @@ bool PerftestConfigureSecurity(
 
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
-    if (_PM->is_set("securePSK") || _PM->is_set("securePSKAlgorithm")) {
+    if (parameterManager->is_set("securePSK") || parameterManager->is_set("securePSKAlgorithm")) {
 
-        if (!_PM->is_set("securePSK")) {
-            _PM->set("securePSK", "DefaultValue");
+        if (!parameterManager->is_set("securePSK")) {
+            parameterManager->set("securePSK", "DefaultValue");
         }
 
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
-                _PM->get<std::string>("securePSK").c_str())) {
+                parameterManager->get<std::string>("securePSK").c_str())) {
             return false;
         }
 
-        if (_PM->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
+        if (parameterManager->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
             if (!addPropertyToParticipantQos(
                     qos,
                     "com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind",
@@ -1206,13 +1314,13 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.cryptography.rtps_psk_symmetric_cipher_algorithm",
-                _PM->get<std::string>("securePSKAlgorithm").c_str())) {
+                parameterManager->get<std::string>("securePSKAlgorithm").c_str())) {
             return false;
         }
 
     }
 
-    if (_PM->is_set("secureRtpsHmacOnly")) {
+    if (parameterManager->is_set("secureRtpsHmacOnly")) {
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.hmac_only.enabled",
@@ -1222,12 +1330,12 @@ bool PerftestConfigureSecurity(
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.hmac_only.cryptography.key",
-                _PM->get<std::string>("secureRtpsHmacOnly").c_str())) {
+                parameterManager->get<std::string>("secureRtpsHmacOnly").c_str())) {
             return false;
         }
     }
 
-    if (_PM->is_set("secureEnableAAD")) {
+    if (parameterManager->is_set("secureEnableAAD")) {
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
@@ -1236,12 +1344,12 @@ bool PerftestConfigureSecurity(
         }
     }
 
-    if (_PM->is_set("secureDebug")) {
+    if (parameterManager->is_set("secureDebug")) {
         // private key
         if (!addPropertyToParticipantQos(
                 qos,
                 "com.rti.serv.secure.logging.log_level",
-                perftest::to_string(_PM->get<int>("secureDebug")))) {
+                perftest::to_string(parameterManager->get<int>("secureDebug")))) {
             return false;
         }
     }

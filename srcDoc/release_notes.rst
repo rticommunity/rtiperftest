@@ -20,7 +20,33 @@ command line, batching will remain enabled.
 +++++++++++++++++++++++++++++++
 
 The ``-scan`` command-line option was previously available in the *Traditional C++*,
-*Modern C++*, and *Java API*, it was deprecated in 4.0 and now it has been removed.
+*Modern C++*, and *Java API*. This option was deprecated in 4.0 and has been removed in this release.
+
+Reliable fragmented data can now be sent in synchronous publish mode. |newTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+*Connext 7.4.0* introduced synchronous support for sending fragmented data with *Reliable* reliability.
+In prior releases, this feature required enabling *asynchronous publishing*, and synchronous support
+was only available for *Best-Effort* reliability.
+
+*Perftest* now supports synchronous fragmentation for both `reliable` and `best-effort` communications.
+In previous releases, *Perftest* automatically enabled asynchronous publishing when fragmented samples
+were detected, even for `best-effort`. Asynchronous publishing is still controlled by the ``-asynchronous``
+command-line option.
+
+*Note:* This behavior implies that for previous *RTI Connext* releases, the ``-asynchronous``
+option must be used when sending reliable large data (at the DDS level).
+
+``message_size_max`` can now be changed via command line |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The ``message_size_max`` transport property can now be provided with the
+``-messageSizeMax <value>`` parameter. This parameter overrides the default
+value, which is the minimum ``message_size_max`` across all the
+enabled transports.
+
+Modifying the ``message_size_max`` property to a value lower than the data length
+will not automatically enable asynchronous publishing.
 
 Support for **RTI Connext Cert 2.4.15** |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++

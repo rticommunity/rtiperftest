@@ -849,45 +849,113 @@ namespace PerformanceTest
             }
         }
 
+        private static void SetTransportMessageSizeMax(
+                String targetTransportName,
+                DomainParticipantQos qos,
+                ulong messageSizeMax)
+        {
+            string propertyName = TransportConfigMap[targetTransportName].PrefixString + ".parent.message_size_max";
+
+            qos = qos.WithProperty(policy =>
+                policy.Add(propertyName, messageSizeMax.ToString()));
+        }
+
         /*
          * Configures the minimumMessageSizeMax value in the PerftestTransport object with
          * the minimum value for all the enabled transports in the XML configuration.
          */
-        private void GetTransportMinimumMessageSizeMax(DomainParticipantQos qos)
+        private void setupTransportMinimumMessageSizeMax(DomainParticipantQos qos)
         {
+            ulong qosConfigurationMessageSizeMax = MessageSizeMaxNotSet;
             ulong transportMessageSizeMax = MessageSizeMaxNotSet;
             int mask = (int)qos.TransportBuiltin.Mask;
 
-            if ((mask & (int)TransportBuiltinMask.Shmem) != 0)
+            if (parameters.messageSizeMaxSet)
             {
-                transportMessageSizeMax = GetTransportMessageSizeMax("SHMEM", qos);
+                transportMessageSizeMax = parameters.MessageSizeMax;
+                qosConfigurationMessageSizeMax = transportMessageSizeMax;
+
+                if ((mask & (int)TransportBuiltinMask.Shmem) != 0)
+                {
+                    SetTransportMessageSizeMax("SHMEM", qos, transportMessageSizeMax);
+                }
+                if ((mask & (int)TransportBuiltinMask.Udpv4) != 0)
+                {
+                    SetTransportMessageSizeMax("UDPv4", qos, transportMessageSizeMax);
+                }
+                if ((mask & (int)TransportBuiltinMask.Udpv6) != 0)
+                {
+                    SetTransportMessageSizeMax("UDPv6", qos, transportMessageSizeMax);
+                }
+                if (TransportConfig.Kind == Transport.Tcpv4
+                        || TransportConfig.Kind == Transport.Tlsv4)
+                {
+                    SetTransportMessageSizeMax("TCP", qos, transportMessageSizeMax);
+                }
+                if (TransportConfig.Kind == Transport.Dtlsv4)
+                {
+                    SetTransportMessageSizeMax("DTLS", qos, transportMessageSizeMax);
+                }
+                if (TransportConfig.Kind == Transport.Wanv4)
+                {
+                    SetTransportMessageSizeMax("WAN", qos, transportMessageSizeMax);
+                }
+
             }
-            if ((mask & (int)TransportBuiltinMask.Udpv4) != 0)
+            else 
             {
-                transportMessageSizeMax = GetTransportMessageSizeMax("UDPv4", qos);
-            }
-            if ((mask & (int)TransportBuiltinMask.Udpv6) != 0)
-            {
-                transportMessageSizeMax = GetTransportMessageSizeMax("UDPv6", qos);
+                if ((mask & (int)TransportBuiltinMask.Shmem) != 0)
+                {
+                    transportMessageSizeMax = GetTransportMessageSizeMax("SHMEM", qos);
+                    if (transportMessageSizeMax < qosConfigurationMessageSizeMax)
+                    {
+                        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+                    }
+                }
+                if ((mask & (int)TransportBuiltinMask.Udpv4) != 0)
+                {
+                    transportMessageSizeMax = GetTransportMessageSizeMax("UDPv4", qos);
+                    if (transportMessageSizeMax < qosConfigurationMessageSizeMax)
+                    {
+                        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+                    }
+                }
+                if ((mask & (int)TransportBuiltinMask.Udpv6) != 0)
+                {
+                    transportMessageSizeMax = GetTransportMessageSizeMax("UDPv6", qos);
+                    if (transportMessageSizeMax < qosConfigurationMessageSizeMax)
+                    {
+                        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+                    }
+                }
+                if (TransportConfig.Kind == Transport.Tcpv4
+                        || TransportConfig.Kind == Transport.Tlsv4)
+                {
+                    transportMessageSizeMax = GetTransportMessageSizeMax("TCP", qos);
+                    if (transportMessageSizeMax < qosConfigurationMessageSizeMax)
+                    {
+                        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+                    }
+                }
+                if (TransportConfig.Kind == Transport.Dtlsv4)
+                {
+                    transportMessageSizeMax = GetTransportMessageSizeMax("DTLS", qos);
+                    if (transportMessageSizeMax < qosConfigurationMessageSizeMax)
+                    {
+                        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+                    }
+                }
+                if (TransportConfig.Kind == Transport.Wanv4)
+                {
+                    transportMessageSizeMax = GetTransportMessageSizeMax("WAN", qos);
+                    if (transportMessageSizeMax < qosConfigurationMessageSizeMax)
+                    {
+                        qosConfigurationMessageSizeMax = transportMessageSizeMax;
+                    }
+                }
             }
 
-            if (TransportConfig.Kind == Transport.Tcpv4
-                    || TransportConfig.Kind == Transport.Tlsv4)
-            {
-                transportMessageSizeMax = GetTransportMessageSizeMax("TCP", qos);
-            }
-
-            if (TransportConfig.Kind == Transport.Dtlsv4)
-            {
-                transportMessageSizeMax = GetTransportMessageSizeMax("DTLS", qos);
-            }
-
-            if (TransportConfig.Kind == Transport.Wanv4)
-            {
-                transportMessageSizeMax = GetTransportMessageSizeMax("WAN", qos);
-            }
-
-            MinimumMessageSizeMax = transportMessageSizeMax;
+            MinimumMessageSizeMax = qosConfigurationMessageSizeMax;
         }
 
         public bool ConfigureTransport(ref DomainParticipantQos qos)
@@ -963,7 +1031,7 @@ namespace PerformanceTest
             * MessageSizeMax for the Transport, which should be the minimum of
             * all the enabled transports
             */
-            GetTransportMinimumMessageSizeMax(qos);
+            setupTransportMinimumMessageSizeMax(qos);
 
             switch (TransportConfig.Kind)
             {

@@ -175,13 +175,13 @@ struct PerftestThread* PerftestThread_new(
 bool PerftestConfigureTransport(
         PerftestTransport &transport,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM);
+        ParameterManager *parameterManager);
 
 #ifdef RTI_SECURE_PERFTEST
 bool PerftestConfigureSecurity(
         PerftestSecurity &security,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM);
+        ParameterManager *parameterManager);
 #endif
 
 #endif /* INFRASTRUCTURE_PRO_H_ */

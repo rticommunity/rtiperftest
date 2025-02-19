@@ -103,7 +103,7 @@ RTIDDSImpl<T>::RTIDDSImpl()
     _instanceMaxCountReader = 1;
   #endif
     _isLargeData = false;
-    _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
+    _maxUnfragmentedRTPSPayloadSize = MESSAGE_SIZE_MAX_NOT_SET;
     _isFlatData = false;
     _isZeroCopy = false;
     _factory = NULL;
@@ -346,32 +346,17 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
         return false;
     }
 
-    // If the user wants to use asynchronous we enable it
-    if (_PM->get<bool>("asynchronous")) {
-        _isLargeData = true;
-    } else { //If the message size max is lower than the datalen
-        _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
-    }
+    // We consider large data those that will not fit in the 
+    // _maxUnfragmentedRTPSPayloadSize
+    _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxUnfragmentedRTPSPayloadSize);
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
 
-        // Check if using asynchronous
-        if (_PM->get<bool>("asynchronous")) {
-            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
-                fprintf(stderr,
-                        "Batching cannot be used with asynchronous writing.\n");
-                return false;
-            } else {
-                _PM->set<long>("batchSize", 0); // Disable Batching
-            }
-        }
 
-        /*
-         * Large Data + batching cannot be set. But batching is enabled by default,
-         * so in that case, we just disabled batching, else, the customer set it up,
-         * so we explitly fail
-         */
+        // Large Data + batching cannot be set. But batching is enabled by default,
+        // so in that case, we just disabled batching, else, the customer set it up,
+        // so we explicitly fail
         if (_isLargeData) {
             if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
                 fprintf(stderr, "Batching cannot be used with Large Data.\n");
@@ -379,13 +364,14 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
             } else {
                 _PM->set<long>("batchSize", -2);
             }
-        } else if (((unsigned long)_PM->get<long>("batchSize")
-                        < _PM->get<unsigned long long>("dataLen") * 2)) {
-            /*
-            * We don't want to use batching if the batch size is not large
-            * enough to contain at least two samples (in this case we avoid the
-            * checking at the middleware level).
-            */
+        }
+
+        // We don't want to use batching if the batch size is not large
+        // enough to contain at least two samples (in this case we avoid a check
+        // at the middleware level).
+        if (((unsigned long)_PM->get<long>("batchSize")
+                < _PM->get<unsigned long long>("dataLen") * 2)) {
+
             if (_PM->is_set("batchSize")) {
                 /*
                 * Batchsize disabled. A message will be print if batchSize < 0
@@ -417,7 +403,8 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
         if (_PM->get<bool>("asynchronous")) {
             fprintf(stderr, "Turbo Mode cannot be used with asynchronous writing.\n");
             return false;
-        } if (_isLargeData) {
+        }
+        if (_isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             _PM->set<bool>("enableTurboMode", false);
         }
@@ -560,8 +547,7 @@ std::string RTIDDSImpl<T>::print_configuration()
     // Asynchronous Publishing
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if ((_isLargeData || _PM->get<bool>("asynchronous"))
-                && !_PM->get<bool>("zerocopy")) {
+        if (_PM->get<bool>("asynchronous") && !_PM->get<bool>("zerocopy")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
                          << _PM->get<std::string>("flowController")
@@ -617,14 +603,14 @@ std::string RTIDDSImpl<T>::print_configuration()
    #endif
 
     // Large Data
-    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
-        stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
+    if (_PM->get<unsigned long long>("dataLen") > _maxUnfragmentedRTPSPayloadSize) {
+        stringStream << "\n[IMPORTANT]: -datalen ("
                      << perftest::to_string(_PM->get<unsigned long long>("dataLen"))
-                     << ") is \n"
-                     << "             larger than the minimum message_size_max across\n"
-                     << "             all enabled transports ("
-                     << perftest::to_string(_maxSynchronousSize)
-                     << ")\n";
+                     << ") is greater than\n"
+                     << "             the minimum message_size_max across all\n"
+                     << "             enabled transports ("
+                     << perftest::to_string(_maxUnfragmentedRTPSPayloadSize)
+                     << "). Samples will be fragmented.\n";
     }
 
     return stringStream.str();
@@ -2613,16 +2599,15 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
 
     /*
      * At this point, and not before is when we know the transport message size.
-     * Now we can decide if we need to use asynchronous or not.
      */
-    _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
+    _maxUnfragmentedRTPSPayloadSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     /*
      * We need to account for the different size of the headers when using
      * flatData.
      */
     if (_isFlatData) {
-        _maxSynchronousSize -= 17;
+        _maxUnfragmentedRTPSPayloadSize -= 17;
     }
 
     if (!data_size_related_calculations()) {
@@ -3271,7 +3256,7 @@ bool RTIDDSImpl<T>::configure_writer_qos(
         }
     }
 
-    if ((_isLargeData && !_isZeroCopy) || _PM->get<bool>("asynchronous")) {
+    if (_PM->get<bool>("asynchronous")) {
         dw_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
         if (_PM->get<std::string>("flowController") != "default") {
             dw_qos.publish_mode.flow_controller_name =

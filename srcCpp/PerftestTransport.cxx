@@ -11,17 +11,14 @@
 
 PerftestTransport::PerftestTransport()
 {
-    multicastAddrMap[LATENCY_TOPIC_NAME] =
-            TRANSPORT_MULTICAST_ADDR_LATENCY;
-    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] =
-            TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
-    multicastAddrMap[THROUGHPUT_TOPIC_NAME] =
-            TRANSPORT_MULTICAST_ADDR_THROUGHPUT;
+    multicastAddrMap[LATENCY_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_LATENCY;
+    multicastAddrMap[ANNOUNCEMENT_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_ANNOUNCEMENT;
+    multicastAddrMap[THROUGHPUT_TOPIC_NAME] = TRANSPORT_MULTICAST_ADDR_THROUGHPUT;
 
     transportConfigMap["Use XML"] = TransportConfig(
-        TRANSPORT_NOT_SET,
-        "--",
-        "--");
+            TRANSPORT_NOT_SET,
+            "--",
+            "--");
     transportConfigMap["UDPv4"] = TransportConfig(
             TRANSPORT_UDPv4,
             "UDPv4",

@@ -263,6 +263,16 @@ void ParameterManager::initialize()
                                            | Middleware::RTITSSPRO);
     create("asynchronous", asynchronous);
 
+    Parameter<bool> *messageSizeMax = new Parameter<bool>(false);
+    messageSizeMax->set_command_line_argument("-messageSizeMax", "");
+    messageSizeMax->set_description("Set the value of the transport message_size_max.\nDefault: Connext's default");
+    messageSizeMax->set_type(T_NUMERIC_LD);
+    messageSizeMax->set_extra_argument(YES);
+    messageSizeMax->set_range(0, MAX_PERFTEST_SAMPLE_SIZE);
+    messageSizeMax->set_group(GENERAL);
+    messageSizeMax->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("messageSizeMax", messageSizeMax);
+
     Parameter<std::string> *flowController = new Parameter<std::string>("default");
     flowController->set_command_line_argument("-flowController", "<flow>");
     flowController->set_description(

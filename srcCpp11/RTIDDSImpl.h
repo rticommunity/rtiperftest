@@ -110,7 +110,7 @@ class RTIDDSImpl : public IMessaging
     unsigned long _sendQueueSize;
     int _InstanceHashBuckets;
     bool _isLargeData;
-    unsigned long long _maxSynchronousSize;
+    unsigned long long _maxUnfragmentedRTPSPayloadSize;
     bool _isFlatData;
     bool _isZeroCopy;
     PerftestTransport _transport;

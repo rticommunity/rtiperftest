@@ -112,10 +112,10 @@ public final class RTIDDSImpl<T> implements IMessaging {
     private boolean _isDebug = false;
     private boolean _latencyTest = false;
     private boolean _isLargeData = false;
-    private long _maxSynchronousSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
+    private long _maxUnfragmentedRTPSPayloadSize = PerftestTransport.MESSAGE_SIZE_MAX_NOT_SET;
     private boolean _isPublisher = false;
     private boolean _isPubRateSet = false;
-    private boolean _IsAsynchronous = false;
+    private boolean _isAsynchronous = false;
     private boolean _isDynamicData = false;
     private String  _FlowControllerCustom = "default";
     String[] valid_flow_controller = {"default", "1Gbps", "10Gbps"};
@@ -334,27 +334,13 @@ public final class RTIDDSImpl<T> implements IMessaging {
     }
 
     public boolean data_size_related_calculations() {
-        // If the user wants to use asynchronous we enable it
-        if (_IsAsynchronous) {
-            _isLargeData = true;
-        } else { //If the message size max is lower than the datalen
-            _isLargeData = _dataLen > _maxSynchronousSize;
-        }
+
+        // We consider large data those that will not fit in the 
+        // _maxUnfragmentedRTPSPayloadSize
+        _isLargeData = _dataLen > _maxUnfragmentedRTPSPayloadSize;
 
         // Manage parameter -batchSize
         if (_batchSize > 0) {
-
-            /* Check if using asynchronous */
-            if (_IsAsynchronous) {
-                if (_isBatchSizeProvided) {
-                    System.err.println(
-                            "Batching cannot be used with asynchronous writing.\n");
-                    return false;
-                }
-                else {
-                    _batchSize = 0; // Disable Batching
-                }
-            }
 
             /*
              * Large Data + batching cannot be set. But batching is enabled by default,
@@ -364,7 +350,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             if (_isLargeData) {
                 if (_isBatchSizeProvided) {
                     System.err.println(
-                            "Batching cannot be used with Large Data.");
+                            "Batching cannot be used with Fragmented Samples.");
                     return false;
                 } else {
                     _batchSize = -2;
@@ -392,7 +378,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         if (_TurboMode) {
-            if (_IsAsynchronous) {
+            if (_isAsynchronous) {
                 System.err.println("Turbo Mode cannot be used with asynchronous writing.");
                 return false;
             }
@@ -483,7 +469,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         * At this point, and not before is when we know the transport message size.
         * Now we can decide if we need to use asynchronous or not.
         */
-        _maxSynchronousSize = _transport.minimumMessageSizeMax - (PerftestTransport.MESSAGE_OVERHEAD_BYTES);
+        _maxUnfragmentedRTPSPayloadSize = _transport.minimumMessageSizeMax - (PerftestTransport.MESSAGE_OVERHEAD_BYTES);
 
         if (!data_size_related_calculations()) {
             System.err.print("[Error] Failed to configure the data size settings.\n");
@@ -1050,7 +1036,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                     "fast_buffer_pool", false);
         }
 
-        if (_isLargeData || _IsAsynchronous)
+        if (_isAsynchronous)
         {
             dwQos.publish_mode.kind = PublishModeQosPolicyKind.ASYNCHRONOUS_PUBLISH_MODE_QOS;
             if (!_FlowControllerCustom.toLowerCase().startsWith("default".toLowerCase())) {
@@ -1314,7 +1300,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
         // Dynamic Data
         if (_isPublisher) {
             sb.append("\tAsynchronous Publishing: ");
-            if (_isLargeData || _IsAsynchronous) {
+            if (_isAsynchronous) {
                 sb.append("Yes\n");
                 sb.append("\tFlow Controller: ");
                 sb.append(_FlowControllerCustom);
@@ -1374,14 +1360,14 @@ public final class RTIDDSImpl<T> implements IMessaging {
         }
 
         // Large Data
-        if (_dataLen > _maxSynchronousSize) {
-            sb.append("\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen (");
+        if (_dataLen > _maxUnfragmentedRTPSPayloadSize) {
+            sb.append("\n[IMPORTANT]: -datalen (");
             sb.append(_dataLen);
-            sb.append(") is \n");
-            sb.append("             larger than the minimum message_size_max across\n");
-            sb.append("             all enabled transports (");
-            sb.append(_maxSynchronousSize);
-            sb.append(")\n");
+            sb.append(") is greater than\n");
+            sb.append("             the minimum message_size_max across all\n");
+            sb.append("             enabled transports (");
+            sb.append(_maxUnfragmentedRTPSPayloadSize);
+            sb.append("). Samples will be fragmented.\n");
         }
 
         // We want to expose if we are using or not the unbounded type
@@ -1772,7 +1758,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
                 _secureUseSecure = true;
                 _secureEnableAAD = true;
             } else if ("-asynchronous".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _IsAsynchronous = true;
+                _isAsynchronous = true;
             } else if ("-flowController".toLowerCase().startsWith(argv[i].toLowerCase())) {
                 if ((i == (argc - 1)) || argv[++i].startsWith("-")) {
                     System.err.print("Missing <flow Controller Name> after -flowController\n");

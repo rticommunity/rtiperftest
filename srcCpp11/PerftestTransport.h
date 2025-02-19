@@ -73,6 +73,7 @@ enum Transport {
     TRANSPORT_TLSv4,
     TRANSPORT_DTLSv4,
     TRANSPORT_WANv4,
+    TRANSPORT_UDPv4_WAN,
     TRANSPORT_SHMEM,
     TRANSPORT_UDPv4_SHMEM,
     TRANSPORT_UDPv4_UDPv6,
@@ -159,7 +160,7 @@ public:
 private:
 
     std::map<std::string, std::string> multicastAddrMap;
-    ParameterManager *_PM;
+    ParameterManager *parameterManager;
     /**************************************************************************/
 
     bool setTransport(std::string transportString);
@@ -178,6 +179,6 @@ bool configureTransport(
         PerftestTransport &transport,
         dds::domain::qos::DomainParticipantQos &qos,
         std::map<std::string, std::string> &properties,
-        ParameterManager *_PM);
+        ParameterManager *parameterManager);
 
 #endif /* PERFTEST_2_0_SRCCPP_PERFTESTTRANSPORT_H_ */

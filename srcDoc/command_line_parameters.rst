@@ -67,8 +67,7 @@ Test Parameters for Publishing and Subscribing Applications
    wire protocol is added, it doesn't overflow the UDP maximum datagram
    size of 64KB.
 
-   If ``<bytes>`` is bigger than 64900, *RTI Perftest* will enable the
-   use of *Asynchronous Publishing* and *Unbounded Sequences*. When using
+   If ``<bytes>`` is bigger than 64900, *RTI Perftest* will enable *unbounded sequences*. When using
    *RTI Connext Micro*, the type is not really unbounded; the size is
    given by the ``MICRO_UNBOUNDED_SEQUENCE_SIZE`` constant, which can be
    modified in the ``build.bat`` and ``build.sh`` scripts.
@@ -389,19 +388,33 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-asynchronous``
 
-   Enable asynchronous publishing in the *DataWriter* QoS.
+   Enable asynchronous publishing in the *DataWriter* QoS. In *Connext* releases
+   prior to 7.4.0, this option is required to send *Reliable* data that will be fragmented
+   at the DDS level. Connext 7.4.0 and later do support fragmented synchronous data, so this
+   option is not required.
 
    This parameter is not available when compiling against *Connext Micro*.
 
    **Default:** Not set
 
+-  ``-messageSizeMax <bytes>``
+
+   Overrides the value that *RTI Connext Pro* will use for the ``message_size_max`` transport
+   property for all the enabled transports. The property controls the maximum allowed size
+   for a serialized message. If your message size is greater than this maximum,
+   the message will be fragmented (you can control the size of the messages using the 
+   ``-dataLen`` argument).
+   
+   This parameter is not available when compiling against *Connext Micro*.
+
+   **Default:** Not set: The middleware will use the minimum value of ``message_size_max``
+   for all the enabled transports, except for ``SHMEM``, where the middleware will use the
+   size of the sample to avoid fragmentation.
+
 -  ``-flowController <flow>``
 
    Specify the name of the flow controller that will be used by the
-   *DataWriters*. This parameter will only have effect if the *DataWriter* uses
-   Asynchronous Publishing, either because it is using samples greater
-   than the maximum synchronous size in bytes or because the ``-asynchronous``
-   option is present.
+   *DataWriters*. This parameter requires using ``-asynchronous`` publishing.
 
    There are several flow controllers predefined: ['default','10Gbps','1Gbps'].
 
