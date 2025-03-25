@@ -609,7 +609,8 @@ function additional_defines_calculation()
     # Avoid optimized out variables when debugging
     if [ "${RELEASE_DEBUG}" == "release" ]; then
         echo -e "${INFO_TAG} C++ code will be optimized."
-        additional_defines=${additional_defines}" O3"
+        additional_defines=${additional_defines}" O3 flto fno-semantic-interposition"
+        export ADDITIONAL_LINKER_FLAGS="$ADDITIONAL_LINKER_FLAGS -flto -fno-semantic-interposition"
     else
         additional_defines=${additional_defines}" O0"
         export DEBUG=1
