@@ -82,7 +82,13 @@ import com.rti.perftest.TestMessage;
         }
     }
 
-
+    private void resetLatencyCounters() {
+        _latencySum = 0;
+        _latencySumSquare = 0;
+        _latencyMin = PerfTest.LATENCY_RESET_VALUE;
+        _latencyMax = 0;
+        _count = 0;
+    }
     // --- From IMessagingCB: ------------------------------------------------
 
     public void processMessage(TestMessage message) {
@@ -156,12 +162,13 @@ import com.rti.perftest.TestMessage;
             outputCpu = CpuMonitor.get_cpu_instant();
         }
 
-        // if data sized changed
+        // if data size changed, print out stats and zero counters
         if (_lastDataLength != message.size) {
             _lastDataLength = message.size;
             PerfTest._printer.set_data_length(message.size +
                     PerfTest.OVERHEAD_BYTES);
             PerfTest._printer.print_latency_header();
+            resetLatencyCounters();
 
         } else if (PerfTest.printIntervals) {
             double latency_ave = (double)_latencySum / (double)_count;

@@ -60,7 +60,11 @@ in section :ref:`section-linux_compilation_examples`.
 What's Fixed in 4.2
 ~~~~~~~~~~~~~~~~~~~
 
-<- Nothing new yet ->
+Incorrect latency calculations when data size changed
++++++++++++++++++++++++++++++++++++++++++++++++++++++
+At the beginning of a test, some samples were sent indicating that a new data size would be used. 
+Those samples were discarded, but *Perftest* incorrectly kept the samples' latency information and used it to calculate the different latency statistics.
+This issue caused some inconsistencies in the results displayed, though it did not affect the final results.
 
 Release Notes 4.1.1
 ---------------------

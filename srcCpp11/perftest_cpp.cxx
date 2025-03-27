@@ -1228,6 +1228,14 @@ class LatencyListener : public IMessagingCB
     bool printIntervals;
     bool showCpu;
 
+    void resetLatencyCounters() {
+        latency_sum = 0;
+        latency_sum_square = 0;
+        latency_min = perftest_cpp::LATENCY_RESET_VALUE;
+        latency_max = 0;
+        count = 0;
+    }
+
  public:
     IMessagingReader *_reader;
     CpuMonitor cpu;
@@ -1314,11 +1322,7 @@ class LatencyListener : public IMessagingCB
         }
 
         if (last_data_length != message.size) {
-            latency_sum = 0;
-            latency_sum_square = 0;
-            latency_min = perftest_cpp::LATENCY_RESET_VALUE;
-            latency_max = 0;
-            count = 0;
+            resetLatencyCounters();
         }
 
         sec = message.timestamp_sec;
@@ -1367,6 +1371,7 @@ class LatencyListener : public IMessagingCB
                 _printer->_dataLength =
                         last_data_length + perftest_cpp::OVERHEAD_BYTES;
                 _printer->print_latency_header();
+                resetLatencyCounters();
             } else {
                 if (printIntervals) {
                     latency_ave = (double) latency_sum / (double) count;
