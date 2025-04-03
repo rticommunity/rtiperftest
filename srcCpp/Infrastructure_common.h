@@ -210,7 +210,7 @@ struct DDS_Duration_t {
 };
 #endif
 
-#ifdef PERFTEST_NO_INFRASTRUCTURE_AVAILABLE
+#if defined(PERFTEST_NO_INFRASTRUCTURE_AVAILABLE) || defined(RTI_PERF_TSS_MICRO)
 class NDDSUtility {
 public:
     /*e \dref_Utility_sleep */
