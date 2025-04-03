@@ -375,11 +375,6 @@ RTI_TSS_datawriter_qos(struct DDS_DataWriterQos *dw_qos, void *data)
                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                buf,
                false);
-    } else {
-        DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
-               "dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator",
-               "fast_buffer_pool",
-               false);
     }
 
     if (ctx->pm->get<long>("instances") > 1) {
