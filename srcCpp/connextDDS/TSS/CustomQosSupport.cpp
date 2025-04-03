@@ -376,7 +376,7 @@ RTI_TSS_datawriter_qos(struct DDS_DataWriterQos *dw_qos, void *data)
                buf,
                false);
     } else {
-        DDSPropertyQosPolicyHelper::add_property(dw_qos.property,
+        DDSPropertyQosPolicyHelper::add_property(dw_qos->property,
                "dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator",
                "fast_buffer_pool",
                false);
