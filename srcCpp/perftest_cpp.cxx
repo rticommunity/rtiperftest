@@ -76,7 +76,7 @@ extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
 bool perftest_cpp::_testCompleted = false;
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
-const Perftest_ProductVersion_t perftest_cpp::_version = {0, 0, 0, 0};
+const Perftest_ProductVersion_t perftest_cpp::_version = {4, 2, 0, 0};
 
 /*
  * PERFTEST-108
