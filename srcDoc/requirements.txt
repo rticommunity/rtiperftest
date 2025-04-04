@@ -2,4 +2,4 @@ Sphinx==7.1.2
 sphinx-rtd-theme==2.0.0
 svglib==1.5.1
 rst2pdf==0.101
-urllib3==1.26.6
+urllib3==1.26.19
