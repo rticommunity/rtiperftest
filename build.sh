@@ -48,6 +48,7 @@ MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 BUILD_CPP=1
 BUILD_CPP11=1
 BUILD_JAVA=1
+USER_RTIDDSGEN_EXECUTABLE=""  # Will hold the user-provided rtiddsgen path
 BUILD_CS=0
 
 # If this value is != 0, then it means the user specified specific APIS to be
@@ -214,8 +215,12 @@ function usage()
     echo "    --micro-use-cert-code        [Experimental] Build RTI Perftest for Connext  "
     echo "                                 Micro using the same Perftest code used for    "
     echo "                                 Connext CERT.                                  "
-    echo "    --cert-zc-datalen <size>  Size of the array for the ZeroCopy Type in CERT"
+    echo "    --cert-zc-datalen <size>     Size of the array for the ZeroCopy Type in CERT"
     echo "                                 Default is 1024.                               "
+    echo "    --rtiddsgen-path <path>      Use a specific path for the rtiddsgen tool,    "
+    echo "                                 overriding NDDSHOME, RTIMEHOME, etc.           "
+    echo "                                 If this parameter is not specified, the        "
+    echo "                                 default logic in this script will be used.     "
     echo "    --help -h                    Display this message.                          "
     echo "                                                                                "
     echo "================================================================================"
@@ -486,7 +491,7 @@ function find_ssl_libraries()
 }
 
 # If the NDDSHOME is staged, we might find that the nddssecurity library
-# is not under $NDDSHOME/lib/$platform/ but under $NDDSHOME/lib/$platform/$ndds_security_cryto_lib_folder
+# is not under $NDDSHOME/lib/$platform/ but under $NDDSHOME/lib/$platform/$ndds_security_crypto_lib_folder
 # lets try to find this path. This is a best effort approach if we cannof find
 # we will not fail.
 function rti_security_lib_path_calculation()
@@ -496,17 +501,17 @@ function rti_security_lib_path_calculation()
     export result=""
     get_absolute_folder_path "${NDDSHOME}/lib/${platform}/${find_pattern}"
     if [[ "$result" != "" ]]; then
-        export ndds_security_cryto_lib_folder=$result
-        echo -e "${INFO_TAG} Using the Connext Security libs from: \"${ndds_security_cryto_lib_folder}\""
+        export ndds_security_crypto_lib_folder=$result
+        echo -e "${INFO_TAG} Using the Connext Security libs from: \"${ndds_security_crypto_lib_folder}\""
         return
     fi
 }
 
 # If the NDDSHOME is staged, we might find that the nddssecurity library
-# is not under $NDDSHOME/lib/$platform/ but under $NDDSHOME/lib/$platform/$ndds_security_cryto_lib_folder
+# is not under $NDDSHOME/lib/$platform/ but under $NDDSHOME/lib/$platform/$ndds_security_crypto_lib_folder
 # lets try to find this path. This is a best effort approach if we cannof find
 # we will not fail.
-function get_rti_security_lib_path_for_cryto_path()
+function get_rti_security_lib_path_for_crypto_path()
 {
     local ssl_version="openssl-3"
     if [[ "${RTI_CRYPTOHOME}" == *"$ssl_version"* ]]; then
@@ -527,7 +532,7 @@ function get_rti_security_lib_path_for_cryto_path()
     fi
 }
 
-# Function to try and get the RTI_CRYPTOHOME and ndds_security_cryto_lib_folder when no
+# Function to try and get the RTI_CRYPTOHOME and ndds_security_crypto_lib_folder when no
 # SSL version is provided
 function crypto_path_calculation()
 {
@@ -668,8 +673,8 @@ function additional_defines_calculation()
                     exit -1
                 fi
 
-                # Lets try to load the ndds_security_cryto_lib_folder if we can.
-                get_rti_security_lib_path_for_cryto_path
+                # Lets try to load the ndds_security_crypto_lib_folder if we can.
+                get_rti_security_lib_path_for_crypto_path
             fi
 
             if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then 
@@ -682,14 +687,14 @@ function additional_defines_calculation()
             # libraries will be in a folder specific to the crypto library, we should
             # have calculated this in advance.
 
-            # At this point RTI_CRYPTOHOME must be set. ndds_security_cryto_lib_folder
+            # At this point RTI_CRYPTOHOME must be set. ndds_security_crypto_lib_folder
             # will be set only if the $NDDSHOME points to a staging directory.
-            # In a staging directory, ndds_security_cryto_lib_folder is where
+            # In a staging directory, ndds_security_crypto_lib_folder is where
             # the security libraries are (a folder specific to the crypto library). In a normal
             # installation, the security libraries are in
             # "${NDDSHOME}/lib/${platform}/", which is already in the path.
-            if [ -d "${ndds_security_cryto_lib_folder}" ]; then
-                additional_lib_paths="${ndds_security_cryto_lib_folder} ${additional_lib_paths}"
+            if [ -d "${ndds_security_crypto_lib_folder}" ]; then
+                additional_lib_paths="${ndds_security_crypto_lib_folder} ${additional_lib_paths}"
             fi
             # Add the path to the crypto libraries.
             additional_lib_paths="${RTI_CRYPTOHOME}/${RELEASE_DEBUG}/lib ${additional_lib_paths}"
@@ -2272,6 +2277,10 @@ while [ "$1" != "" ]; do
             RTI_USE_CPP_11_INFRASTRUCTURE=0
             shift
             ;;
+        --rtiddsgen-path)
+            USER_RTIDDSGEN_EXECUTABLE=$2
+             shift
+             ;;
         # These options are not exposed to the user (yet)
         --just-generate)
             JUST_GENERATE=1
@@ -2324,6 +2333,13 @@ elif [ "${BUILD_MICRO}" -eq "1" ]; then
 
 else # Build for ConnextDDS Pro
     rtiddsgen_executable="$NDDSHOME/bin/rtiddsgen"
+
+    # --------------------------------------------------------------------------
+    # If the user explicitly set --rtiddsgen-path <path>, override it
+    if [ -n "${USER_RTIDDSGEN_EXECUTABLE}" ]; then
+        echo -e "${INFO_TAG} Using user-provided rtiddsgen executable: ${USER_RTIDDSGEN_EXECUTABLE}"
+        rtiddsgen_executable="${USER_RTIDDSGEN_EXECUTABLE}"
+    fi
 
     classic_cpp_lang_string=C++
     modern_cpp_lang_string=C++11
