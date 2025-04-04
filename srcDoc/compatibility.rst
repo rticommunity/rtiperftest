@@ -3,15 +3,17 @@
 Compatibility
 =============
 
-*RTI Perftest 4.1.1* is designed to be compatible with the *RTI Connext DDS*
+*RTI Perftest 4.2.0* is designed to be compatible with the *RTI Connext DDS*
 middleware. It has been compiled and tested against:
 
 - *RTI Connext DDS Professional* 6.0.0 and above. Nonetheless previous versions
   starting after 5.2.X should be compatible with certain exceptions.
 
-- *RTI Connext DDS Micro* 3.0.0 and above versions. Versions for 2.4.11 and above
+- *RTI Connext Micro* 4.0.0 and above versions. Versions for 2.4.11 and above
   should also be compatible by adding the `--micro-24x-compatibility` command-line
   option.
+
+- *RTI Connext Cert* 2.4.15.
 
 - *RTI Connext TSS* 3.1.2 over *RTI Connext Pro* 6.1.1.4, or over
   *RTI Connext Micro* 2.4.13.4. The only supported FACE profile is
@@ -21,7 +23,7 @@ Using Security
 ~~~~~~~~~~~~~~
 
 Governance and Permission files have been updated to be compatible with
-the latest release for *RTI Connext DDS*, and are compatible with *RTI
+the latest release for *RTI Connext*, and are compatible with *RTI
 Connext DDS Professional* 5.2.7 and greater.
 
 If you are compiling *RTI Perftest* against 5.2.5, you will need to get
@@ -83,7 +85,7 @@ using .NET 5.0.
 Using the Old C# Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Starting in release 3.3, *RTI Perftest* will stop supporting
-the legacy C# implementation and adopt the new one provided in *RTI ConnextDDS 6.1.0*.
+the legacy C# implementation and adopt the new one provided in *RTI Connext DDS 6.1.0*.
 However, the old implementation can still be tested using the existing code provided in
 the *RTI Perftest 3.2* release branch. You can easily access that code by doing:
 
@@ -149,7 +151,7 @@ Warning when compiling the *Traditional* C++ API Implementation
 
 *RTI Perftest* might show these warnings when compiling the *Traditional* C++
 API implementation for *RTI Connext DDS Pro* (in versions prior to 6.0.0) and
-for *RTI Connext DDS Micro*:
+for *RTI Connext Micro*:
 
 .. code-block:: console
 
@@ -240,10 +242,10 @@ similar to this one:
 
 This warning should be innocuous.
 
-Dynamic compilation modes for *RTI Connext DDS Micro*
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
+Dynamic compilation modes for *RTI Connext Micro*
++++++++++++++++++++++++++++++++++++++++++++++++++
 
-When building against the *RTI Connext DDS Micro* libraries, only the static
+When building against the *RTI Connext Micro* libraries, only the static
 compilation modes are supported. Therefore the ``--dynamic`` option will have
 no effect.
 

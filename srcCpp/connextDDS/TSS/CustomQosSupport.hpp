@@ -22,7 +22,7 @@ typedef struct QoSBundle {
     std::string topic_name;
     long instanceMaxCountReader;
     bool* isLargeData;
-    unsigned long long* maxSynchronousSize;
+    unsigned long long* maxUnfragmentedRTPSPayloadSize;
 } QoSBundle;
 
 std::string stringValueQoS(DDS_Long resourceLimitValue);

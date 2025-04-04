@@ -76,7 +76,6 @@ class perftest_cpp
     static void ThreadYield();
     static unsigned long long GetTimeUsec();
     static void Timeout();
-    static void Timeout_scan();
 
   private:
     struct ScheduleInfo {
@@ -104,7 +103,6 @@ class perftest_cpp
     /* The following three members are used in a static callback
        and so they have to be static */
     static bool _testCompleted;
-    static bool _testCompleted_scan;
 
     /*
      * Number of bytes sent in messages besides user data. This value is
@@ -116,8 +114,6 @@ class perftest_cpp
     static const int INITIALIZE_SIZE = 1234;
     // Flag used to indicate end of test
     static const int FINISHED_SIZE = 1235;
-    // Flag used to data packet length is changing
-    static const int LENGTH_CHANGED_SIZE = 1236;
 
     /*
      * Value used to compare against to check if the latency_min has

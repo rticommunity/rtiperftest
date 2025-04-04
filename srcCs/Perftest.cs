@@ -57,8 +57,6 @@ namespace PerformanceTest
         public const int INITIALIZE_SIZE = 1234;
         // Flag used to indicate end of test
         public const int FINISHED_SIZE = 1235;
-        // Flag used to indicate end of test
-        public const int LENGTH_CHANGED_SIZE = 1236;
 
         /*
          * Value used to compare against to check if the latency_min has
@@ -90,7 +88,7 @@ namespace PerformanceTest
                 return;
             }
 
-            ulong maxPerftestSampleSize = Math.Max(dataSize, LENGTH_CHANGED_SIZE);
+            ulong maxPerftestSampleSize = Math.Max(dataSize, FINISHED_SIZE);
 
             if (parameters.UnboundedSizeSet)
             {
@@ -207,9 +205,6 @@ namespace PerformanceTest
                     new string[] { "--numPublishers", "-numPublishers" },
                     getDefaultValue: () => 1,
                     description: "Number of publishers running in test."),
-                new System.CommandLine.Option<string>(
-                    new string[] { "--scan", "-scan" },
-                    description: "This option is deprecated in this version of perftest."),
                 new System.CommandLine.Option<bool>(
                     new string[] { "--noPrintIntervals", "-noPrintIntervals" },
                     description: "Don't print statistics at intervals during test."),
@@ -788,7 +783,7 @@ namespace PerformanceTest
                 sb.Append(latencyCount);
                 sb.Append('\n');
 
-                // Scan/Data Sizes
+                // Data Sizes
                 sb.Append("\tData Size: ");
                 sb.Append(dataSize);
                 sb.Append('\n');
@@ -825,6 +820,11 @@ namespace PerformanceTest
                     {
                         sb.Append("\t\t  BatchSize cannot be used with\n");
                         sb.Append("\t\t  Large Data.\n");
+                    }
+                    if (batchSize == -3)
+                    {
+                        sb.Append("\t\t  BatchSize disabled by default.\n");
+                        sb.Append("\t\t  when using -pubRate.\n");
                     }
                 }
 
@@ -964,18 +964,6 @@ namespace PerformanceTest
                 prevTime = now;
                 Thread.Sleep(1000);
                 now = GetTimeUsec();
-
-                if (readerListener.changeSize)
-                { // ACK change_size
-                    TestMessage messageChangeSize = new TestMessage();
-                    messageChangeSize.entityId = subID;
-                    // messageChangeSize.data = new List<byte>(new byte[1]);
-                    // messageChangeSize.size = 1;
-                    messageChangeSize.Size = 1;
-                    announcementWriter.Send(messageChangeSize, false);
-                    announcementWriter.Flush();
-                    readerListener.changeSize = false;
-                }
 
                 if (readerListener.endTest)
                 {

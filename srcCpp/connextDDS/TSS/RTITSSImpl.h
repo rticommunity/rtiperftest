@@ -159,7 +159,7 @@ private:
 
     bool _isLargeData;
 
-    unsigned long long _maxSynchronousSize;
+    unsigned long long _maxUnfragmentedRTPSPayloadSize;
 
     DDS_Boolean
     GetSystemConfig(

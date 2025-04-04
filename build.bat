@@ -1,4 +1,3 @@
-
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -28,6 +27,7 @@ set MICRO_UNBOUNDED_SEQUENCE_SIZE=1048576
 set BUILD_CPP=1
 set BUILD_CPP11=1
 set BUILD_JAVA=1
+set USER_RTIDDSGEN_EXECUTABLE=""
 set BUILD_CS=0
 
 @REM # If this value is != 0, then it means the user specified specific APIS to be
@@ -46,7 +46,6 @@ set RELEASE_DEBUG=release
 set STATIC_DYNAMIC=static
 set USE_SECURE_LIBS=0
 set USE_LW_SECURE_LIBS=0
-set LEGACY_DD_IMPL=0
 
 @REM Starting with 5.2.6 (rtiddsgen 2.3.6) the name of the solutions is different
 set rtiddsgen_version_number_new_solution_name=2.3.6
@@ -74,6 +73,7 @@ set "custom_idl_file=%custom_type_folder%\custom.idl"
 @REM #3.0.0 -- 3 We just need the Major first value of the version.
 set flatdata_ddsgen_version=3
 set FLATDATA_AVAILABLE=0
+set rtiddsgen_extra_options=
 ::------------------------------------------------------------------------------
 
 @REM # Initial message
@@ -145,8 +145,6 @@ if NOT "%1"=="" (
 				SET RELEASE_DEBUG=debug
 		) ELSE if "%1"=="--dynamic" (
 				SET STATIC_DYNAMIC=dynamic
-		) ELSE if "%1"=="--legacy-DynamicData" (
-				SET LEGACY_DD_IMPL=1
 		) ELSE if "%1"=="--secure" (
 				SET USE_SECURE_LIBS=1
 		) ELSE if "%1"=="--lightWeightSecure" (
@@ -221,6 +219,9 @@ if NOT "%1"=="" (
 					exit /b 1
 				)
 				SHIFT
+		) ELSE if "%1"=="--rtiddsgen-path" (
+				SET "USER_RTIDDSGEN_EXECUTABLE=%2"
+				SHIFT
 		) ELSE (
 				echo [ERROR]: Unknown argument "%1"
 				call:help
@@ -228,6 +229,11 @@ if NOT "%1"=="" (
 		)
 		SHIFT
 		GOTO :parse_arguments
+)
+
+if defined VSDEVCMD (
+    echo [INFO]: Sourcing Visual Studio environment from "!VSDEVCMD!"
+    call "!VSDEVCMD!"
 )
 
 ::------------------------------------------------------------------------------
@@ -337,10 +343,14 @@ if !BUILD_MICRO! == 1 (
 ) else (
 	@REM # This calls the function in charge of getting the name of the solution for C++
 	@REM # given the architecture.
-	echo .
 	call::get_solution_name
 
 	set "rtiddsgen_executable=!NDDSHOME!/bin/rtiddsgen.bat"
+	
+	if not !USER_RTIDDSGEN_EXECUTABLE!=="" (
+		echo [INFO]: Using user-provided rtiddsgen executable: !USER_RTIDDSGEN_EXECUTABLE!
+		set "rtiddsgen_executable=!USER_RTIDDSGEN_EXECUTABLE!"
+	)
 )
 
 ::------------------------------------------------------------------------------
@@ -398,11 +408,6 @@ if !BUILD_CPP! == 1 (
 		)
 	)
 
-	if !LEGACY_DD_IMPL! == 1 (
-		echo [INFO]: Allow the use of both legacy and new Dynamic Data Impl.
-		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_LEGACY_DD_IMPL"
-	)
-
 	set "ADDITIONAL_DEFINES=PERFTEST_RTI_PRO RTI_LANGUAGE_CPP_TRADITIONAL RTI_WIN32"
 
 	if !USE_SECURE_LIBS! == 1 (
@@ -435,11 +440,19 @@ if !BUILD_CPP! == 1 (
 				)
 			)
 
-			REM If the SSL_VERSION is empty and the $RTI_CRYPTOHOME is empty too
+			REM If the SSL_VERSION is empty and the $RTI_OPENSSLHOME is empty too
 			REM we need to be creative. If we set the $SSL_VERSION before, we will
 			REM not enter here.
 			if "!RTI_OPENSSLHOME!"=="" (
 				call :crypto_path_calculation
+			) else (
+				if not exist "%RTI_OPENSSLHOME%\" (
+					echo [ERROR] %RTI_OPENSSLHOME% is not a folder.
+					exit /b -1
+				)
+
+				call :get_rti_security_lib_path_for_crypto_path
+				echo [INFO] ndds_security_crypto_lib_folder = "!ndds_security_crypto_lib_folder!"
 			)
 
 			if "%USE_LW_SECURE_LIBS%"=="1" (
@@ -448,8 +461,9 @@ if !BUILD_CPP! == 1 (
 				set additional_rti_libs=nddssecurity !additional_rti_libs!
 			)
 
-			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcrypto libssl"
-			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
+			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraries "crypt32 libcrypto libssl"
+			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib !ndds_security_crypto_lib_folder!"
+			echo [INFO] rtiddsgen_extra_options=!rtiddsgen_extra_options!
 			echo [INFO] Using security plugin. Linking Statically.
 		)
 		set "additional_header_files=PerftestSecurity.h !additional_header_files!"
@@ -585,7 +599,7 @@ if !BUILD_CPP! == 1 (
 	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
-		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
+		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%architecture%"
 		if !USE_SECURE_LIBS! == 1 (
 			echo and <OPENSSL_HOME>\!RELEASE_DEBUG!\bin
 		)
@@ -609,7 +623,7 @@ if !BUILD_CPP11! == 1 (
 			set "LWS_TAG=Lightweight "
 		)
 
-		echo [INFO_TAG] Using RTI !LWS_TAG!Security Libraries
+		echo [INFO] Using RTI !LWS_TAG!Security Libraries
 
 		set "ADDITIONAL_DEFINES=!ADDITIONAL_DEFINES! RTI_SECURE_PERFTEST"
 
@@ -633,11 +647,20 @@ if !BUILD_CPP11! == 1 (
 				)
 			)
 
-			REM If the SSL_VERSION is empty and the $RTI_CRYPTOHOME is empty too
+			REM If the SSL_VERSION is empty and the $RTI_OPENSSLHOME is empty too
 			REM we need to be creative. If we set the $SSL_VERSION before, we will
 			REM not enter here.
 			if "!RTI_OPENSSLHOME!"=="" (
 				call :crypto_path_calculation
+			) else (
+				if not exist "%RTI_OPENSSLHOME%\" (
+					echo [ERROR] %RTI_OPENSSLHOME% is not a folder.
+					exit /b -1
+				)
+
+				call :get_rti_security_lib_path_for_crypto_path
+				echo [INFO] ndds_security_crypto_lib_folder = "!ndds_security_crypto_lib_folder!"
+				echo [INFO] rtiddsgen_extra_options=!rtiddsgen_extra_options!
 			)
 
 			if "%USE_LW_SECURE_LIBS%"=="1" (
@@ -647,7 +670,8 @@ if !BUILD_CPP11! == 1 (
 			)
 
 			set rtiddsgen_extra_options=-additionalLibraries "crypt32 libcrypto libssl"
-			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib"
+			set rtiddsgen_extra_options=!rtiddsgen_extra_options! -additionalLibraryPaths "!RTI_OPENSSLHOME!\static_!RELEASE_DEBUG!\lib !ndds_security_crypto_lib_folder!"
+			echo [INFO] rtiddsgen_extra_options=!rtiddsgen_extra_options!
 			echo [INFO] Using security plugin. Linking Statically.
 		)
 	)
@@ -770,7 +794,7 @@ if !BUILD_CPP11! == 1 (
 	call::clean_copied_files
 
 	if "x!STATIC_DYNAMIC!" == "xdynamic" (
-		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%platform%"
+		echo [INFO]: Code compiled dynamically, Add "NDDSHOME/lib/%architecture%"
 		if !USE_SECURE_LIBS! == 1 (
 			echo and <OPENSSL_HOME>\!RELEASE_DEBUG!\bin
 		)
@@ -1095,11 +1119,9 @@ goto:EOF
 GOTO:EOF
 
 :get_ddsgen_version
-	for /F "delims=" %%i in ('"%NDDSHOME%\bin\rtiddsgen.bat" -version ^| findstr /R /C:rtiddsgen') do (
-		set version_line=%%i
+	for /F "tokens=5 delims= " %%i in ('call "%NDDSHOME%\bin\rtiddsgen.bat" -version ^| findstr /R /C:"rtiddsgen version"') do (
+		set version_string=%%i
 	)
-	set version_string=%version_line:~49,6%
-
 	for /F "tokens=1,2,3 delims=." %%a in ("%version_string%") do (
 		set Major=%%a
 		set Minor=%%b
@@ -1109,26 +1131,68 @@ GOTO:EOF
 	set /a version_number=%Major%%Minor%%Revision%
 GOTO:EOF
 
+:get_rti_security_lib_path_for_crypto_path
+
+	set "ssl_version=openssl-3"
+	echo %RTI_OPENSSLHOME% | findstr /C:"%ssl_version%" >nul
+	if not errorlevel 1 (
+		call :rti_security_lib_path_calculation %ssl_version%
+		goto :eof
+	)
+
+	set "ssl_version=openssl-1"
+	echo %RTI_OPENSSLHOME% | findstr /C:"%ssl_version%" >nul
+	if not errorlevel 1 (
+		call :rti_security_lib_path_calculation %ssl_version%
+		goto :eof
+	)
+
+	set "ssl_version=wolfssl-"
+	echo %RTI_OPENSSLHOME% | findstr /C:"%ssl_version%" >nul
+	if not errorlevel 1 (
+		call :rti_security_lib_path_calculation %ssl_version%
+		goto :eof
+	)
+
+GOTO:EOF
+
 :crypto_path_calculation
+	echo.
+	echo [INFO] Finding crypto libraries to use:
 
 	set "ssl_version=openssl-3"
 	call :find_ssl_libraries %ssl_version%
 	if not "!RTI_OPENSSLHOME!" == "" (
+		call :rti_security_lib_path_calculation %ssl_version%
+		set "USE_OPENSSL=1"
+		set "USE_OPENSSL=%USE_OPENSSL%"
 		exit /b
 	)
 
 	set "ssl_version=openssl-1"
 	call :find_ssl_libraries %ssl_version%
-	if not "!RTI_OPENSSLHOME!" == "" (
+	if not "!RTI_OPENSSLHOME!"=="" (
+		call :rti_security_lib_path_calculation %ssl_version%
+		set "USE_OPENSSL=1"
+		set "USE_OPENSSL=%USE_OPENSSL%"
+		exit /b
+	)
+
+	set "ssl_version=wolfssl-"
+	call :find_ssl_libraries %ssl_version%
+	if not "!RTI_OPENSSLHOME!"=="" (
+		call :rti_security_lib_path_calculation %ssl_version%
+		set "USE_OPENSSL=0"
+		set "USE_OPENSSL=%USE_OPENSSL%"
 		exit /b
 	)
 
 	REM Well, we tried...
-	echo.
-	echo [ERROR] We couldn't find Any SSL libraries in your Connext installation folder.
-	echo You need to provide us with a path to a crypto library. Set the OpenSSL
-	echo home path by using the --openssl-home option.
-	exit /b
+	echo [ERROR] We couldn't find any SSL libraries in your Connext installation folder.
+	echo You need to provide a path to a crypto library.
+	echo Set either the OpenSSL home path using --openssl-home,
+	echo or the WolfSSL home path using --wolfssl-home.
+	exit /b -1
 
 :find_ssl_libraries
 
@@ -1155,6 +1219,18 @@ GOTO:EOF
 	)
 	exit /b
 
+:rti_security_lib_path_calculation
+    set "find_pattern=%~1"
+
+    set "full_path="
+    call :get_absolute_folder_path "%NDDSHOME%\lib\%architecture%\%find_pattern%"
+	if not "!full_path!"=="" (
+		set "ndds_security_crypto_lib_folder=!full_path!"
+		echo [INFO] Using the Connext Security libs from: "!ndds_security_crypto_lib_folder!"
+	)
+
+    set "ndds_security_crypto_lib_folder=%ndds_security_crypto_lib_folder%"
+    GOTO:EOF
 
 :get_absolute_folder_path
 
@@ -1247,6 +1323,10 @@ GOTO:EOF
 	echo.    --flatData-max-size size     Specify the maximum bounded size in bytes
 	echo.                                 for sequences when using FlatData language
 	echo.                                 binding. Default 10MB
+	echo.	 --rtiddsgen-path <path>	  Use a specific path for the rtiddsgen tool,    
+	echo.								  overriding NDDSHOME, RTIMEHOME, etc.           
+	echo.								  If this parameter is not specified, the        
+	echo.								  default logic in this script will be used.  
 	echo.    --help -h                    Display this message.
 	echo[
 	echo ================================================================================

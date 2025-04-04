@@ -142,6 +142,12 @@ private:
     bool setTransport(std::string transportString);
     void populateSecurityFiles();
   #ifdef PERFTEST_RTI_PRO
+    bool get_number_of_addresses_in_string(unsigned int *number, const char *input_string);
+    bool get_address(
+        char *output_address,
+        size_t output_buffer_size,
+        const char *input_string,
+        int index);
     bool parse_multicast_addresses(const char *arg);
     bool increase_address_by_one(const std::string addr, std::string &nextAddr);
   #endif

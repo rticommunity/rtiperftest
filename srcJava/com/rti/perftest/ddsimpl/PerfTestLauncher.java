@@ -33,7 +33,7 @@ public final class PerfTestLauncher {
 
         parseConfig(argv);
         int MAX_PERFTEST_SAMPLE_SIZE = Math.max((int)_dataLen,
-                PerfTest.LENGTH_CHANGED_SIZE);
+                PerfTest.FINISHED_SIZE);
 
         if(_useUnbounded > 0) {
             if (_isKeyed) {
@@ -174,39 +174,6 @@ public final class PerfTestLauncher {
                             MAX_BOUNDED_SEQ_SIZE.VALUE);
                     return false;
                 }
-            }else if ("-scan".toLowerCase().startsWith(argv[i].toLowerCase())) {
-                _isScan = true;
-
-                System.err.println("'-scan' is deprecated and will not be supported in future versions");
-
-                if ((i != (argc - 1)) && !argv[1+i].startsWith("-")) {
-                    ++i;
-                    long _scan_max_size = 0;
-                    long aux_scan;
-                    StringTokenizer st = new StringTokenizer(argv[i], ":", true);
-                    while (st.hasMoreTokens()) {
-                        String s = st.nextToken();
-                        if (!s.equals(":")) {
-                            aux_scan = Long.parseLong(s);
-                            if (aux_scan >= _scan_max_size) {
-                                _scan_max_size = aux_scan;
-                            }
-                        }
-                    }
-                    // Check if large data or small data
-                    if (_scan_max_size > MAX_BOUNDED_SEQ_SIZE.VALUE) {
-                        if (_useUnbounded == 0) {
-                            _useUnbounded = MAX_BOUNDED_SEQ_SIZE.VALUE;
-                        }
-                    } else if (_scan_max_size <= MAX_BOUNDED_SEQ_SIZE.VALUE) {
-                        if (_useUnbounded != 0) {
-                            System.err.printf("Unbounded will be ignored since -scan is present.");
-                            _useUnbounded = 0;
-                        }
-                    } else {
-                        return false;
-                    }
-                }
             }
         }
 
@@ -214,7 +181,6 @@ public final class PerfTestLauncher {
     }
 
     private static boolean _isKeyed = false;
-    private static boolean _isScan = false;
     private static boolean _isDynamicData = false;
     private static long _useUnbounded = 0;
     private static long _dataLen = 100;

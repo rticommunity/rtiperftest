@@ -1,4 +1,5 @@
 /srcCpp*/perftest.*
+/srcCpp/perftest_cert_zc*
 /srcC*/perftest_ZeroCopy*
 /srcC*/perftestPlugin.*
 /srcC*/perftestSupport.*
@@ -47,6 +48,7 @@ srcDoc/_build
 /srcCpp/perftestApplication.cxx
 /srcCpp/perftestApplication.h
 /srcCpp/gen/*
+/srcCpp/gen_c/*
 /srcCpp/perftest_build
 /srcCpp/CMakeLists.txt
 /srcCpp/custom.cxx
@@ -69,3 +71,5 @@ srcCs/NuGet.Config
 srcCs/README*
 srcCs/ConnextDDS/GeneratedCode/*
 srcDoc/output
+.venv
+/srcCpp/perftest_micro.tc

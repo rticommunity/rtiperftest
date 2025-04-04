@@ -2,7 +2,7 @@
 #define __MESSAGINGIF_H__
 
 /*
- * (c) 2005-2017  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -55,7 +55,9 @@ class IMessagingCB
     virtual ~IMessagingCB()
     {
         if (sync_semaphore != NULL) {
+#ifndef PERFTEST_CERT
             PerftestSemaphore_delete(sync_semaphore);
+#endif
             sync_semaphore = NULL;
         }
     }

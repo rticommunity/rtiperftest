@@ -106,9 +106,8 @@ RTI_TSS_participant_qos(struct DDS_DomainParticipantQos *dp_qos, void *data)
 
     /*
      * At this point, and not before is when we know the transport message size.
-     * Now we can decide if we need to use asynchronous or not.
      */
-    *ctx->maxSynchronousSize = ctx->transport->minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
+    *ctx->maxUnfragmentedRTPSPayloadSize = ctx->transport->minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     if (!data_size_related_calculations(ctx)) {
         fprintf(stderr, "Failed to configure the data size settings\n");
@@ -138,12 +137,8 @@ bool data_size_related_calculations(QoSBundle* ctx)
         return false;
     }
 
-    // If the user wants to use asynchronous we enable it
-    if (ctx->pm->get<bool>("asynchronous")) {
-        *ctx->isLargeData = true;
-    } else { //If the message size max is lower than the datalen
-        *ctx->isLargeData = (ctx->pm->get<unsigned long long>("dataLen") > *ctx->maxSynchronousSize);
-    }
+    // If the message size max is lower than the datalen
+    *ctx->isLargeData = (ctx->pm->get<unsigned long long>("dataLen") > *ctx->maxUnfragmentedRTPSPayloadSize);
 
     // Manage parameter -batchSize
     if (ctx->pm->get<long>("batchSize") > 0) {
@@ -172,8 +167,7 @@ bool data_size_related_calculations(QoSBundle* ctx)
                 ctx->pm->set<long>("batchSize", -2);
             }
         } else if (((unsigned long)ctx->pm->get<long>("batchSize")
-                        < ctx->pm->get<unsigned long long>("dataLen") * 2)
-                    && !ctx->pm->is_set("scan")) {
+                        < ctx->pm->get<unsigned long long>("dataLen") * 2)) {
             /*
             * We don't want to use batching if the batch size is not large
             * enough to contain at least two samples (in this case we avoid the
@@ -199,25 +193,6 @@ bool data_size_related_calculations(QoSBundle* ctx)
         } if (ctx->isLargeData) {
             fprintf(stderr, "Turbo Mode disabled, using large data.\n");
             ctx->pm->set<bool>("enableTurboMode", false);
-        }
-    }
-
-    // Manage the parameter: -scan
-    if (ctx->pm->is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                ctx->pm->get_vector<unsigned long long>("scan");
-
-        // Check if scan is large data or small data
-        if (scanList[0] <= (unsigned long long) ctx->maxSynchronousSize
-                && scanList[scanList.size() - 1] > (unsigned long long)ctx->maxSynchronousSize) {
-            fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < scanList.size(); i++) {
-                fprintf(stderr, "%llu ", scanList[i]);
-            }
-            fprintf(stderr,
-                    "] should be either all smaller or all bigger than %llu.\n",
-                    *ctx->maxSynchronousSize);
-            return false;
         }
     }
 

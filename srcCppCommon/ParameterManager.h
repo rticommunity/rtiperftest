@@ -1,12 +1,13 @@
 /*
- * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
 #ifndef __PARAMETERMANAGER_H__
 #define __PARAMETERMANAGER_H__
 
-#if defined(RTI_LANGUAGE_CPP_TRADITIONAL)
+
+#if defined(RTI_LANGUAGE_CPP_TRADITIONAL) || defined(RTI_CERT) || defined(BUILD_CERT_WITH_REGULAR_MICRO)
   #include "perftest.h"
 #elif defined(RTI_LANGUAGE_CPP_MODERN)
   #include "perftest.hpp"

@@ -43,7 +43,7 @@ RTITSSImpl<Type, TypedTS, TypedCB>::RTITSSImpl(const char*type_name) :
     _instanceMaxCountReader = 1;
 #endif
 
-    _maxSynchronousSize = MESSAGE_SIZE_MAX_NOT_SET;
+    _maxUnfragmentedRTPSPayloadSize = MESSAGE_SIZE_MAX_NOT_SET;
 
     _isLargeData = false;
 }
@@ -184,7 +184,7 @@ RTITSSImpl<Type, TypedTS, TypedCB>::SetDomainParticipantConfig(
 
     participant_qos_bundle->isLargeData = &_isLargeData;
 
-    participant_qos_bundle->maxSynchronousSize = &_maxSynchronousSize;
+    participant_qos_bundle->maxUnfragmentedRTPSPayloadSize = &_maxUnfragmentedRTPSPayloadSize;
 
     FACE::RETURN_CODE_TYPE::Value return_code;
     FACE::Configuration::HANDLE_TYPE domain_config_handler;
@@ -456,7 +456,7 @@ RTITSSImpl<Type, TypedTS, TypedCB>::InstrumentConnection(
 
     connection_qos_bundle->isLargeData = &_isLargeData;
 
-    connection_qos_bundle->maxSynchronousSize = &_maxSynchronousSize;
+    connection_qos_bundle->maxUnfragmentedRTPSPayloadSize = &_maxUnfragmentedRTPSPayloadSize;
 
     if (!GetConnectionConfig(connection_name, connection_config))
     {

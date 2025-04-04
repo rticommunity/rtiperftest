@@ -1,0 +1,46 @@
+/*
+ * (c) 2023-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
+ */
+
+/*
+ * This file contains the types for Cert with Zero Copy used by RTI Perftest. The reason
+ * why these types are separated from the main idl is because in RTI Connext CERT,
+ * sequences are not available with Zero Copy transport. Therefore, we need to create
+ * a new type that is equivalent but using arrays instead of sequences.
+ */
+
+ /* We need to use the definitions from the perftest.idl */
+#include "perftest.idl"
+
+const long CERT_ZC_ARRAY_SIZE = CERT_ZC_DATALEN - CERT_ZC_OVERHEAD;
+
+@transfer_mode(SHMEM_REF)
+struct TestData_Cert_ZCopy_t {
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    long size;
+    /* Array instead of sequence becuase Cert Zcopy
+     * does not support sequence.
+     */
+    octet bin_data[CERT_ZC_ARRAY_SIZE];
+};
+
+@transfer_mode(SHMEM_REF)
+struct TestDataKeyed_Cert_ZCopy_t {
+    @key
+    octet key[KEY_SIZE];
+
+    long entity_id;
+    unsigned long seq_num;
+    long timestamp_sec;
+    unsigned long timestamp_usec;
+    long latency_ping;
+    long size;
+    octet bin_data[CERT_ZC_ARRAY_SIZE];
+};

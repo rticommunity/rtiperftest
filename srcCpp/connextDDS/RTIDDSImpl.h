@@ -137,7 +137,7 @@ protected:
     long                         _instanceMaxCountReader;
     unsigned long                _sendQueueSize;
     bool                         _isLargeData;
-    unsigned long long           _maxSynchronousSize;
+    unsigned long long           _maxUnfragmentedRTPSPayloadSize;
     bool                         _isFlatData;
     bool                         _isZeroCopy;
     PerftestTransport            _transport;

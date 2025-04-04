@@ -101,7 +101,7 @@ RTIDDSImpl<T>::RTIDDSImpl():
         _sendQueueSize(0),
         _InstanceHashBuckets(dds::core::LENGTH_UNLIMITED),
         _isLargeData(false),
-        _maxSynchronousSize(MESSAGE_SIZE_MAX_NOT_SET),
+        _maxUnfragmentedRTPSPayloadSize(MESSAGE_SIZE_MAX_NOT_SET),
         _isFlatData(false),
         _isZeroCopy(false),
 
@@ -166,26 +166,10 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
         return false;
     }
 
-    // If the user wants to use asynchronous we enable it
-    if (_PM->get<bool>("asynchronous")) {
-        _isLargeData = true;
-    } else { //If the message size max is lower than the datalen
-        _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize);
-    }
+    _isLargeData = (_PM->get<unsigned long long>("dataLen") > _maxUnfragmentedRTPSPayloadSize);
 
     // Manage parameter -batchSize
     if (_PM->get<long>("batchSize") > 0) {
-
-        // Check if using asynchronous
-        if (_PM->get<bool>("asynchronous")) {
-            if (_PM->is_set("batchSize") && _PM->get<long>("batchSize") != 0) {
-                std::cerr << "[Error] Batching cannot be used with asynchronous writing."
-                          << std::endl;
-                return false;
-            } else {
-                _PM->set<long>("batchSize", 0); // Disable Batching
-            }
-        }
 
         /*
          * Large Data + batching cannot be set. But batching is enabled by default,
@@ -200,9 +184,8 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
             } else {
                 _PM->set<long>("batchSize", -2);
             }
-        } else if (((unsigned long)_PM->get<long>("batchSize")
-                        < _PM->get<unsigned long long>("dataLen") * 2)
-                    && !_PM->is_set("scan")) {
+        } else if ((unsigned long)_PM->get<long>("batchSize")
+                        < _PM->get<unsigned long long>("dataLen") * 2) {
             /*
             * We don't want to use batching if the batch size is not large
             * enough to contain at least two samples (in this case we avoid the
@@ -228,6 +211,10 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
                 _PM->set<long>("batchSize", -3);
             }
         }
+
+        if (_PM->is_set("pubRate") && _PM->is_set("batchSize")) {
+            _PM->set<long>("batchSize", -4); // Disable Batching
+        }
     }
 
     // Manage parameter -enableTurboMode
@@ -240,25 +227,6 @@ bool RTIDDSImpl<T>::data_size_related_calculations()
             std::cerr << "[Info] Turbo Mode disabled, using large data."
                       << std::endl;
             _PM->set<bool>("enableTurboMode", false);
-        }
-    }
-
-    // Manage the parameter: -scan
-    if (_PM->is_set("scan")) {
-        const std::vector<unsigned long long> scanList =
-                _PM->get_vector<unsigned long long>("scan");
-
-        // Check if scan is large data or small data
-        if (scanList[0] <= (unsigned long long) _maxSynchronousSize
-                && scanList[scanList.size() - 1] > (unsigned long long)_maxSynchronousSize) {
-            fprintf(stderr, "The sizes of -scan [");
-            for (unsigned int i = 0; i < scanList.size(); i++) {
-                fprintf(stderr, "%llu ", scanList[i]);
-            }
-            fprintf(stderr,
-                    "] should be either all smaller or all bigger than %lld.\n",
-                    _maxSynchronousSize);
-            return false;
         }
     }
 
@@ -397,8 +365,7 @@ std::string RTIDDSImpl<T>::print_configuration()
     // Dynamic Data
     if (_PM->get<bool>("pub")) {
         stringStream << "\tAsynchronous Publishing: ";
-        if ((_isLargeData || _PM->get<bool>("asynchronous"))
-                && !_PM->get<bool>("zerocopy")) {
+        if (_PM->get<bool>("asynchronous")) {
             stringStream << "Yes\n";
             stringStream << "\tFlow Controller: "
                          << _PM->get<std::string>("flowController")
@@ -461,14 +428,14 @@ std::string RTIDDSImpl<T>::print_configuration()
    #endif
 
     // Large Data
-    if (_PM->get<unsigned long long>("dataLen") > _maxSynchronousSize) {
-        stringStream << "\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen ("
+    if (_PM->get<unsigned long long>("dataLen") > _maxUnfragmentedRTPSPayloadSize) {
+        stringStream << "\n[IMPORTANT]: -datalen ("
                      << perftest::to_string(_PM->get<unsigned long long>("dataLen"))
-                     << ") is \n"
-                     << "             larger than the minimum message_size_max across\n"
-                     << "             all enabled transports ("
-                     << perftest::to_string(_maxSynchronousSize)
-                     << ")\n";
+                     << ") is greater than\n"
+                     << "             the minimum message_size_max across all\n"
+                     << "             enabled transports ("
+                     << perftest::to_string(_maxUnfragmentedRTPSPayloadSize)
+                     << "). Samples will be fragmented.\n";
     }
 
     return stringStream.str();
@@ -1792,14 +1759,14 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
      * At this point, and not before is when we know the transport message size.
      * Now we can decide if we need to use asynchronous or not.
      */
-    _maxSynchronousSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
+    _maxUnfragmentedRTPSPayloadSize = _transport.minimumMessageSizeMax - (MESSAGE_OVERHEAD_BYTES);
 
     /*
      * TODO: This should not be needed after adding changes for #265
      * Rework idls to handle better custom types and Flat Data
      */
     if (_isFlatData) {
-        _maxSynchronousSize -= 17;
+        _maxUnfragmentedRTPSPayloadSize -= 17;
     }
 
     if (!data_size_related_calculations()) {
@@ -2510,7 +2477,7 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::configure_reader_qos(
         }
     }
 
-    if ((_isLargeData && !_isZeroCopy) || _PM->get<bool>("asynchronous")) {
+    if (_PM->get<bool>("asynchronous")) {
         if (_PM->get<std::string>("flowController") != "default") {
             dwPublishMode = PublishMode::Asynchronous(
                     "dds.flow_controller.token_bucket."
@@ -2654,6 +2621,9 @@ dds::pub::qos::DataWriterQos RTIDDSImpl<T>::configure_reader_qos(
                 : _PM->get<int>("unbounded")));
         properties["dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size"] =
                 buf;
+    } else {
+        properties["dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator"] =
+                "fast_buffer_pool";
     }
 
     #ifdef RTI_FLATDATA_AVAILABLE

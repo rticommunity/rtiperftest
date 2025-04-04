@@ -21,7 +21,6 @@ namespace PerformanceTest
         public ulong bytesReceived;
         public ulong missingPackets;
         public bool endTest;
-        public bool changeSize;
 
         private int currentMessageSize;
         public int lastDataLength = -1;
@@ -133,14 +132,6 @@ namespace PerformanceTest
                 writer.Send(message, false);
                 writer.Flush();
             }
-
-            // // Always check if need to reset internals
-            // if (currentMessageSize == Perftest.LENGTH_CHANGED_SIZE)
-            // {
-            //     PrintSummaryThroughput(message);
-            //     changeSize = true;
-            //     return;
-            // }
 
             if (currentMessageSize != lastDataLength)
             {
@@ -265,8 +256,6 @@ namespace PerformanceTest
             packetsReceived = 0;
             bytesReceived = 0;
             missingPackets = 0;
-            // length changed only used in scan mode in which case
-            // there is only 1 publisher with ID 0
             lastSeqNum[0] = 0;
             beginTime = now;
         }

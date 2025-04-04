@@ -247,8 +247,8 @@ which return the time in *microseconds*.
 This option can be enabled at compilation time by using `--ns-resolution`.
 This option is only implemented for Linux/macOS/QNX Systems.
 
-Decloupled Asynchronous Publishing and switching to unbounded sequences |enhancedTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Decoupled asynchronous publishing and switching to unbounded sequences |enhancedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 *RTI Perftest* uses by default bounded sequences, this is in certain cases more
 efficient, but it involves allocating more memory. In order to avoid reserving
@@ -1378,13 +1378,13 @@ What's New in 2.2
 Added command-line parameters "-asynchronous" and "-flowController ``<``\ flow\ ``>``"
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In previous releases Asynchronous Publishing was only enabled for the
+In previous releases asynchronous publishing was only enabled for the
 DataWriters when the samples were greater than 63000 bytes and in such
 case, RTI Perftest would only use a custom flow controller defined for
 1Gbps networks.
 
 This behavior has been modified: Starting with this release,
-Asynchronous Publishing will be activated if the samples to send are
+asynchronous publishing will be activated if the samples to send are
 bigger than 63000 bytes or if the ``-asynchronous`` command-line
 parameter is used. In that case, *RTI Perftest* will use the ``Default``
 flow controller. However, now you can change this behavior by specifying
@@ -1422,10 +1422,10 @@ send.
 
 The sample size can be set via the ``-dataLen <bytes>`` command-line
 parameter. If this value is larger than 63,000 bytes *RTI Perftest* will
-enable the use of *Asynchronous Publishing* and *Unbounded Sequences*.
+enable the use of *asynchronous publishing* and *Unbounded Sequences*.
 
 It is also possible to enable the use of *Unbounded Sequences* or
-*Asynchronous Publishing* independently of the sample size by specifying
+*asynchronous publishing* independently of the sample size by specifying
 the command-line parameters ``unbounded <allocation_threshold>`` and
 ``-asynchronous``.
 
@@ -1785,6 +1785,6 @@ we could get into the following error:
     [D0001|ENABLE]NDDS_Transport_Shmem_Property_verify:received_message_count_max < 1
     [D0001|ENABLE]NDDS_Transport_Shmem_newI:Invalid transport properties.
 
-.. |newTag| image:: _static/new.png
-.. |fixedTag| image:: _static/fixed.png
-.. |enhancedTag| image:: _static/enhanced.png
+.. |newTag| :bdg-secondary:`New`
+.. |fixedTag| :bdg-secondary:`Fixed`
+.. |enhancedTag| :bdg-secondary:`New`

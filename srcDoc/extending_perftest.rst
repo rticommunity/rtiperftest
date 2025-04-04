@@ -8,9 +8,9 @@ The *RTI Perftest* C++ implementation is designed in a way that it can be
 extended to test other middlewares or communication mechanisms.
 
 An example is the **RAW transport** support *RTI Perftest* offers when
-compiling against *RTI Connext DDS Professional*. In this case, although
-using specific functions from the OS/Network abstraction layer from *RTI Connext
-DDS*, *RTI Perftest* is testing pure socket-to-socket communication (in this
+compiling against *RTI Connext Professional*. In this case, although
+using specific functions from the OS/Network abstraction layer from *RTI 
+Connext*, *RTI Perftest* is testing pure socket-to-socket communication (in this
 case, even simpler than a middleware).
 
 Interface infrastructure
@@ -55,7 +55,7 @@ by a callback in the middleware, or by any other way), the same actions will be 
 Common Infrastructure
 ---------------------
 
-*RTI Connext DDS Professional* and *RTI Connext DDS Micro* offer specific OS
+*RTI Connext Professional* and *RTI Connext Micro* offer specific OS
 abstraction layers in order to be able to use semaphores, timers, threads,
 and other OS-dependent functions, etc., independently of the OS where the
 middleware is running. When *RTI Perftest* is being compiled against those
@@ -75,8 +75,8 @@ sense if the target OS/platform does not have a modern compiler).
 Message type (idl)
 ------------------
 
-*RTI Perftest* generates its code for *RTI Connext DDS Professional* and *RTI
-Connext DDS Micro* using the *rtiddsgen* tool, which generates the code from
+*RTI Perftest* generates its code for *RTI Connext Professional* and *RTI
+Connext Micro* using the *rtiddsgen* tool, which generates the code from
 some `.idl` files.
 
 These `.idl` files are used to represent the types that *RTI Perftest* uses to
@@ -95,7 +95,7 @@ as input.
 Discovery mechanisms
 --------------------
 
-The *RTI Perftest* implementation for *RTI Connext DDS* relies on the discovery mechanisms
+The *RTI Perftest* implementation for *RTI Connext* relies on the discovery mechanisms
 provided by the middleware. However, this is not a hard restriction, and communication
 patterns without discovery can be used as well.
 
@@ -117,9 +117,9 @@ Build infrastructure
 --------------------
 
 *RTI Perftest* relies on two scripts for building, `build.sh` and `build.bat`. These
-scripts build against *RTI Connext DDS* for each of the different language implementations.
+scripts build against *RTI Connext* for each of the different language implementations.
 
-In every case, *RTI Perftest* for *RTI Connext DDS* uses *rtiddsgen* to generate the
+In every case, *RTI Perftest* for *RTI Connext* uses *rtiddsgen* to generate the
 right makefiles/solutions, and then uses those files to build natively.
 
 *rtiddsgen* may not work for other middlewares, so *RTI Perftest* cannot currently offer
@@ -129,7 +129,7 @@ implemented by the developer.
 Selecting and protecting code
 -----------------------------
 
-*RTI Perftest* for *RTI Connext DDS Professional* and *Micro* need to protect
+*RTI Perftest* for *RTI Connext Professional* and *Micro* need to protect
 certain parts of the code to avoid interferences, or to let the compiler know
 what files it should include or not. This is done by checking if certain defines
 are present and provided at compilation time.

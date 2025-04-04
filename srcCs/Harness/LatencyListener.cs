@@ -29,6 +29,15 @@ namespace PerformanceTest
         public CpuMonitor cpu = new CpuMonitor();
         private int NumLatency => latencyHistory.Length;
 
+        private void ResetLatencyCounters()
+        {
+            latencySum = 0;
+            latencySumSquare = 0;
+            latencyMin = Perftest.LATENCY_RESET_VALUE;
+            latencyMax = 0;
+            count = 0;
+        }
+
         public LatencyListener(
                 IMessagingWriter writer,
                 Parameters parameters,
@@ -70,14 +79,6 @@ namespace PerformanceTest
             // there's nothing to process
             if (message.Size == Perftest.INITIALIZE_SIZE || message.Size == Perftest.FINISHED_SIZE)
             {
-                return;
-            }
-            else if (message.Size == Perftest.LENGTH_CHANGED_SIZE)
-            {
-                Console.Error.WriteLine(
-                        "[Error]: Received command to change size,"
-                        + "this is not supported in C#");
-                PrintSummaryLatency();
                 return;
             }
 
@@ -138,7 +139,7 @@ namespace PerformanceTest
             latencySum += latency;
             latencySumSquare += (ulong)latency * (ulong)latency;
 
-            // if data sized changed
+            // if data size changed, print out stats and zero counters
             if (lastDataLength != message.Size)
             {
                 lastDataLength = message.Size;
@@ -149,6 +150,7 @@ namespace PerformanceTest
                              + (int)Perftest.OVERHEAD_BYTES);
                     printer.PrintLatencyHeader();
                 }
+                ResetLatencyCounters();
             }
             else
             {

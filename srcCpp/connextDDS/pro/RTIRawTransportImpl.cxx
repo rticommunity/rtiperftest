@@ -90,8 +90,7 @@ bool RTIRawTransportImpl::validate_input() {
     }
 
     if (((unsigned long) _PM->get<long>("batchSize")
-                < _PM->get<unsigned long long>("dataLen") * 2)
-            && !_PM->is_set("scan")) {
+                < _PM->get<unsigned long long>("dataLen") * 2)) {
         /*
          * We don't want to use batching if the batch size is not large
          * enough to contain at least two samples (in this case we avoid the
@@ -774,7 +773,7 @@ unsigned int RTIRawTransportImpl::get_peer_unicast_port(
     struct DDS_RtpsWellKnownPorts_t wellKnownPorts =
             DDS_RTPS_WELL_KNOWN_PORTS_DEFAULT;
 
-    return PRESRtps_getWellKnownUnicastPort(
+    return DISCRtps_getWellKnownUnicastPort(
             _PM->get<int>("domain"),           /* domainId */
             _PM->get<bool>("pub") ? subId + 1 : 0, /* participantId */
             wellKnownPorts.port_base,
@@ -809,7 +808,7 @@ RTIRawTransportImpl::get_receive_port(const char *topicName)
      * - The subscriber only use one port for receive data from Throughput
      *   channel.
      */
-    return PRESRtps_getWellKnownUnicastPort(
+    return DISCRtps_getWellKnownUnicastPort(
             _PM->get<int>("domain"), /* domainId */
             _PM->get<bool>("pub") ? 0 :  sidValue + 1, /* participantId */
             wellKnownPorts.port_base,

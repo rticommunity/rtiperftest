@@ -26,7 +26,7 @@ namespace PerformanceTest
         private int instanceMaxCountReader = -1;
         private readonly bool directCommunication = true;
         private bool isLargeData;
-        private ulong maxSynchronousSize = PerftestTransport.MessageSizeMaxNotSet;
+        private ulong maxUnfragmentedRTPSPayloadSize = PerftestTransport.MessageSizeMaxNotSet;
         private readonly string[] validFlowController = { "default", "1Gbps", "10Gbps" };
         private int peerHostCount = 0;
         private readonly string[] peerHostArray = new string[RTIPERFTEST_MAX_PEERS];
@@ -173,34 +173,11 @@ namespace PerformanceTest
 
         public bool DataSizeRelatedCalculations()
         {
-            // If the user wants to use asynchronous we enable it
-            if (parameters.Asynchronous)
-            {
-                isLargeData = true;
-            }
-            else //If the message size max is lower than the datalen
-            {
-                isLargeData = parameters.DataLen > maxSynchronousSize;
-            }
+            isLargeData = parameters.DataLen > maxUnfragmentedRTPSPayloadSize;
 
             // Manage parameter -batchSize
             if (parameters.BatchSize > 0)
             {
-                /* Check if using asynchronous */
-                if (parameters.Asynchronous)
-                {
-                    if (parameters.BatchSizeSet)
-                    {
-                        Console.Error.Write(
-                                "Batching cannot be used with asynchronous writing.\n");
-                        return false;
-                    }
-                    else
-                    {
-                        parameters.batchSize = 0; // Disable Batching
-                    }
-                }
-
                 /*
                  * Large Data + batching cannot be set. But batching is enabled by default,
                  * so in that case, we just disabled batching, else, the customer set it up,
@@ -238,6 +215,10 @@ namespace PerformanceTest
                         parameters.batchSize = 0;
                     }
                 }
+            }
+            if (parameters.PubRateSet && parameters.BatchSizeSet)
+            {
+                parameters.batchSize = -3;
             }
 
             if (parameters.EnableTurboMode)
@@ -342,15 +323,15 @@ namespace PerformanceTest
             }
 
             // Large Data
-            if (parameters.DataLen > maxSynchronousSize)
+            if (parameters.DataLen > maxUnfragmentedRTPSPayloadSize)
             {
-                sb.Append("\n[IMPORTANT]: Enabling Asynchronous publishing: -datalen (");
+                sb.Append("\n[IMPORTANT]: -datalen (");
                 sb.Append(parameters.DataLen);
-                sb.Append(") is \n");
-                sb.Append("             larger than the minimum message_size_max across\n");
-                sb.Append("             all enabled transports (");
-                sb.Append(maxSynchronousSize);
-                sb.Append(")\n");
+                sb.Append(") is greater than\n");
+                sb.Append("             the minimum message_size_max across all\n");
+                sb.Append("             enabled transports (");
+                sb.Append(maxUnfragmentedRTPSPayloadSize);
+                sb.Append("). Samples will be fragmented.\n");
             }
 
             // We want to expose if we are using or not the unbounded type
@@ -373,10 +354,6 @@ namespace PerformanceTest
 
         public bool ParseConfig()
         {
-            if (parameters.Scan)
-            {
-                Console.Error.WriteLine("Scan has been deprecated in this version of perftest");
-            }
 
             if (parameters.Durability > 3)
             {
@@ -535,7 +512,7 @@ namespace PerformanceTest
                 SecureUseSecure = true;
             }
 
-            /* Check if we need to enable Large Data. This works also for -scan */
+            /* Check if we need to enable Large Data. */
             if (parameters.DataLen > MAX_BOUNDED_SEQ_SIZE.Value)
             {
                 isLargeData = true;
@@ -1026,11 +1003,7 @@ namespace PerformanceTest
                 return null;
             }
 
-            /*
-            * At this point, and not before is when we know the transport message size.
-            * Now we can decide if we need to use asynchronous or not.
-            */
-            maxSynchronousSize = transport.MinimumMessageSizeMax - (PerftestTransport.MessageOverheadBytes);
+            maxUnfragmentedRTPSPayloadSize = transport.MinimumMessageSizeMax - (PerftestTransport.MessageOverheadBytes);
 
             if (!DataSizeRelatedCalculations())
             {
@@ -1192,7 +1165,7 @@ namespace PerformanceTest
                 });
             }
 
-            if (isLargeData || parameters.Asynchronous)
+            if (parameters.Asynchronous)
             {
                 dataWriterQos = dataWriterQos.WithPublishMode(policy =>
                 {
@@ -1271,6 +1244,10 @@ namespace PerformanceTest
                 dataWriterQos = dataWriterQos.WithProperty(policy =>
                             policy.Add("dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
                             parameters.UnboundedSize.ToString()));
+            } else {
+                dataWriterQos = dataWriterQos.WithProperty(policy =>
+                            policy.Add("dds.data_writer.history.memory_manager.pluggable_allocator.underlying_allocator",
+                            "fast_buffer_pool"));
             }
 
             return dataWriterQos;

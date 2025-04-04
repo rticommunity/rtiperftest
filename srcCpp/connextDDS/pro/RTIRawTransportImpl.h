@@ -17,6 +17,7 @@
 #include "perftest_cpp.h"
 #include "transport/transport_socketutil.h"
 #include "transport/transport_udpv4.h"
+#include "disc/disc_rtps.h"
 
 #include "perftestPlugin.h"
 

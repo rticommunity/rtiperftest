@@ -1,7 +1,7 @@
 
 
 /*
- * (c) 2005-2018  Copyright, Real-Time Innovations, Inc. All rights reserved.
+ * (c) 2005-2024  Copyright, Real-Time Innovations, Inc. All rights reserved.
  * Subject to Eclipse Public License v1.0; see LICENSE.md for details.
  */
 
@@ -57,10 +57,12 @@ enum Group {
     SUB,
     TRANSPORT,
     SECURE,
-    RAWTRANSPORT
+    RAWTRANSPORT,
+    CERT
 };
 
 // This struct specifies witch parameters are supported by each middleware
+
 
 struct Middleware {
     static const MiddlewareMask RTIDDSPRO;
@@ -69,6 +71,7 @@ struct Middleware {
     static const MiddlewareMask RTITSSPRO;
     static const MiddlewareMask RTITSSMICRO;
     static const MiddlewareMask RTITSS;
+    static const MiddlewareMask RTICERT;
     static const MiddlewareMask RAWTRANSPORT;
     static const MiddlewareMask ALLDDS;
     static const MiddlewareMask ALL;
