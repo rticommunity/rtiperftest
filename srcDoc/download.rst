@@ -29,10 +29,15 @@ memory consumption or the platform's lack of support for certain features
    *Microsoft Visual Studio 2008 Express* or *2010 Express* is not
    supported.
 
-Download instructions
+Download Instructions
 ---------------------
 
 Download the *RTI Perftest* bundle in one of three ways:
+
+-  Download the container image from `RTI's Docker Hub registry <https://hub.docker.com/u/rticom>`_.
+   Docker Engine must be installed on your system. The image
+   contains the *RTI Perftest* executable and all the necessary dependencies
+   to run it. 
 
 -  Clone it from the official `GitHub <https://github.com/rticommunity/rtiperftest>`_ repository:
 
