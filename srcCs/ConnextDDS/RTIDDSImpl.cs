@@ -768,7 +768,7 @@ namespace PerformanceTest
 
                 // permissions file
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.access_control.permissions_file",
+                    policy.Add("dds.sec.access.permissions",
                     parameters.SecurePermissionsFile));
 
                 // permissions authority file (legacy property, it should be permissions_file)

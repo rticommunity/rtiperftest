@@ -1233,7 +1233,7 @@ bool PerftestConfigureSecurity(
         // Permissions file
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.access_control.permissions_file",
+                "dds.sec.access.permissions",
                 parameterManager->get<std::string>("securePermissionsFile"))) {
             return false;
         }

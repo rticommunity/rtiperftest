@@ -1446,7 +1446,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         }
 
         // permissions file
-        dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]
+        dpQosProperties["dds.sec.access.permissions"]
                 = _PM->get<std::string>("securePermissionsFile");
 
         // permissions authority file (legacy property, it should be permissions_file)

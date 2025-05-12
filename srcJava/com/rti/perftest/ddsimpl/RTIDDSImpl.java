@@ -908,7 +908,7 @@ public final class RTIDDSImpl<T> implements IMessaging {
             // permissions file
             PropertyQosPolicyHelper.add_property(
                     dpQos.property,
-                    "com.rti.serv.secure.access_control.permissions_file",
+                    "dds.sec.access.permissions",
                     _securePermissionsFile,
                     false);
 

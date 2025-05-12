@@ -3,6 +3,20 @@
 Release Notes
 =============
 
+Release Notes develop
+---------------------
+
+What's New in develop
+~~~~~~~~~~~~~~~~~~~~~
+
+Updated Property Names for *RTI Connext Security Plugin* |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The property names for the *RTI Connext Security Plugin* have been revised.
+In earlier releases, deprecated property names were retained to ensure backward
+compatibility with *RTI Connext 6.0.X*. Starting with this release, the property
+names have been updated as *RTI Connext* no longer supports the old names.
+
 Release Notes 4.2
 -----------------
 
