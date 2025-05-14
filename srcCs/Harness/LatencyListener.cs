@@ -193,6 +193,7 @@ namespace PerformanceTest
             {
                 if (endTest)
                 {
+                    printer.PrintLatencySummary( 0, 0, 0, 0, latencyHistory, 0, 0);
                     Console.Error.Write(
                         "\nNo Pong samples have been received in the Publisher side.\n"
                         + "If you are interested in latency results, you might need to\n"

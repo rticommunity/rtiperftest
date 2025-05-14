@@ -907,6 +907,7 @@ public:
                     missing_packets_percent,
                     outputCpu);
         } else if (endTest) {
+            _printer->print_throughput_summary(0, 0, 0, 0, 0, 0, 0);
             fprintf(stderr,
                     "\n[Info] No samples have been received by the Subscriber side,\n"
                     "however 1 or more Publishers sent the finalization message.\n\n"
@@ -1412,6 +1413,7 @@ class LatencyListener : public IMessagingCB
 
         if (count == 0) {
             if (endTest) {
+                _printer->print_latency_summary(0, 0, 0, 0, _latency_history, 0, 0);
                 fprintf(stderr,
                         "\n[Info] No Pong samples have been received in the Publisher side.\n"
                         "If you are interested in latency results, you might need to\n"

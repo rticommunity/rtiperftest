@@ -242,6 +242,7 @@ namespace PerformanceTest
             }
             else if (endTest)
             {
+                printer.PrintThroughputSummary(0, 0, 0, 0, 0, 0, 0);
                 Console.WriteLine(
                     "\nNo samples have been received by the Subscriber side,\n"
                     + "however 1 or more Publishers sent the finalization message.\n\n"

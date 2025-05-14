@@ -239,6 +239,7 @@ import com.rti.perftest.TestMessage;
 
             System.out.flush();
         } else if (endTest) {
+            PerfTest._printer.print_throughput_summary(0, 0, 0, 0, 0, 0, 0);
             System.out.printf(
                     "\nNo samples have been received by the Subscriber side,\n"
                     + "however 1 or more Publishers sent the finalization message.\n\n"
