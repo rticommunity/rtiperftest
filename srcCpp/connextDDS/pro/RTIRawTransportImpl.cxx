@@ -81,7 +81,7 @@ bool RTIRawTransportImpl::validate_input() {
         // If it was not explicit:
         if (!_PM->is_set("batchSize")) {
             _PM->set<long>("batchSize", 0); // Disable Batching
-        } else { // If it was explicit, it is ok as long as it is not a lat test
+        } else { // If it was explicit, it is ok as long as it is not a latency test
             if (_PM->get<bool>("latencyTest")) {
                 fprintf(stderr, "Batching cannot be used in a Latency test.\n");
                 return false;
@@ -93,12 +93,12 @@ bool RTIRawTransportImpl::validate_input() {
                 < _PM->get<unsigned long long>("dataLen") * 2)) {
         /*
          * We don't want to use batching if the batch size is not large
-         * enough to contain at least two samples (in this case we avoid the
+         * enough to contain at least two samples (in this case we avoid
          * checking at the middleware level).
          */
         if (_PM->is_set("batchSize")) {
             /*
-             * Batchsize disabled. A message will be print if _batchSize < 0
+             * Batchsize disabled. A message will be printed if _batchSize < 0
              * in perftest_cpp::print_configuration()
              */
             _PM->set<long>("batchSize", -1);
@@ -118,8 +118,8 @@ bool RTIRawTransportImpl::validate_input() {
     }
 
     /*
-     * Check that the overhead is not bigger than the -dataLen, since we can not
-     * send a smaller size that the overhead of the test_type.
+     * Check that the overhead is not bigger than the -dataLen, since we cannot
+     * send a smaller size than the overhead of the test_type.
      */
     if (_PM->get<unsigned long long>("dataLen")
             < perftest_cpp::OVERHEAD_BYTES) {
@@ -202,7 +202,7 @@ std::string RTIRawTransportImpl::print_configuration()
 {
     std::ostringstream stringStream;
 
-    // Meedleware
+    // Middleware
     stringStream << "\tMiddleware: Raw Transport\n";
 
     // Domain ID
@@ -217,8 +217,8 @@ std::string RTIRawTransportImpl::print_configuration()
     // Ports
     stringStream << "\tThe following ports will be used: ";
     if (_PM->get<bool>("pub")) {
-        stringStream << get_receive_port(ANNOUNCEMENT_TOPIC_NAME) << " - "
-                     << get_receive_port(LATENCY_TOPIC_NAME) << "\n";
+        stringStream << get_receive_port(LATENCY_TOPIC_NAME) << " - "
+                     << get_receive_port(ANNOUNCEMENT_TOPIC_NAME) << "\n";
     } else {
         stringStream << get_receive_port(THROUGHPUT_TOPIC_NAME) << "\n";
     }
@@ -432,7 +432,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         _sendBuffer.length += actualCdrLength;
 
         /*
-         * If batching is not been used, flush the data, in other case,
+         * If batching is not being used, flush the data, in other case,
          * accumulate them until the buffer is full
          */
         if (!_useBatching) {
@@ -695,7 +695,7 @@ public:
                     &_recvResource,
                     _worker);
         } else if (_plugin != NULL && _worker != NULL){
-            /* Receive resource already destroy */
+            /* Receive resource already destroyed */
             retCode = 1;
         }
         if (retCode == 0) {
@@ -713,7 +713,7 @@ public:
  */
 bool RTIRawTransportImpl::initialize(ParameterManager &PM, perftest_cpp *parent)
 {
-    /* Set paramter manager */
+    /* Set parameter manager */
     _PM = &PM;
 
     /*
@@ -866,7 +866,7 @@ IMessagingWriter *RTIRawTransportImpl::create_writer(const char *topicName)
     RTIBool shared = false;
     unsigned int j = 0;
 
-    // If multicat, then take the multicast address.
+    // If multicast, then take the multicast address.
     if (_PM->get<bool>("multicast")
             && get_multicast_transport_addr(topicName, multicastAddr)) {
         is_multicastAddr = true;
@@ -876,7 +876,7 @@ IMessagingWriter *RTIRawTransportImpl::create_writer(const char *topicName)
     }
 
     /*
-     * _PM->get_vector<std::string>("peer").size() is garanteed to be 1 if
+     * _PM->get_vector<std::string>("peer").size() is guaranteed to be 1 if
      * multicast is enabled
      */
     for (unsigned int i = 0; i < _peersMap.size(); i++) {
@@ -915,7 +915,7 @@ IMessagingWriter *RTIRawTransportImpl::create_writer(const char *topicName)
 
             PeerData::resourcesList.push_back(resource);
         }
-        /* This data will be used by the writer to send to multiples peers. */
+        /* This data will be used by the writer to send to multiple peers. */
         _peersDataList.push_back(
                 PeerData(
                         shared ? &PeerData::resourcesList[j-1]
@@ -1092,7 +1092,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
             udpPlugin = (struct NDDS_Transport_UDP *) _plugin;
             if (udpPlugin->_interfacesCount == 0) {
                 fprintf(stderr,
-                        "Input interface (%s) not recognize\n",
+                        "Input interface (%s) not recognized\n",
                         interfaceAddr);
                 return false;
             }
@@ -1134,7 +1134,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
             }
 
             if (_peersMap.size() == 0) {
-                fprintf(stderr, "Any peer correspond to a valid address\n");
+                fprintf(stderr, "No peer correspond to a valid address\n");
                 return false;
             }
 
@@ -1194,7 +1194,7 @@ bool RTIRawTransportImpl::configure_sockets_transport()
         }
 
         /*
-         * For SHMEM we dont want to print any interface on the
+         * For SHMEM we don't want to print any interface on the
          * printTransportConfigurationSummary()
          */
         _PM->set<std::string>("allowInterfaces", std::string(""));
@@ -1236,7 +1236,7 @@ bool RTIRawTransportImpl::get_serialized_overhead_size(
     data.bin_data.length(0);
 
     /*
-     * Calling serialize_data_to_cdr_buffer witout a buffer will return the
+     * Calling serialize_data_to_cdr_buffer without a buffer will return the
      * maximum serialized sample size
      */
     if (TestData_t::TypeSupport::serialize_data_to_cdr_buffer(
