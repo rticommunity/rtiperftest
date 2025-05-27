@@ -1011,6 +1011,7 @@ function build_cpp()
     additional_header_files="${additional_header_files_custom_type} \
         RTIRawTransportImpl.h \
         ThreadPriorities.h \
+        ThreadCPUAffinity.h \
         Parameter.h \
         ParameterManager.h \
         RTIDDSLoggerDevice.h \
@@ -1621,6 +1622,7 @@ function build_cpp11()
 
     additional_header_files=" \
         ThreadPriorities.h \
+        ThreadCPUAffinity.h \
         Parameter.h \
         ParameterManager.h \
         MessagingIF.h \

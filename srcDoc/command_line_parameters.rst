@@ -479,6 +479,23 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:**
    Not set. The priority will not be modified.
 
+-  ``-threadCPUAffinity A:B:C:D``
+
+   This command-line parameter is supported only for Traditional C++ and
+   Modern C++ API implementations. It sets the CPU affinity for the application threads:
+
+    - **A** for the main thread (the one sending the data), or the asynchronous publishing thread if that one is used.
+    - **B** for the receive thread(s) created by *Connext*.
+    - **C** for the event thread created by *Connext*.
+    - **D** for the database thread created by *Connext*.
+
+   The values A, B, C, and D can be either a single CPU number or a range list of CPU numbers.
+
+   This parameter is not available when compiling against *RTI Connext Micro* or when using the Raw Transport feature.
+
+   **Default:**
+   Not set. The CPU affinity will not be modified.
+
 -  ``-cacheStats``
 
    Enable extra messages showing the reader/writer queue sample count and

@@ -1791,6 +1791,14 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
                 threadPriorities.dbAndEvent);
     }
 
+    ThreadCPUAffinity threadCPUAffinity = parent->get_thread_cpu_affinity();
+
+    if (threadCPUAffinity.isInitialized()) {
+        qos.policy<ReceiverPool>().thread().cpu_list(threadCPUAffinity.get_cores_receive());
+        qos.policy<Event>().thread().cpu_list(threadCPUAffinity.get_cores_event());
+        qos.policy<Database>().thread().cpu_list(threadCPUAffinity.get_cores_db());
+    }
+
     if (_PM->get<bool>("enableAutoThrottle")) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
@@ -1826,6 +1834,11 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
                 .mask(mask);
         publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
                 .priority(threadPriorities.main);
+    }
+
+    if (threadCPUAffinity.isInitialized()) {
+        publisherQoS.policy<AsynchronousPublisher>().thread().cpu_list(threadCPUAffinity.get_cores_main());
+        publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread().cpu_list(threadCPUAffinity.get_cores_main());
     }
 
     // Create the _publisher and _subscriber

@@ -335,6 +335,24 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT);
     create("threadPriorities", threadPriorities);
 
+    Parameter<std::string> *threadCPUAffinity = new Parameter<std::string>("");
+    threadCPUAffinity->set_command_line_argument("-threadCPUAffinity", "<A:B:C:D>");
+    threadCPUAffinity->set_description(
+            "Set the CPU assigned for the different application Threads:\n"
+            "A - For the Main Thread, which will be the one\n"
+            "    sending the data. Also for the Asynchronous \n"
+            "    thread if that one is used.\n"
+            "B - For the Receive Threads.\n"
+            "C - For the Event Thread.\n"
+            "D - For the DataBase Thread.\n"
+            "The CPU can be set as a number or a range of CPUs.\n"
+            "For example: 0,1,2,3 or 0-3.\n");
+    threadCPUAffinity->set_type(T_STR);
+    threadCPUAffinity->set_extra_argument(YES);
+    threadCPUAffinity->set_group(GENERAL);
+    threadCPUAffinity->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("threadCPUAffinity", threadCPUAffinity);
+
     Parameter<std::string> *outputFormat = new Parameter<std::string>("csv");
     outputFormat->set_command_line_argument("-outputFormat", "<format>");
     outputFormat->set_description(

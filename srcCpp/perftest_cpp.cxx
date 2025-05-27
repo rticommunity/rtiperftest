@@ -165,6 +165,13 @@ int perftest_cpp::Run(int argc, char *argv[])
         return -1;
     }
 
+  #ifdef PERFTEST_RTI_PRO
+    if (_threadCPUAffinity.isInitialized()
+            && !_threadCPUAffinity.set_main_thread_affinity()) {
+        return -1;
+    }
+  #endif
+
   #if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS)
     if (_PM.get<bool>("rawTransport")) {
       #ifdef PERFTEST_RTI_PRO
@@ -568,6 +575,16 @@ bool perftest_cpp::validate_input()
         _threadPriorities.isSet = true;
     }
 
+  #ifdef PERFTEST_RTI_PRO
+    if (_PM.is_set("threadCPUAffinity")) {
+        if (!_threadCPUAffinity.parse_affinities(_PM.get<std::string>("threadCPUAffinity"))) {
+            fprintf(stderr, "Could not set -threadCPUAffinity.\n");
+            return false;
+        }
+        // isSet is already set to true in parse_affinities
+    }
+  #endif
+
     // Check if we need to enable the use of unbounded sequences.
     if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
         if (_PM.get<int>("unbounded") == 0) {
@@ -780,6 +797,21 @@ void perftest_cpp::print_configuration()
         stringStream << "\t\tDataBase and Event threads Priority: "
                 << _threadPriorities.dbAndEvent << std::endl;
     }
+
+  #ifdef PERFTEST_RTI_PRO
+    // Thread CPU Affinity
+    if (_threadCPUAffinity.isInitialized()) {
+        stringStream << "\tUsing thread CPU Affinity:" << std::endl;
+        stringStream << "\t\tMain thread Core(s): "
+                << _threadCPUAffinity.get_cores_main_str() << std::endl;
+        stringStream << "\t\tReceive thread Core(s): "
+                << _threadCPUAffinity.get_cores_receive_str() << std::endl;
+        stringStream << "\t\tDataBase Core(s): "
+                << _threadCPUAffinity.get_cores_db_str() << std::endl;
+        stringStream << "\t\tEvent thread Core(s): "
+                << _threadCPUAffinity.get_cores_event_str() << std::endl;
+    }
+  #endif
 
     stringStream << _MessagingImpl->print_configuration();
 
@@ -2470,6 +2502,13 @@ const ThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
 }
+
+#ifdef PERFTEST_RTI_PRO
+const ThreadCPUAffinity perftest_cpp::get_thread_cpu_affinity()
+{
+    return _threadCPUAffinity;
+}
+#endif
 
 void perftest_cpp::Timeout() {
     _testCompleted = true;

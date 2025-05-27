@@ -18,6 +18,9 @@
 
 #include "MessagingIF.h"
 #include "ThreadPriorities.h"
+#ifdef PERFTEST_RTI_PRO
+  #include "ThreadCPUAffinity.h"
+#endif
 #include "ParameterManager.h"
 #include "Infrastructure_common.h"
 #include "FileDataLoader.h"
@@ -41,6 +44,9 @@ class perftest_cpp
     void print_configuration();
     unsigned int get_samples_per_batch();
     const ThreadPriorities get_thread_priorities();
+  #ifdef PERFTEST_RTI_PRO
+    const ThreadCPUAffinity get_thread_cpu_affinity();
+  #endif
     void calculate_publication_rate();
     static const Perftest_ProductVersion_t get_perftest_version();
     static void print_version();
@@ -63,6 +69,10 @@ class perftest_cpp
     // Priorities for the threads used by perftest and domain participant
     ThreadPriorities _threadPriorities;
 
+  #ifdef PERFTEST_RTI_PRO
+    // Thread affinity for the threads used by perftest and Connext.
+    ThreadCPUAffinity _threadCPUAffinity;
+  #endif
 
     static void Timeout();
 
