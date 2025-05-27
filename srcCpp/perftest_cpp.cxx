@@ -1531,7 +1531,7 @@ public:
                 _printer->print_latency_summary(0, 0, 0, 0, *_latency_history, 0, 0, 0, 0, 0);
                 
               #else
-                _printer->print_latency_summary(0, 0, 0, 0, *_latency_history, 0, 0);
+                _printer->print_latency_summary(0, 0, 0, 0, _latency_history, 0, 0);
               #endif
                 fprintf(stderr,
                         "\nNo Pong samples have been received in the Publisher side.\n"
