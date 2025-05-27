@@ -9,6 +9,17 @@ Release Notes develop
 What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
 
+New command-line option to control the CPU thread affinity |newTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+A new command-line option, ``-threadCpuAffinity <A:B:C:D>``, can be used to control pinning CPU cores
+to the different threads used by *Connext Pro* and *Perftest*. The following threads can be controlled:
+- Main thread (A)
+- Receiver Pool thread (B)
+- Event thread (C)
+- Database thread (D)
+The values for A, B, C, and D are the CPU cores to which the threads will be pinned; each can be a single number or a range (for example, 0-3).
+
 Updated Property Names for *RTI Connext Security Plugin* |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

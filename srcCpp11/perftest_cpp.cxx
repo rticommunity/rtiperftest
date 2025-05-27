@@ -86,6 +86,7 @@ const long timeout_wait_for_ack_sec = 0;
 const unsigned long timeout_wait_for_ack_nsec = 100000000;
 const Perftest_ProductVersion_t perftest_cpp::_version = {0, 0, 0, 0};
 ThreadPriorities _threadPriorities;
+ThreadCPUAffinity _threadCPUAffinity;
 
 /*
  * PERFTEST-108
@@ -171,6 +172,11 @@ int perftest_cpp::Run(int argc, char *argv[]) {
 
     if (_threadPriorities.isSet
             && !_threadPriorities.set_main_thread_priority()) {
+        return -1;
+    }
+
+    if (_threadCPUAffinity.isInitialized()
+            && !_threadCPUAffinity.set_main_thread_affinity()) {
         return -1;
     }
 
@@ -480,6 +486,15 @@ bool perftest_cpp::validate_input()
         _threadPriorities.isSet = true;
     }
 
+    // Manage the parameter: -threadCPUAffinity
+    if (_PM.is_set("threadCPUAffinity")) {
+        if (!_threadCPUAffinity.parse_affinities(_PM.get<std::string>("threadCPUAffinity"))) {
+            fprintf(stderr, "Could not set -threadCPUAffinity.\n");
+            return false;
+        }
+        // isSet is already set to true in parse_affinities
+    }
+
     // Check if we need to enable the use of unbounded sequences.
     if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
         if (_PM.get<int>("unbounded") == 0) {
@@ -665,6 +680,19 @@ void perftest_cpp::print_configuration()
                 << _threadPriorities.receive << std::endl;
         stringStream << "\t\tDataBase and Event threads Priority: "
                 << _threadPriorities.dbAndEvent << std::endl;
+    }
+
+    // Thread CPU Affinity
+    if (_threadCPUAffinity.isInitialized()) {
+        stringStream << "\tUsing thread CPU Affinity:" << std::endl;
+        stringStream << "\t\tMain thread Core(s): "
+                << _threadCPUAffinity.get_cores_main_str() << std::endl;
+        stringStream << "\t\tReceive thread Core(s): "
+                << _threadCPUAffinity.get_cores_receive_str() << std::endl;
+        stringStream << "\t\tDataBase Core(s): "
+                << _threadCPUAffinity.get_cores_db_str() << std::endl;
+        stringStream << "\t\tEvent thread Core(s): "
+                << _threadCPUAffinity.get_cores_event_str() << std::endl;
     }
 
     stringStream << _MessagingImpl->print_configuration();
@@ -2005,6 +2033,11 @@ inline unsigned int perftest_cpp::get_samples_per_batch() {
 const ThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
+}
+
+const ThreadCPUAffinity perftest_cpp::get_thread_cpu_affinity()
+{
+    return _threadCPUAffinity;
 }
 
 inline void perftest_cpp::Timeout() {

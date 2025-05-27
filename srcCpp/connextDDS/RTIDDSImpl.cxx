@@ -2525,6 +2525,30 @@ bool RTIDDSImpl<T>::configure_participant_qos(DDS_DomainParticipantQos &qos)
         qos.database.thread.priority = threadPriorities.dbAndEvent;
     }
 
+  #ifdef PERFTEST_RTI_PRO
+    ThreadCPUAffinity threadCPUAffinity = _parent->get_thread_cpu_affinity();
+    // set CPU affinity
+    if (threadCPUAffinity.isInitialized()) {
+        std::vector<int> cores = threadCPUAffinity.get_cores_receive();
+        if (!qos.receiver_pool.thread.cpu_list.from_array(&cores[0], (int) cores.size())) {
+            fprintf(stderr, "Error setting CPU affinity for receiver_pool thread\n");
+            return false;
+        }
+        cores.clear();
+        cores = threadCPUAffinity.get_cores_event();
+        if (!qos.event.thread.cpu_list.from_array(&cores[0], (int) cores.size())) {
+            fprintf(stderr, "Error setting CPU affinity for event thread\n");
+            return false;
+        }
+        cores.clear();
+        cores = threadCPUAffinity.get_cores_db();
+        if (!qos.database.thread.cpu_list.from_array(&cores[0], (int) cores.size())) {
+            fprintf(stderr, "Error setting CPU affinity for database thread\n");
+            return false;
+        }
+    }
+  #endif 
+
     if (_PM->get<bool>("enableAutoThrottle")) {
         DDSPropertyQosPolicyHelper::add_property(qos.property,
                 "dds.domain_participant.auto_throttle.enable",
@@ -2687,6 +2711,9 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
     }
     _parent = parent;
     ThreadPriorities threadPriorities = _parent->get_thread_priorities();
+  #ifdef PERFTEST_RTI_PRO
+    ThreadCPUAffinity threadCPUAffinity = _parent->get_thread_cpu_affinity();
+  #endif
 
   #ifdef PERFTEST_RTI_PRO
     // Register _loggerDevice
@@ -2845,6 +2872,21 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
         publisherQoS.asynchronous_publisher.asynchronous_batch_thread.priority
                 = threadPriorities.main;
     }
+
+
+  #ifdef PERFTEST_RTI_PRO
+    if (threadCPUAffinity.isInitialized()) {
+        std::vector<int> cores = threadCPUAffinity.get_cores_main();
+        if (!publisherQoS.asynchronous_publisher.thread.cpu_list.from_array(&cores[0], (int) cores.size())) {
+            fprintf(stderr, "Error setting CPU affinity for asynchronous_publisher thread\n");
+            return false;
+        }
+        if (!publisherQoS.asynchronous_publisher.asynchronous_batch_thread.cpu_list.from_array(&cores[0], (int) cores.size())) {
+            fprintf(stderr, "Error setting CPU affinity for asynchronous_batch_thread thread\n");
+            return false;
+        }
+    }
+  #endif
 
     // Create the DDSPublisher and DDSSubscriber
     _publisher = _participant->create_publisher(
