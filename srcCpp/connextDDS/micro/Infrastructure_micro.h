@@ -61,17 +61,17 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock {
 
   private:
-  #ifndef RTI_PERFTEST_NANO_CLOCK
-    #ifndef RTI_WIN32
+  #ifndef RTI_WIN32
     OSAPI_NtpTime clockTimeAux;
     RTI_INT32 clockSec;
     RTI_UINT32 clockUsec;
-    #else
-    double _frequency;
-    #endif
   #else
-    struct timespec timeStruct;
+    double _frequency;
   #endif
+
+  #ifdef RTI_PERFTEST_NANO_CLOCK
+    struct timespec timeStruct;
+  #endif // RTI_PERFTEST_NANO_CLOCK
 
   public:
     PerftestClock();
@@ -79,6 +79,9 @@ class PerftestClock {
 
     static PerftestClock &getInstance();
     unsigned long long getTime();
+  #ifdef RTI_PERFTEST_NANO_CLOCK
+    unsigned long long getTimeNs();
+  #endif // RTI_PERFTEST_NANO_CLOCK
     static void milliSleep(unsigned int millisec);
     static void sleep(const struct DDS_Duration_t& sleep_period);
 

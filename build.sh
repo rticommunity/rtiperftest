@@ -2134,7 +2134,7 @@ while [ "$1" != "" ]; do
         --debug)
             RELEASE_DEBUG=debug
             ;;
-        --ns-resolution)
+        --latency-high-resolution)
             RTI_PERFTEST_NANO_CLOCK=1
             ;;
         --force-c++11-infrastructure)

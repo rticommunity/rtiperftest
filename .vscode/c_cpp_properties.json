@@ -15,7 +15,8 @@
                 "_UNICODE",
                 "PERFTEST_RTI_PRO",
                 "RTI_FLATDATA_AVAILABLE",
-                "RTI_SECURE_PERFTEST"
+                "RTI_SECURE_PERFTEST",
+                "RTI_PERFTEST_NANO_CLOCK"
             ],
             "intelliSenseMode": "${default}",
             "cStandard": "c11",

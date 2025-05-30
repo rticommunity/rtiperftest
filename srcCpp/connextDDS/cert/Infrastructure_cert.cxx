@@ -19,7 +19,6 @@
 
 PerftestClock::PerftestClock()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
   #ifndef RTI_WIN32
 
     OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
@@ -36,7 +35,6 @@ PerftestClock::PerftestClock()
     _frequency = double(ticks.QuadPart);
 
   #endif
-  #endif
 }
 
 PerftestClock::~PerftestClock()
@@ -51,8 +49,7 @@ PerftestClock &PerftestClock::getInstance()
 
 unsigned long long PerftestClock::getTime()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
-    #ifndef RTI_WIN32
+  #ifndef RTI_WIN32
 
     #if defined(RTI_QNX)
 
@@ -82,7 +79,7 @@ unsigned long long PerftestClock::getTime()
     return clockUsec + (unsigned long long) 1000000 * clockSec;
     #endif
 
-    #else
+  #else
     /*
      * RTI Connext DDS Micro takes the timestamp by GetSystemTimeAsFileTime,
      * this function should have a resolution of 100 nanoseconds but
@@ -101,12 +98,18 @@ unsigned long long PerftestClock::getTime()
     QueryPerformanceCounter(&ticks);
     return ticks.QuadPart / (unsigned long long) (_frequency /1000000.0);
 
-    #endif /* RTI_WIN32 */
-  #else
-    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
-    return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
-  #endif /* RTI_PERFTEST_NANO_CLOCK */
+  #endif /* RTI_WIN32 */
 }
+
+#ifdef RTI_PERFTEST_NANO_CLOCK
+unsigned long long PerftestClock::getTimeNs()
+{
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
+    return (static_cast<unsigned long long>(timeStruct.tv_sec) * 1000000000ULL)
+            + static_cast<unsigned long long>(timeStruct.tv_nsec);
+}
+#endif // RTI_PERFTEST_NANO_CLOCK
+
 
 void PerftestClock::milliSleep(unsigned int millisec)
 {

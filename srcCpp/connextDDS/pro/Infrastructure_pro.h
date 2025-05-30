@@ -115,14 +115,13 @@ class PerftestClock
 {
 
   private:
-  #ifndef RTI_PERFTEST_NANO_CLOCK
     RTIClock *clock;
     RTINtpTime clockTimeAux;
     RTI_UINT64 clockSec;
     RTI_UINT64 clockUsec;
-  #else
+  #ifdef RTI_PERFTEST_NANO_CLOCK
     struct timespec timeStruct;
-  #endif
+  #endif // RTI_PERFTEST_NANO_CLOCK
 
   public:
     PerftestClock();
@@ -130,6 +129,9 @@ class PerftestClock
 
     static PerftestClock &getInstance();
     unsigned long long getTime();
+  #ifdef RTI_PERFTEST_NANO_CLOCK
+    unsigned long long getTimeNs();
+  #endif // RTI_PERFTEST_NANO_CLOCK
     static void milliSleep(unsigned int millisec);
     static void sleep(const struct DDS_Duration_t& sleep_period);
 

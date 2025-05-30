@@ -1776,7 +1776,11 @@ public:
         double latency_std;
         double outputCpu = 0.0;
 
+      #ifndef RTI_PERFTEST_NANO_CLOCK
         now = PerftestClock::getInstance().getTime();
+      #else
+        now = PerftestClock::getInstance().getTimeNs();
+      #endif
 
         switch (message.size) {
             // Initializing message, don't process
@@ -2337,7 +2341,12 @@ int perftest_cpp::Publisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
+
+              #ifndef RTI_PERFTEST_NANO_CLOCK
                 unsigned long long now = PerftestClock::getInstance().getTime();
+              #else
+                unsigned long long now = PerftestClock::getInstance().getTimeNs();
+              #endif
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
                 ++num_pings;
