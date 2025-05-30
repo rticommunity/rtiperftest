@@ -88,7 +88,11 @@ class perftest_cpp
     int RunPublisher();
     int RunSubscriber();
     static void *waitAndExecute(void *scheduleInfo);
-    static RTIOsapiThread *SetTimeout(ScheduleInfo &info);
+    static RTIOsapiThread *SetParameters(
+        ScheduleInfo &info,
+        int threadPriority,
+        int threadOptions,
+        int cpuAffinity);
 
     // Private members
     ParameterManager _PM;

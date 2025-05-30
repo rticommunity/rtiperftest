@@ -1760,11 +1760,6 @@ int perftest_cpp::RunPublisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
-    struct ScheduleInfo schedInfo = {
-            (unsigned int)_PM.get<unsigned long long>("executionTime"),
-            Timeout
-    };
-
     time_last_check = PerftestClock::getTime();
 
     /* Minimum value for spin_sample_period will be 1 so we execute 100 times
@@ -1778,7 +1773,38 @@ int perftest_cpp::RunPublisher()
     }
 
     if (_PM.get<unsigned long long>("executionTime") > 0) {
-        executionTimeoutThread = SetTimeout(schedInfo);
+
+        struct ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+        };
+
+        // Set thread priority and CPU affinity if configured
+        int execThreadPriority = RTI_OSAPI_THREAD_PRIORITY_DEFAULT;
+        int execThreadOptions = RTI_OSAPI_THREAD_OPTION_DEFAULT;
+        if (_threadPriorities.isSet) {
+            execThreadPriority = _threadPriorities.main + 10;
+            execThreadOptions = RTI_OSAPI_THREAD_OPTION_REALTIME_PRIORITY
+                    | RTI_OSAPI_THREAD_OPTION_PRIORITY_ENFORCE;
+        }
+
+        int execThreadCpuAffinity = -1;
+        if (_threadCPUAffinity.isInitialized()) {
+            // For simplicity, use the first core assigned to main thread
+            // (get_cores_main() returns a vector<int>)
+            const std::vector<int>& cores = _threadCPUAffinity.get_cores_main();
+            if (!cores.empty()) {
+                execThreadCpuAffinity = cores[0];
+            }
+        }
+
+        executionTimeoutThread = SetParameters(
+            schedInfo,
+            execThreadPriority,
+            execThreadOptions,
+            execThreadCpuAffinity
+        );
+
         if (executionTimeoutThread == NULL) {
             std::cerr << "[Error] Problem creating timeoutThread for executionTime."
                     << std::endl;
@@ -2005,17 +2031,36 @@ void *perftest_cpp::waitAndExecute(void *scheduleInfo) {
     return NULL;
 }
 
-inline RTIOsapiThread *perftest_cpp::SetTimeout(ScheduleInfo &info) {
+inline RTIOsapiThread *perftest_cpp::SetParameters(
+        ScheduleInfo &info,
+        int threadPriority,
+        int threadOptions,
+        int cpuAffinity) {
+
     struct RTIOsapiThread *timerThread = NULL;
 
     timerThread = RTIOsapiThread_new(
             "timerThread",
-            RTI_OSAPI_THREAD_PRIORITY_DEFAULT,
-            RTI_OSAPI_THREAD_OPTION_DEFAULT,
+            threadPriority,
+            threadOptions,
             RTI_OSAPI_THREAD_STACK_SIZE_DEFAULT,
             NULL,
             waitAndExecute,
             &info);
+
+    if (cpuAffinity >= 0 && timerThread != NULL) {
+        #ifdef RTI_LINUX
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(cpuAffinity, &cpuset);
+            int error = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+            if (error != 0) {
+                std::cerr << "[ThreadCPUAffinity] Failed to set CPU affinity for timer thread (error " << error << ")" << std::endl;
+            }
+        #else
+            std::cerr << "[ThreadCPUAffinity] CPU affinity is not supported on this platform" << std::endl;
+        #endif
+    }
 
     return timerThread;
 }

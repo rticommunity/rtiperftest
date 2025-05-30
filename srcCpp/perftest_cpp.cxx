@@ -2169,11 +2169,6 @@ int perftest_cpp::Publisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
-    struct PerftestTimer::ScheduleInfo schedInfo = {
-            (unsigned int)_PM.get<unsigned long long>("executionTime"),
-            Timeout
-    };
-
     time_last_check = PerftestClock::getInstance().getTime();
 
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
@@ -2187,7 +2182,38 @@ int perftest_cpp::Publisher()
     }
 
     if (_PM.get<unsigned long long>("executionTime") > 0) {
-        executionTimeoutThread = PerftestTimer::getInstance().setTimeout(schedInfo);
+
+        struct PerftestTimer::ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+        };
+
+        // Set thread priority and CPU affinity if configured
+        int execThreadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
+        int execThreadOptions = Perftest_THREAD_OPTION_DEFAULT;
+        if (_threadPriorities.isSet) {
+            execThreadPriority = _threadPriorities.main + 10;
+            execThreadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
+        }
+
+        int execThreadCpuAffinity = -1;
+        if (_threadCPUAffinity.isInitialized()) {
+            // For simplicity, use the first core assigned to main thread
+            // (get_cores_main() returns a vector<int>)
+            const std::vector<int>& cores = _threadCPUAffinity.get_cores_main();
+            if (!cores.empty()) {
+                execThreadCpuAffinity = cores[0];
+            }
+        }
+
+        executionTimeoutThread = PerftestTimer::getInstance().setParameters(
+            schedInfo,
+            execThreadPriority,
+            execThreadOptions,
+            execThreadCpuAffinity
+        );
+
         if (executionTimeoutThread == NULL) {
             fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
             return -1;

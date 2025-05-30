@@ -243,7 +243,11 @@ class PerftestTimer
     PerftestTimer() {}  // We need empty constructor and destructor for VxWorks
     ~PerftestTimer() {}
     static PerftestTimer &getInstance();
-    PerftestThread *setTimeout(ScheduleInfo &info);
+    PerftestThread *setParameters(
+          ScheduleInfo &info,
+          int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT,
+          int threadOptions = Perftest_THREAD_OPTION_DEFAULT,
+          int cpuAffinity = -1);
 };
 
 /********************************************************************/
