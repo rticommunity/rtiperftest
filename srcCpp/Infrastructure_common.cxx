@@ -209,10 +209,12 @@ void *PerftestTimer::waitAndExecute(void *scheduleInfo)
 
     PerftestClock::milliSleep(info->timer * 1000u);
 
+    printf("Executing scheduled function after %u seconds\n", info->timer);
     if (info->handlerFunction != NULL) {
         info->handlerFunction();
     }
 
+    delete info; // Clean up the scheduleInfo after use
     return NULL;
 }
 
@@ -222,7 +224,7 @@ PerftestTimer &PerftestTimer::getInstance()
     return instance;
 }
 
-PerftestThread *PerftestTimer::setParameters(PerftestTimer::ScheduleInfo &info, int threadPriority, int threadOptions, int cpuAffinity)
+PerftestThread *PerftestTimer::setParameters(PerftestTimer::ScheduleInfo info, int threadPriority, int threadOptions, int cpuAffinity)
 {
     struct PerftestThread *timerThread = NULL;
 
@@ -231,7 +233,7 @@ PerftestThread *PerftestTimer::setParameters(PerftestTimer::ScheduleInfo &info, 
             threadPriority,
             threadOptions,
             waitAndExecute,
-            &info);
+            new ScheduleInfo(info));
 
     if (cpuAffinity >= 0 && timerThread != NULL) {
         #ifdef RTI_LINUX

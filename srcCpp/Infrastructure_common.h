@@ -235,7 +235,7 @@ class PerftestTimer
     ~PerftestTimer() {}
     static PerftestTimer &getInstance();
     PerftestThread *setParameters(
-          ScheduleInfo &info,
+          ScheduleInfo info,
           int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT,
           int threadOptions = Perftest_THREAD_OPTION_DEFAULT,
           int cpuAffinity = -1);
