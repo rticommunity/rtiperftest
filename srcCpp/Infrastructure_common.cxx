@@ -209,7 +209,6 @@ void *PerftestTimer::waitAndExecute(void *scheduleInfo)
 
     PerftestClock::milliSleep(info->timer * 1000u);
 
-    printf("Executing scheduled function after %u seconds\n", info->timer);
     if (info->handlerFunction != NULL) {
         info->handlerFunction();
     }
