@@ -13,7 +13,7 @@ pipeline {
     agent none
     parameters {
         string(name: 'DEVELOP_VERSION', defaultValue: 'latest', description: 'RTI Connext Pro version to build against')
-        string(name: 'LATEST_RELEASE_VERSION', defaultValue: '7.4.0', description: 'RTI Connext Pro version to build against')
+        string(name: 'LATEST_RELEASE_VERSION', defaultValue: '7.5.0', description: 'RTI Connext Pro version to build against')
         string(name: 'LATEST_LTS_VERSION', defaultValue: '7.3.0', description: 'RTI Connext Pro version to build against')
     }
     stages {

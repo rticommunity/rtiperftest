@@ -16,20 +16,16 @@ LANGUAGES = []
 
 ////////////////////UTILS/////////////////
 def extractConnextVersion(String artifactoryPath) {
-    def matcher = artifactoryPath =~ /release(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/
+    def matcher = artifactoryPath =~ /BUILD_(\d+\.\d+\.\d+\.\d+)_\d{8}T\d{6}Z_([A-Z_-]+)/
     if (matcher.find()) {
-        def major = matcher[0][1]
-        def minor = matcher[0][2]
-        def patch = matcher[0][3]
-        def build = matcher[0][4] // might be null
-        return build ? "${major}.${minor}.${patch}.${build}" : "${major}.${minor}.${patch}"
+        return matcher[0][1]
     } else {
         error("Could not extract Connext version from path: ${artifactoryPath}")
     }
 }
 
 def extractBuildIdentifier(String artifactoryPath) {
-    def matcher = artifactoryPath =~ /(BUILD_\d+\.\d+\.\d+\.\d+_\d{8}T\d{6}Z_RTI_REL)/
+    def matcher = artifactoryPath =~ /(BUILD_\d+\.\d+\.\d+\.\d+_\d{8}T\d{6}Z_[A-Z_-]+)/
     if (matcher.find()) {
         return matcher[0][1]
     } else {
@@ -68,7 +64,7 @@ def getVSDevCmdPatternForArch(String connextArch) {
     return archMap[connextArch] ?: ""
 }
 
-def getScriptExtensionForArch(String connextArch) {
+def getZipExtensionForArch(String connextArch) {
     return connextArch.contains('Win') ? 'zip' : 'tar.gz'
 }
 /////////////////////////////////////////
@@ -85,7 +81,7 @@ def generateBuildStages(List<String> architectures, List<String> languages) {
                     downloadArtifactoryStage(arch)
                     languages.each { lang ->
                         stage(lang) {
-                            buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --secure --openssl-home ${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}/third_party/openssl-3.0.12/${arch} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen")                        }
+                            buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --secure --openssl-home ${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}/third_party/openssl-${params.OPENSSL_VERSION}/${arch} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen")                        }
                     }
                 }
             }
@@ -144,7 +140,8 @@ def buildPerftestAgainstPro(String connextArch, String nddsHome, String flags) {
 
 def generateBundle(String arch) {
     unstash "perftest-${arch}"
-    def folder = "rti_perftest_Connext-${arch}"
+    def folder = "rti_perftest_Connext-${CONNEXT_VERSION_SHORT}_${arch}"
+    def zipName = "rti_perftest-${BRANCHNAME}_Connext-${CONNEXT_VERSION_SHORT}_${arch}"
 
     runCommand "mkdir -p ${folder}/bin"
     runCommand "mkdir -p ${folder}/resource"
@@ -157,11 +154,11 @@ def generateBundle(String arch) {
 
     if (!arch.contains('Win')) {
         runCommand """
-            tar czvf ${folder}.tar.gz ${folder}
+            tar czvf ${zipName}.tar.gz ${folder}
         """
     } else {
         runCommand """
-            zip -r ${folder}.zip ${folder}/
+            zip -r ${zipName}.zip ${folder}/
         """
     }
     rtUpload (
@@ -170,8 +167,8 @@ def generateBundle(String arch) {
             """{
             "files": [
                 {
-                    "pattern": "${env.WORKSPACE}/${folder}.${getScriptExtensionForArch(arch)}",
-                    "target": "perftest-ci/${BRANCHNAME}/connext/${CONNEXT_VERSION}/${BUILD_IDENTIFIER}/${folder}.${getScriptExtensionForArch(arch)}",
+                    "pattern": "${env.WORKSPACE}/${zipName}.${getZipExtensionForArch(arch)}",
+                    "target": "perftest-ci/${BRANCHNAME}/connext/${CONNEXT_VERSION}/${BUILD_IDENTIFIER}/${zipName}.${getZipExtensionForArch(arch)}",
                     "props": "rti.artifact.kind=bundle;rti.product.name=perftest;rti.product.version=${CONNEXT_VERSION}"
                 }
             ]
@@ -201,6 +198,12 @@ pipeline {
             name: 'CONNEXT_BUILD_LANGUAGES',
             defaultValue: 'cpp-build',
             description: 'Comma-separated list of language flags to build.',
+            trim: true
+        )
+        string(
+            name: 'OPENSSL_VERSION',
+            defaultValue: '3.5.0',
+            description: 'OpenSSL version to use for building perftest.',
             trim: true
         )
     }
