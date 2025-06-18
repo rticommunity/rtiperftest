@@ -2201,6 +2201,7 @@ int perftest_cpp::Publisher()
                     | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
 
+      #ifdef PERFTEST_RTI_PRO
         int execThreadCpuAffinity = -1;
         if (_threadCPUAffinity.isInitialized()) {
             // For simplicity, use the first core assigned to main thread
@@ -2210,6 +2211,7 @@ int perftest_cpp::Publisher()
                 execThreadCpuAffinity = cores[0];
             }
         }
+      #endif // PERFTEST_RTI_PRO
 
         executionTimeoutThread = PerftestTimer::getInstance().setParameters(
             schedInfo,
