@@ -28,6 +28,16 @@ In earlier releases, deprecated property names were retained to ensure backward
 compatibility with *RTI Connext 6.0.X*. Starting with this release, the property
 names have been updated as *RTI Connext* no longer supports the old names.
 
+What's Fixed in develop
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Assert Error when using Raw Transport in Debug mode |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+When compiling *Perftest* in debug mode, the publisher side failed to initialize if using 
+a middleware implementation that did not support listeners, such as rawTransport mode. 
+This issue was due to a thread name exceeding the maximum supported length.
+
 Release Notes 4.2
 -----------------
 

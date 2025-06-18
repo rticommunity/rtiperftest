@@ -2032,7 +2032,7 @@ int perftest_cpp::Publisher()
         }
 
         announcementReadThread = PerftestThread_new(
-                "announcementReadThread",
+                "announceThread",
                 threadPriority,
                 threadOptions,
                 ReadThread<AnnouncementListener>,
