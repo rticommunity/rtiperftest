@@ -2201,8 +2201,8 @@ int perftest_cpp::Publisher()
                     | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
         }
 
-      #ifdef PERFTEST_RTI_PRO
         int execThreadCpuAffinity = -1;
+      #ifdef PERFTEST_RTI_PRO
         if (_threadCPUAffinity.isInitialized()) {
             // For simplicity, use the first core assigned to main thread
             // (get_cores_main() returns a vector<int>)
