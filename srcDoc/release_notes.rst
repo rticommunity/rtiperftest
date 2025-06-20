@@ -31,6 +31,13 @@ names have been updated as *RTI Connext* no longer supports the old names.
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+Crash when no pong samples received in latency test |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+If the Publisher did not receive any pong samples, Perftest could 
+crash when trying to display latency statistics. Perftest now checks 
+for the presence of latency data before displaying statistics.
+
 Assert Error when using Raw Transport in Debug mode |fixedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

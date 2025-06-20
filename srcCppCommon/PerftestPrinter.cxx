@@ -120,30 +120,47 @@ void PerftestCSVPrinter::print_latency_summary(
         }
         fprintf(_outputFile, "\n");
     }
+
   #ifndef RTI_PERFTEST_NANO_CLOCK
+    unsigned long p50 = 0, p90 = 0, p99 = 0, p9999 = 0, p999999 = 0;
+    if (latencyHistory) {
+        p50 = latencyHistory[count * 50 / 100];
+        p90 = latencyHistory[count * 90 / 100];
+        p99 = latencyHistory[count * 99 / 100];
+        p9999 = latencyHistory[(int) (count * (9999.0 / 10000))];
+        p999999 = latencyHistory[(int) (count * (999999.0 / 1000000))];
+    }
     fprintf(_outputFile, "%19d,%9.0lf,%9.1lf,%9lu,%9lu,%9lu,%9lu,%9lu,%12lu,%14lu",
             totalSampleSize,
             latencyAve,
             latencyStd,
             latencyMin,
             latencyMax,
-            latencyHistory[count * 50 / 100],
-            latencyHistory[count * 90 / 100],
-            latencyHistory[count * 99 / 100],
-            latencyHistory[(int) (count * (9999.0 / 10000))],
-            latencyHistory[(int) (count * (999999.0 / 1000000))]);
+            p50,
+            p90,
+            p99,
+            p9999,
+            p999999);
   #else
+    double p50 = 0, p90 = 0, p99 = 0, p9999 = 0, p999999 = 0;
+    if (latencyHistory) {
+        p50 = latencyHistory[count * 50 / 100] / 1000.0;
+        p90 = latencyHistory[count * 90 / 100] / 1000.0;
+        p99 = latencyHistory[count * 99 / 100] / 1000.0;
+        p9999 = latencyHistory[(int) (count * (9999.0 / 10000))] / 1000.0;
+        p999999 = latencyHistory[(int) (count * (999999.0 / 1000000))] / 1000.0;
+    }
     fprintf(_outputFile, "%19d,%9.3f,%9.3f,%9.3f,%9.3f,%9.3f,%9.3f,%9.3f,%12.3f,%14.3f",
             totalSampleSize,
             latencyAve / 1000.0,
             latencyStd / 1000.0,
             latencyMin / 1000.0,
             latencyMax / 1000.0,
-            latencyHistory[count * 50 / 100] / 1000.0,
-            latencyHistory[count * 90 / 100] / 1000.0,
-            latencyHistory[count * 99 / 100] / 1000.0,
-            latencyHistory[(int) (count * (9999.0 / 10000))] / 1000.0,
-            latencyHistory[(int) (count * (999999.0 / 1000000))] / 1000.0);
+            p50,
+            p90,
+            p99,
+            p9999,
+            p999999);
   #endif
     if (_printSerialization) {
         fprintf(_outputFile, ",%19.3f,%21.3f,%11.3f",
