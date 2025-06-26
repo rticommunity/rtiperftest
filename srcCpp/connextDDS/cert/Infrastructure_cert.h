@@ -57,7 +57,7 @@ class PerftestClock {
 
   private:
   #ifndef RTI_WIN32
-    OSAPI_NtpTime clockTimeAux;
+    OSAPI_SystemTime clockTimeAux;
     #ifdef RTI_QNX
     uint64_t clockSec;
     uint64_t clockUsec;
