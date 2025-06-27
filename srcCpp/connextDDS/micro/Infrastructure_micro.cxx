@@ -55,8 +55,8 @@ unsigned long long PerftestClock::getTime()
     OSAPI_Time_from_ntp(
             &clockSec,
             &clockUsec,
-            clockTimeAux.seconds,
-            clockTimeAux.nanoseconds);
+            clockTimeAux.sec,
+            clockTimeAux.nanosec);
     return clockUsec + (unsigned long long) 1000000 * clockSec;
 
   #else

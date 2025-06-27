@@ -62,7 +62,7 @@ class PerftestClock {
     uint64_t clockSec;
     uint64_t clockUsec;
     #else
-    RTI_INT32 clockSec;
+    RTI_UINT32 clockSec;
     RTI_UINT32 clockUsec;
     #endif
   #else
