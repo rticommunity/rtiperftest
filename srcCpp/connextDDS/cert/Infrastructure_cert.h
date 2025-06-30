@@ -28,6 +28,15 @@
 
 #ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
+#if (RTIME_DDS_VERSION_MAJOR < 2) || \
+    (RTIME_DDS_VERSION_MAJOR == 2 && RTIME_DDS_VERSION_MINOR < 4) || \
+    (RTIME_DDS_VERSION_MAJOR == 2 && RTIME_DDS_VERSION_MINOR == 4 && \
+        RTIME_DDS_VERSION_REVISION < 16)
+    #define RTI_NTP_TIME_COMPATIBLE 1
+#else
+    #define RTI_NTP_TIME_COMPATIBLE 0
+#endif
+
 /********************************************************************/
 /*
  * In order to unify the implementations for Micro and Pro, we wrap the
@@ -57,12 +66,20 @@ class PerftestClock {
 
   private:
   #ifndef RTI_WIN32
+    #if RTI_NTP_TIME_COMPATIBLE
     OSAPI_NtpTime clockTimeAux;
+    #else
+    OSAPI_SystemTime clockTimeAux;
+    #endif
     #ifdef RTI_QNX
     uint64_t clockSec;
     uint64_t clockUsec;
     #else
+    #if RTI_NTP_TIME_COMPATIBLE
     RTI_INT32 clockSec;
+    #else
+    RTI_UINT32 clockSec;
+    #endif
     RTI_UINT32 clockUsec;
     #endif
   #else
