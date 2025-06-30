@@ -72,7 +72,7 @@ unsigned long long PerftestClock::getTime()
 
     #if RTI_NTP_TIME_COMPATIBLE
     if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
-      return 0;
+        return 0;
     }
 
     /* OSAPI_NtpTime_to_microsec is not available in CERT library */
