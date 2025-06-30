@@ -13,9 +13,7 @@ middleware. It has been compiled and tested against:
   should also be compatible by adding the `--micro-24x-compatibility` command-line
   option.
 
-- *RTI Connext Cert* 2.4.15.
-
-- *RTI Connext Cert* 2.4.16.
+- *RTI Connext Cert* 2.4.15 and later releases.
 
 - *RTI Connext TSS* 3.1.2 over *RTI Connext Pro* 6.1.1.4, or over
   *RTI Connext Micro* 2.4.13.4. The only supported FACE profile is
