@@ -18,7 +18,7 @@ PerftestClock::PerftestClock()
 {
   #ifndef RTI_WIN32
 
-    clockTimeAux = OSAPI_TIME_ZERO;
+    OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
     clockSec = 0;
     clockUsec = 0;
 
@@ -48,15 +48,14 @@ unsigned long long PerftestClock::getTime()
 {
   #ifndef RTI_WIN32
 
-    if (!OSAPI_System_get_time(&clockTimeAux)) {
+    if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
         return 0;
     }
 
-    OSAPI_Time_from_ntp(
+    OSAPI_NtpTime_to_microsec(
             &clockSec,
             &clockUsec,
-            clockTimeAux.sec,
-            clockTimeAux.nanosec);
+            (struct OSAPI_NtpTime*)&clockTimeAux);
     return clockUsec + (unsigned long long) 1000000 * clockSec;
 
   #else
