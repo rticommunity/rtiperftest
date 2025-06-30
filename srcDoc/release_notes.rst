@@ -31,13 +31,6 @@ names have been updated as *RTI Connext* no longer supports the old names.
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Compilation error due to 2038 bugfix |fixedTag|
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-After the fix for the 2038 bug, the performance tests compilation 
-failed due to the redefinition of the OSAPI_NtpTime type and other
-related function interfaces.
-
 Crash when no pong samples received in latency test |fixedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
