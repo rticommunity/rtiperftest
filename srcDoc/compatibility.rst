@@ -15,6 +15,8 @@ middleware. It has been compiled and tested against:
 
 - *RTI Connext Cert* 2.4.15.
 
+- *RTI Connext Cert* 2.4.16.
+
 - *RTI Connext TSS* 3.1.2 over *RTI Connext Pro* 6.1.1.4, or over
   *RTI Connext Micro* 2.4.13.4. The only supported FACE profile is
   GeneralPurpose.
