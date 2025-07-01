@@ -1420,11 +1420,11 @@ RTICertImpl<T, TSeq>::configure_participant_qos(DDS_DomainParticipantQos &dpQos)
         CHECK_BOOL(brc, "DDS_StringSeq_set_length");
         strRef = DDS_StringSeq_get_reference(&dpQos.discovery.initial_peers, 0);
         CHECK_PTR(strRef, "DDS_StringSeq_get_reference");
-        *strRef = DDS_String_dup("239.255.0.1");
+        *strRef = DDS_String_dup("_udp://239.255.0.1");
         CHECK_PTR(*strRef, "DDS_String_dup");
         strRef = DDS_StringSeq_get_reference(&dpQos.discovery.initial_peers, 1);
         CHECK_PTR(strRef, "DDS_StringSeq_get_reference");
-        *strRef = DDS_String_dup("127.0.0.1");
+        *strRef = DDS_String_dup("_udp://127.0.0.1");
         CHECK_PTR(*strRef, "DDS_String_dup");
     }
     dpQos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
@@ -1564,11 +1564,11 @@ bool RTICertImpl_ZCopy<T, TSeq>::configure_participant_qos(
     CHECK_BOOL(brc, "DDS_StringSeq_set_length");
     strRef = DDS_StringSeq_get_reference(&dpQos.discovery.initial_peers, 0);
     CHECK_PTR(strRef, "DDS_StringSeq_get_reference");
-    *strRef = DDS_String_dup("239.255.0.1");
+    *strRef = DDS_String_dup("_udp://239.255.0.1");
     CHECK_PTR(*strRef, "DDS_String_dup");
     strRef = DDS_StringSeq_get_reference(&dpQos.discovery.initial_peers, 1);
     CHECK_PTR(strRef, "DDS_StringSeq_get_reference");
-    *strRef = DDS_String_dup("127.0.0.1");
+    *strRef = DDS_String_dup("_udp://127.0.0.1");
     CHECK_PTR(*strRef, "DDS_String_dup");
 
     dpQos.discovery.accept_unknown_peers = DDS_BOOLEAN_TRUE;
