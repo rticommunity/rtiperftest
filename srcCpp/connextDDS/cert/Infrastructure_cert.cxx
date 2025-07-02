@@ -85,8 +85,8 @@ unsigned long long PerftestClock::getTime()
       return 0;
     }
 
-    clockSec = (RTI_INT32)clockTimeAux.seconds;
-    clockUsec = clockTimeAux.nanoseconds;
+    clockSec = (RTI_INT32)clockTimeAux.sec;
+    clockUsec = clockTimeAux.nanosec;
     #endif
     
     clockUsec = clockUsec / 1000;
