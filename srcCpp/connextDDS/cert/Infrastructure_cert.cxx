@@ -85,11 +85,8 @@ unsigned long long PerftestClock::getTime()
       return 0;
     }
 
-    OSAPI_Time_from_ntp(
-            &clockSec,
-            &clockUsec,
-            clockTimeAux.sec,
-            clockTimeAux.nanosec);
+    clockSec = (RTI_INT32)clockTimeAux.seconds;
+    clockUsec = clockTimeAux.nanoseconds;
     #endif
     
     clockUsec = clockUsec / 1000;

@@ -75,11 +75,7 @@ class PerftestClock {
     uint64_t clockSec;
     uint64_t clockUsec;
     #else
-    #if RTI_NTP_TIME_COMPATIBLE
     RTI_INT32 clockSec;
-    #else
-    RTI_UINT32 clockSec;
-    #endif
     RTI_UINT32 clockUsec;
     #endif
   #else
