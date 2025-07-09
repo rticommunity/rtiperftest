@@ -142,6 +142,7 @@ def generateBundle(String arch) {
     unstash "perftest-${arch}"
     def folder = "rti_perftest_Connext-${CONNEXT_VERSION_SHORT}_${arch}"
     def zipName = "rti_perftest-${BRANCHNAME}_Connext-${CONNEXT_VERSION_SHORT}_${arch}"
+    def artifactoryFolderVersion = CONNEXT_VERSION.endsWith('0') ? CONNEXT_VERSION_SHORT : CONNEXT_VERSION
 
     runCommand "mkdir -p ${folder}/bin"
     runCommand "mkdir -p ${folder}/resource"
@@ -168,7 +169,7 @@ def generateBundle(String arch) {
             "files": [
                 {
                     "pattern": "${env.WORKSPACE}/${zipName}.${getZipExtensionForArch(arch)}",
-                    "target": "perftest-ci/${BRANCHNAME}/connext/${CONNEXT_VERSION}/${BUILD_IDENTIFIER}/${zipName}.${getZipExtensionForArch(arch)}",
+                    "target": "perftest-ci/${BRANCHNAME}/connext/${artifactoryFolderVersion}/${BUILD_IDENTIFIER}/${zipName}.${getZipExtensionForArch(arch)}",
                     "props": "rti.artifact.kind=bundle;rti.product.name=perftest;rti.product.version=${CONNEXT_VERSION}"
                 }
             ]
