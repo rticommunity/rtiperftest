@@ -715,6 +715,9 @@ if !BUILD_CPP11! == 1 (
 		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
 	)
 
+    set USE_RTIDDSGEN_ENV_VAR=True
+    set RTIDDSGEN_STANDARD=DDS_PSM_Cxx
+
 	echo[
 	echo [INFO] "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^
 	-unboundedSupport -replace -create typefiles -create makefiles^

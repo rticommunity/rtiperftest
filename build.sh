@@ -1652,6 +1652,8 @@ function build_cpp11()
         perftest_ZeroCopyPlugin.cxx"
     fi
 
+    local USE_RTIDDSGEN_ENV_VAR=True
+    local RTIDDSGEN_STANDARD=DDS_PSM_Cxx
 
     ##############################################################################
     # Generate files for srcCpp11
