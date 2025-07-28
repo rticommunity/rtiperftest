@@ -1652,8 +1652,8 @@ function build_cpp11()
         perftest_ZeroCopyPlugin.cxx"
     fi
 
-    local USE_RTIDDSGEN_ENV_VAR=True
-    local RTIDDSGEN_STANDARD=DDS_PSM_Cxx
+    export USE_RTIDDSGEN_ENV_VAR=True
+    export RTIDDSGEN_STANDARD=DDS_PSM_Cxx
 
     ##############################################################################
     # Generate files for srcCpp11
@@ -1796,6 +1796,9 @@ function build_cpp11()
 
     # Removing README files if those are created by rtiddsgen
     rm -rf "${modern_cpp_folder}/README_${platform}.txt"
+
+    unset USE_RTIDDSGEN_ENV_VAR
+    unset RTIDDSGEN_STANDARD
 }
 
 function build_java()
