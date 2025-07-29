@@ -165,6 +165,7 @@ IF (NOT RTIME_CERT)
             rti_me_whsm${RTI_LIB_SUFFIX}
             rti_me_discdpse${RTI_LIB_SUFFIX}
             rti_me_discdpde${RTI_LIB_SUFFIX}
+            rti_me_ddsxtypes${RTI_LIB_SUFFIX}
                 )
 
         IF(arch_is_pi)
