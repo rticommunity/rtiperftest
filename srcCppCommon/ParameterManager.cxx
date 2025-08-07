@@ -1565,7 +1565,9 @@ void ParameterManager::initialize()
     securePSK->set_type(T_STR);
     securePSK->set_extra_argument(YES);
     securePSK->set_group(SECURE);
-    securePSK->set_supported_middleware(Middleware::RTIDDSPRO);
+    securePSK->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("securePSK", securePSK);
 
     // This one will be used both in Static and Dynamic. In static will be yet
@@ -1577,7 +1579,9 @@ void ParameterManager::initialize()
     securePSKAlgorithm->set_type(T_STR);
     securePSKAlgorithm->set_extra_argument(YES);
     securePSKAlgorithm->set_group(SECURE);
-    securePSKAlgorithm->set_supported_middleware(Middleware::RTIDDSPRO);
+    securePSKAlgorithm->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("securePSKAlgorithm", securePSKAlgorithm);
 
 

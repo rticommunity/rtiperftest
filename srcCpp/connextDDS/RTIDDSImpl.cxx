@@ -201,10 +201,10 @@ void RTIDDSImpl<T>::shutdown()
 
         registry->unregister("_udp", NULL, NULL);
       #ifdef RTI_SECURE_PERFTEST
-        if (!SECCORE_SecurePluginFactory::unregister_suite(
-                    registry,
-                    SECCORE_DEFAULT_SUITE_NAME)) {
-            //printf("failed to unregister security plugins\n");
+        struct DDS_PskServiceFactoryProperty psk_svc_property = DDS_PskServiceFactoryProperty_INITIALIZER;
+        if(!DDS_PskLibrary_unregister(registry->get_c_registry(), &psk_svc_property)) {
+            //printf("failed to unregister psk library \n");
+            return;
         }
       #endif
     }

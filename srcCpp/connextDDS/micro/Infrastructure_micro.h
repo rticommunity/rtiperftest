@@ -18,8 +18,9 @@
 #include "Infrastructure_common.h"
 
 #ifdef RTI_SECURE_PERFTEST
-  #include "sec_core/sec_core_cpp.h"
   #include "PerftestSecurity.h"
+  #include "dds_psk/dds_psk.h"
+  #include "rti_me_psl/pskpsl/psk_ossl_transform.h"
 #endif
 
 #ifdef RTI_WIN32
@@ -31,11 +32,13 @@
 
 #ifndef RTI_USE_CPP_11_INFRASTRUCTURE
 
-#if (RTIME_DDS_VERSION_MAJOR < 4) || \
-    (RTIME_DDS_VERSION_MAJOR == 4 && RTIME_DDS_VERSION_MINOR < 2)
-    #define RTI_NTP_TIME_COMPATIBLE 1
-#else
+#if (RTIME_DDS_VERSION_MAJOR == 4 && RTIME_DDS_VERSION_MINOR >= 2) || \
+    (RTIME_DDS_VERSION_MAJOR == 2 && RTIME_DDS_VERSION_MINOR == 4 && \
+        RTIME_DDS_VERSION_REVISION == 14 && RTIME_DDS_VERSION_RELEASE >= 3) || \
+    (RTIME_DDS_VERSION_MAJOR > 4)
     #define RTI_NTP_TIME_COMPATIBLE 0
+#else
+    #define RTI_NTP_TIME_COMPATIBLE 1
 #endif
 
 /********************************************************************/
@@ -68,18 +71,7 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock {
 
   private:
-  #ifndef RTI_WIN32
-    #if RTI_NTP_TIME_COMPATIBLE
-    OSAPI_NtpTime clockTimeAux;
-    RTI_INT32 clockSec;
-    RTI_UINT32 clockUsec;
-    #else
-    OSAPI_SystemTime clockTimeAux;
-    RTI_UINT32 clockSec;
-    RTI_UINT32 clockUsec;
-    #endif
-
-  #else
+  #ifdef RTI_WIN32
     double _frequency;
   #endif
 

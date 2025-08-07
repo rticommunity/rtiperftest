@@ -802,25 +802,12 @@ function additional_defines_calculation_micro()
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
         additional_defines="${additional_defines} -DRTI_SECURE_PERFTEST"
 
-        if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
-            echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
+        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
+            additional_defines="${additional_defines} -DRTI_LW_SECURE_PERFTEST"
         else
-            if [ "${RTI_CRYPTOHOME}" == "" ]; then
-                # In this case, we are going to try to use the one that should be
-                # under $NDDSHOME/third_party/<crypto_lib_dir>/<arch>, we will check if
-                # it exists.
-                export RTI_CRYPTOHOME="$NDDSHOME/third_party/${RTI_CRYPTO_LIB_DIRECTORY}${RTI_CRYPTO_LIB_DIRECTORY_VERSION}/${platform}"
-                if [ ! -f "${RTI_CRYPTOHOME}" ]; then
-                    # Well, we tried...
-                    echo -e "${ERROR_TAG} In order to link statically using the "\
-                        "Security Plugins you need to also provide a path to a"\
-                        "crypto library. Set either the OpenSSL home path by"\
-                        "using the --openssl-home option or the WolfSSL home path"\
-                        "by using the --wolfssl-home option"
-                    exit -1
-                fi
-                echo -e "${INFO_TAG} Using the CRYPTO LIBS FROM openSSL from: \"${RTI_CRYPTOHOME}\""
-            fi
+            echo -e "${ERROR_TAG} Micro does not support full security. The"\
+                "PSK feature can be used with the --lightWeightSecurity option."
+            exit -1
         fi
     fi
 }
