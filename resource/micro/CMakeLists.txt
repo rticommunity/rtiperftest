@@ -211,7 +211,7 @@ IF (${RTIME_LIGHTWEIGHT_SECURE})
         SET(SSL_LIBS crypto)
 
         IF (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-            LIST(INSERT SSL_LIBS 2 dl)
+            LIST(APPEND SSL_LIBS dl)
         ENDIF()
 
     ENDIF()
