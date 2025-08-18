@@ -201,8 +201,7 @@ void RTIDDSImpl<T>::shutdown()
 
         registry->unregister("_udp", NULL, NULL);
       #ifdef RTI_SECURE_PERFTEST
-        struct DDS_PskServiceFactoryProperty psk_svc_property = DDS_PskServiceFactoryProperty_INITIALIZER;
-        if(!DDS_PskLibrary_unregister(registry->get_c_registry(), &psk_svc_property)) {
+        if(!DDS_PskLibrary_unregister(registry->get_c_registry(), NULL)) {
             //printf("failed to unregister psk library \n");
             return;
         }
