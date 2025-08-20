@@ -1297,7 +1297,7 @@ bool PerftestConfigureSecurity(
 
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
+                "dds.sec.crypto.rtps_psk_secret_passphrase",
                 parameterManager->get<std::string>("securePSK").c_str())) {
             return false;
         }
@@ -1305,7 +1305,7 @@ bool PerftestConfigureSecurity(
         if (parameterManager->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
             if (!addPropertyToParticipantQos(
                     qos,
-                    "com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind",
+                    "dds.sec.access.rtps_psk_protection_kind",
                     "SIGN")) {
                 return false;
             }
