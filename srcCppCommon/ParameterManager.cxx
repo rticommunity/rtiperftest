@@ -866,14 +866,14 @@ void ParameterManager::initialize()
     pubRatebps->set_command_line_argument("-pubRatebps", "<bps>:<method>");
     pubRatebps->set_description(
             "Limit the throughput to the specified number\n"
-            "of samples/s. Default 0 (don't limit)\n"
+            "of bits/s. Default 0 (don't limit)\n"
             "[OPTIONAL] Method to control the throughput can be:\n"
             "'spin' or 'sleep'.\nDefault method: spin");
     pubRatebps->set_type(T_PAIR_NUMERIC_STR);
     pubRatebps->set_extra_argument(YES);
     pubRatebps->set_group(PUB);
     pubRatebps->set_supported_middleware(Middleware::ALL);
-    pubRatebps->set_range(1, 10000000);
+    pubRatebps->set_range(1, LONG_MAX);
     pubRatebps->add_valid_str_value("sleep");
     pubRatebps->add_valid_str_value("spin");
     create("pubRatebps", pubRatebps);
