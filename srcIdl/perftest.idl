@@ -7,6 +7,10 @@
 #include "custom.idl"
 #endif
 
+/* This is the max size across ConnextDDS Pro and ConnextDDS Micro/Cert,
+ * using a sequence larger than this would imply that when adding the headers,
+ * the packet would exceed the maximum UDPv4 size of a packet.
+  */
 const long MAX_BOUNDED_SEQ_SIZE = 65448;
 #ifndef RTI_FLATDATA_MAX_SIZE
   const long RTI_FLATDATA_MAX_SIZE = 10485760; // 10MB
