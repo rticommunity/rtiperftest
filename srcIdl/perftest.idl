@@ -11,7 +11,7 @@
  *This is the max size across ConnextDDS Pro and ConnextDDS Micro/Cert,
  * using a sequence larger than this would imply that when adding the headers,
  * the packet would exceed the maximum UDPv4 size of a packet.
-  */
+ */
 #if defined(PERFTEST_RTI_PRO)
 const long MAX_BOUNDED_SEQ_SIZE = 65470;
 #else
