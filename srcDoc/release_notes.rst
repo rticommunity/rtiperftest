@@ -10,7 +10,7 @@ What's New in develop
 ~~~~~~~~~~~~~~~~~~~~~
 
 Added compatibility with Connext Micro 2.4.14.3 |newTag|
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The maximum sequence size has been reduced for Micro to ensure it does not exceed
 the maximum UDPv4 packet size, making Perftest compatible with Micro 2.4.14.3.
