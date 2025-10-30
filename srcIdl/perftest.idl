@@ -8,7 +8,7 @@
 #endif
 
 /*
- * This is the max size across ConnextDDS Pro and ConnextDDS Micro/Cert,
+ * This is the max size across Connext Pro and Connext Micro/Cert,
  * using a sequence larger than this would imply that when adding the headers,
  * the packet would exceed the maximum UDPv4 size of a packet.
  */
