@@ -185,7 +185,7 @@ pipeline {
     parameters {
         string(
             name: 'ARTIFACTORY_PATH',
-            defaultValue: 'connext-ci/pro/release7.5.0.0/BUILD_7.5.0.0_20250313T000000Z_RTI_REL',
+            defaultValue: '',
             description: 'Path where connext will be pulled i.e. connext-ci/pro/release7.5.0.0/BUILD_7.5.0.0_20250313T000000Z_RTI_REL/installers',
             trim: true
         )
@@ -203,7 +203,7 @@ pipeline {
         )
         string(
             name: 'OPENSSL_VERSION',
-            defaultValue: '3.5.0',
+            defaultValue: '',
             description: 'OpenSSL version to use for building perftest.',
             trim: true
         )
