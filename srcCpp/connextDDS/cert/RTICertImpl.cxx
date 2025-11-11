@@ -6,7 +6,10 @@
 #include "perftest_cpp.h"
 #include "RTICertImpl.h"
 
+#include <sys/socket.h>  
+#include <net/if.h>
 #include <ifaddrs.h>
+#include <netinet/in.h>   
 #include <arpa/inet.h>
 
 /**********************************
@@ -2415,35 +2418,27 @@ namespace {
     }
 #endif
 
-    RTI_UINT32 get_interface_address(const char *interface_name)
-    {
-        struct ifaddrs * ifAddrStruct = NULL;
-        struct ifaddrs * ifa = NULL;
-        void * tmpAddrPtr = NULL;
-        RTI_UINT32 address_hex = 0;
+RTI_UINT32 get_interface_address(const char *interface_name)
+{
+    struct ifaddrs *ifs = NULL, *ifa = NULL;
+    RTI_UINT32 addr_host = 0; 
 
-        getifaddrs(&ifAddrStruct);
+    if (getifaddrs(&ifs) != 0) return 0;
 
-        for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
-            if (!ifa->ifa_addr) {
-                continue;
-            }
-            if (strcmp(ifa->ifa_name, interface_name) != 0) {
-                continue;
-            }
-#ifndef RTI_QNX
-            if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IP4
-#endif
-                // is a valid IP4 Address
-                tmpAddrPtr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-                address_hex = ntohl(((struct in_addr *)tmpAddrPtr)->s_addr);
-#ifndef RTI_QNX
-            }
-#endif
-        }
-        if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
-        return address_hex;
+    for (ifa = ifs; ifa; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) continue;
+        if (strcmp(ifa->ifa_name, interface_name) != 0) continue;
+        if (ifa->ifa_addr->sa_family != AF_INET) continue;
+
+        struct sockaddr_in *sin = (struct sockaddr_in *)ifa->ifa_addr;
+        addr_host = ntohl(sin->sin_addr.s_addr);
+        break; 
     }
+
+    freeifaddrs(ifs);
+    return addr_host;
+}
+
 
 #ifndef RTI_CERT_IS_PI
     bool configureUDPv4Transport(
