@@ -2417,15 +2417,33 @@ namespace {
     }
 #endif
 
+#ifndef RTI_INVALID_INTERFACE_ADDRESS
+#define RTI_INVALID_INTERFACE_ADDRESS ((RTI_UINT32)0)
+#endif
+    /* Returns IPv4 address in host byte order.
+    * Returns RTI_INVALID_INTERFACE_ADDRESS (0) if:
+    *  - getifaddrs() fails
+    *  - the interface does not exist
+    *  - the interface exists but has no AF_INET address
+    *  - the AF_INET address is 0.0.0.0
+    */
     RTI_UINT32 get_interface_address(const char *interface_name)
     {
         struct ifaddrs * ifAddrStruct = NULL;
         struct ifaddrs * ifa = NULL;
         void * tmpAddrPtr = NULL;
-        RTI_UINT32 address_hex = 0;
+        RTI_UINT32 address_hex = RTI_INVALID_INTERFACE_ADDRESS;
 
-        if(getifaddrs(&ifAddrStruct) != 0) {
-            return 0;
+        if (interface_name == NULL) {
+            fprintf(stderr, "get_interface_address: interface_name is NULL\n");
+            return RTI_INVALID_INTERFACE_ADDRESS;
+        }
+        
+        if (getifaddrs(&ifAddrStruct) != 0) {
+            fprintf(stderr,
+                    "getifaddrs failed for interface '%s'\n",
+                    interface_name ? interface_name : "<null>");
+            return RTI_INVALID_INTERFACE_ADDRESS;
         }
 
         for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
@@ -2444,9 +2462,13 @@ namespace {
             break;
         }
         freeifaddrs(ifAddrStruct);
+        if (address_hex == RTI_INVALID_INTERFACE_ADDRESS) {
+            fprintf(stderr,
+                    "Interface '%s' not found or has no IPv4 address\n",
+                    interface_name ? interface_name : "<null>");
+        }
         return address_hex;
     }
-
 
 #ifndef RTI_CERT_IS_PI
     bool configureUDPv4Transport(
