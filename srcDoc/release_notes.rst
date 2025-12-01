@@ -41,7 +41,7 @@ Communication issue between Publisher and Subscriber when using two different QN
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The get_interface_address() function in perftest was returning an incorrect IP address on QNX.
-This function is used before registering the interface, so we were effectively using a wrong IP
+This function is used before registering the interface, so Perftest was effectively using the wrong IP
 during the registration process.
 
 
