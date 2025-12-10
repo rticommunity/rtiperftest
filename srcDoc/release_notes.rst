@@ -37,6 +37,14 @@ names have been updated as *RTI Connext* no longer supports the old names.
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+Communication issue between Publisher and Subscriber when using two different QNX boards |fixedTag|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The ``get_interface_address()`` function in Perftest was returning an incorrect IP address on QNX.
+This function is used before registering the interface, so Perftest was effectively using the wrong IP
+during the registration process.
+
+
 Crash when no pong samples received in latency test |fixedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
