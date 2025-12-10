@@ -5,7 +5,7 @@
 Copyrights and Notices
 **********************
 
-© 2012-2022 Real-Time Innovations, Inc. 
+© 2012-|current_year| Real-Time Innovations, Inc. 
 All rights reserved. 
 |today|
 

@@ -14,7 +14,7 @@ created by *Code Generator* to compile its code.
 can generate an example, except for those in which *rtiddsgen* doesn't
 generate regular makefiles or *Visual Studio Solutions* but specific
 project files, as is the case with *Android* and *iOS* platforms. See
-the `Core Libraries Release Notes, Supported Operating Systems <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/release_notes/index.htm#release_notes/System_Requirements.htm>`_, for a list of
+the `Core Libraries Release Notes, Supported Operating Systems <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/release_notes/index.htm#release_notes/System_Requirements.htm>`_, for a list of
 supported platforms.
 
 Some platforms compile with *RTI Perftest's* out of-the-box code and
