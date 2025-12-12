@@ -316,7 +316,7 @@ Test Parameters for Publishing and Subscribing Applications
        Some QoS values are 'hard-coded' in the application.
        Therefore, setting them in the XML file has no effect.
        See comments in ``perftest_qos_profiles.xml``, as well as in 
-       `Configuring QoS with XML<https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/XMLConfiguration.htm>`__ 
+       `Configuring QoS with XML <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/XMLConfiguration.htm>`__ 
        in the *RTI Connext Core Libraries User's Manual*.
 
 -  ``-qosLibrary <library name>``
@@ -1282,7 +1282,7 @@ To avoid the cost of blocking, consider the following:
 
 For more information on the send queue size, see information about the
 ``max_samples`` field in
-`RESOURCE_LIMITS QosPolicy<https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/RESOURCE_LIMITS_QosPolicy.htm>`__
+`RESOURCE_LIMITS QosPolicy <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/RESOURCE_LIMITS_QosPolicy.htm>`__
 in the *RTI Connext Core Libraries User's Manual*.
 
 .. _Number of Iterations vs. Latency Count:
@@ -1355,9 +1355,9 @@ in order to achieve better (smaller) latency results, an approach where we set
 ``-waitsetDelayUsec 0`` and ``-waitsetEventCount 1`` is recommended.
 
 For more information, see
-`Receive Threads<https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Receive_Threads.htm>`__
+`Receive Threads <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Receive_Threads.htm>`__
 and 
-`Conditions and WaitSets<https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Conditions_and_WaitSets.htm>`__
+`Conditions and WaitSets <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Conditions_and_WaitSets.htm>`__
 in the *RTI Connext Core Libraries User's Manual*.
 
 

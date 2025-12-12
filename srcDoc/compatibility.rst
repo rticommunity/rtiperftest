@@ -35,7 +35,7 @@ repository:
 
     git checkout release/2.0 -- resource/secure
 
-*RTI Connext DDS 6.0.1 Security Plugins* Changes
+RTI Connext DDS 6.0.1 Security Plugins Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to add compatibility for *RTI Connext DDS 6.0.1* including the
@@ -109,7 +109,7 @@ Known Issues
 Compilation Errors in Microsoft Visual Studio 2017 Express
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Due to `this issue <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/code_generator/release_notes/known_issues.html#classes-and-types-defined-in-some-net-namespaces-cannot-be-used-to-define-user-data-types>`__
+Due to `this issue <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/code_generator/release_notes/known_issues.html#examples-and-generated-code-for-visual-studio-2017-and-later-may-not-compile-error-msb8036>`__
 documented in the Known Issues for *RTI Code Generator*, when compiling with
 *Visual Studio 2017 Express*, you need to set the `RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION`
 as follows to avoid compilation errors:
