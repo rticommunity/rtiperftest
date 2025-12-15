@@ -184,7 +184,8 @@ Test Parameters for Publishing and Subscribing Applications
 
    For an introduction to the RTI durability model, see
    `Basic QoS <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/getting_started_guide/cpp11/intro_qos.html>`__
-   and `Mechanisms for Achieving Information Durability and Persistence <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/MechanismsForDurabilityAndPersistence.htm>`__.
+   in the *RTI Connext Getting Started* and 
+   `Mechanisms for Achieving Information Durability and Persistence <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/MechanismsForDurabilityAndPersistence.htm>`__.
    in the *RTI Connext Core Libraries User's Manual*. 
 
    ``PERSISTENT`` is not available when compiling against *Connext Micro*.
