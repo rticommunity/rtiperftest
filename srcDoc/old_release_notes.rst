@@ -179,7 +179,7 @@ more information about the parameters.
 Support for new WAN transport |newTag|
 ++++++++++++++++++++++++++++++++++++++
 
-*RTI Perftest* now supports testing the new WAN transport in the *Tradditional C++
+*RTI Perftest* now supports testing the new WAN transport in the *Traditional C++
 API implementation*. It can be accessed as a new `-transport` command-line option
 argument. See :ref:`section-command_examples` for an example of its
 usage. To use this option, the ``-transportPublicAddress`` command-line option

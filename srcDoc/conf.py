@@ -44,7 +44,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'RTI Perftest'
-copyright = u'2022, Real-Time Innovations, Inc'
+import datetime
+year = datetime.date.today().year
+copyright = f'2012-{year}, Real-Time Innovations, Inc'
 author = u'Real-Time Innovations, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -150,3 +152,7 @@ latex_documents = [
 ]
 
 pdf_documents = [(master_doc, u'RTI Perftest Documentation', u'RTI Perftest Documentation', u'Real-Time Innovations, Inc.'),]
+
+rst_prolog = """
+.. |current_year| replace:: {0}
+""".format(year)
