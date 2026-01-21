@@ -196,8 +196,10 @@ IF (${RTIME_LIGHTWEIGHT_SECURE})
                 SET(_cfg_link "static")
             ENDIF()
 
+            # Hardcoded path to the OpenSSL libraries provided with RTI Connext Micro
+            # Adjust if necessary when updating the openssl version
             SET(OPENSSLHOME
-                "${RTIMEHOME}/third_party/openssl-3.5.0/${RTIME_TARGET_NAME}/${_cfg_type}-${_cfg_link}"
+                "${RTIMEHOME}/third_party/openssl-3.5.4/${RTIME_TARGET_NAME}/${_cfg_type}-${_cfg_link}"
             )
         ENDIF()
     ENDIF()

@@ -801,6 +801,11 @@ function additional_defines_calculation_micro()
 
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
         additional_defines="${additional_defines} -DRTI_SECURE_PERFTEST"
+        
+        find_ssl_libraries "openssl-3"
+        if [[ "${RTI_CRYPTOHOME}" != "" ]]; then
+            export OPENSSLHOME="${RTI_CRYPTOHOME}/${RELEASE_DEBUG}-${STATIC_DYNAMIC}"
+        fi
 
         if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
             additional_defines="${additional_defines} -DRTI_LW_SECURE_PERFTEST"
