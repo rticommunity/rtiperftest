@@ -2653,9 +2653,13 @@ namespace {
     }
 }
 
+template class RTICertImplBase<TestData_t, TestData_tSeq>;
+template class RTICertImplBase<TestDataKeyed_t, TestDataKeyed_tSeq>;
 template class RTICertImpl<TestData_t, TestData_tSeq>;
 template class RTICertImpl<TestDataKeyed_t, TestDataKeyed_tSeq>;
 #ifdef RTI_ZEROCOPY_AVAILABLE
+template class RTICertImplBase<TestData_Cert_ZCopy_t, TestData_Cert_ZCopy_tSeq>;
+template class RTICertImplBase<TestDataKeyed_Cert_ZCopy_t, TestDataKeyed_Cert_ZCopy_tSeq>;
 template class RTICertImpl_ZCopy<TestData_Cert_ZCopy_t, TestData_Cert_ZCopy_tSeq>;
 template class RTICertImpl_ZCopy<TestDataKeyed_Cert_ZCopy_t, TestDataKeyed_Cert_ZCopy_tSeq>;
 #endif
