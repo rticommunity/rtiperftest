@@ -662,6 +662,8 @@ class RTIPublisherBase : public IMessagingWriter
     DDS_InstanceHandle_t *_instance_handles;
     PerftestSemaphore *_pongSemaphore;
     long _instancesToBeWritten;
+    unsigned int _lastSequenceNumber;
+    
   #ifdef RTI_CUSTOM_TYPE
     unsigned int _lastMessageSize;
     unsigned int _minCustomTypeSerializeSize;
@@ -830,6 +832,10 @@ class RTIPublisherBase : public IMessagingWriter
         // Not supported in Micro
         return 0;
       #endif
+    }
+
+    unsigned int get_last_sequence_number() {
+        return _lastSequenceNumber;
     }
 
     void wait_for_ack(int sec, unsigned int nsec) {
@@ -1027,6 +1033,7 @@ class RTIPublisher : public RTIPublisherBase<T>
             fprintf(stderr,"Write error %d.\n", retcode);
             return false;
         }
+        this->_lastSequenceNumber = message.seq_num;
 
         return true;
     }
@@ -1225,6 +1232,8 @@ public:
         } else {
             this->_writer->write(*sample, this->getCftInstanceHandle());
         }
+
+        this->_lastSequenceNumber = message.seq_num;
 
         return true;
     }
@@ -1500,6 +1509,7 @@ class RTIDynamicDataPublisher: public RTIPublisherBase<DDS_DynamicData>
         }
       #endif
         this->_lastMessageSize = message.size;
+        this->_lastSequenceNumber = message.seq_num;
 
         if (!isCftWildCardKey) {
             retcode = this->_writer->write(data, this->_instance_handles[key]);

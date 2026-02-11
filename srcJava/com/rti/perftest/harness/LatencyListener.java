@@ -36,7 +36,9 @@ import com.rti.perftest.TestMessage;
     private int   _lastDataLength = 0;
     private int[] _latencyHistory = null;
     private int   _clockSkewCount = 0;
+    private int   _unexpectedPongsCount = 0;
     private int   _num_latency = 0;
+    private boolean _latencyTest = false;
 
     private IMessagingReader _reader = null;
     private IMessagingWriter _writer = null;
@@ -51,21 +53,23 @@ import com.rti.perftest.TestMessage;
 
     // --- Constructors: -----------------------------------------------------
 
-    public LatencyListener(int num_latency, IMessagingWriter writer) {
+    public LatencyListener(int num_latency, IMessagingWriter writer, boolean latencyTest) {
         if (num_latency > 0) {
             _latencyHistory = new int[num_latency];
             _num_latency = num_latency;
         }
         _writer = writer;
+        _latencyTest = latencyTest;
     }
 
-    public LatencyListener(IMessagingReader reader, IMessagingWriter writer, int num_latency) {
+    public LatencyListener(IMessagingReader reader, IMessagingWriter writer, int num_latency, boolean latencyTest) {
         if (num_latency > 0) {
             _latencyHistory = new int[num_latency];
             _num_latency = num_latency;
         }
         _reader = reader;
         _writer = writer;
+        _latencyTest = latencyTest;
     }
 
 
@@ -88,6 +92,7 @@ import com.rti.perftest.TestMessage;
         _latencyMin = PerfTest.LATENCY_RESET_VALUE;
         _latencyMax = 0;
         _count = 0;
+        _unexpectedPongsCount = 0;
     }
     // --- From IMessagingCB: ------------------------------------------------
 
@@ -116,6 +121,14 @@ import com.rti.perftest.TestMessage;
         long usec = message.timestamp_usec & (~0L >>> 32);
         long sentTime = (sec << 32) | usec;     // may be negative!
         int  latency;
+
+        if (_latencyTest
+            && message.seq_num != _writer.getLastSequenceNumber()) {
+            ++_unexpectedPongsCount;
+            System.err.println(
+                "Received an unexpected pong response. (See summary for more information)");
+            return;
+        }
 
         if (now >= sentTime) {
             latency = (int)(now - sentTime);
@@ -233,6 +246,15 @@ import com.rti.perftest.TestMessage;
                 _latencyHistory,
                 _count,
                 outputCpu);
+
+        if (_unexpectedPongsCount != 0) {
+            System.out.printf(
+                "\n[INFO] Received %1$d unexpected pong response(s).\n"
+                + "This occurs when a pong is received after the timeout for its ping.\n"
+                + "The resulting RTTs for these ping-pong messages are excluded from the\n"
+                + "latency calculations since are likely results of unknown network behaviors.\n",
+                _unexpectedPongsCount);
+        }
 
         System.out.flush();
         _latencySum = 0;

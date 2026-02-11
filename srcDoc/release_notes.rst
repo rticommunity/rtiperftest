@@ -37,6 +37,14 @@ names have been updated as *RTI Connext* no longer supports the old names.
 What's Fixed in develop
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+Unexpected pong responses now reported in latency tests |fixedTag|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Latency tests now notify you when unexpected pong responses are received and provide a 
+detailed summary message. Previously, these responses were included in latency statistics, 
+which could result in inaccurate measurements.
+
+
 Communication issue between Publisher and Subscriber when using two different QNX boards |fixedTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

@@ -486,6 +486,7 @@ protected:
     long _instancesToBeWritten;
     bool _isReliable;
     ParameterManager *_PM;
+    unsigned int _lastSequenceNumber;
 
      /*
       * Returns the instance handler for the content filtered topic.
@@ -511,7 +512,8 @@ public:
             _useSemaphore(useSemaphore),
             _pongSemaphore(pongSemaphore),
             _instancesToBeWritten(instancesToBeWritten),
-            _PM(PM)
+            _PM(PM),
+            _lastSequenceNumber(0)
     {
         using namespace dds::core::policy;
 
@@ -559,6 +561,10 @@ public:
 
     unsigned int get_pulled_sample_count() {
         return (unsigned int)_writer->datawriter_protocol_status().pulled_sample_count().total();
+    }
+
+    unsigned int get_last_sequence_number() {
+        return _lastSequenceNumber;
     }
 
     void wait_for_ack(long sec, unsigned long nsec) {
@@ -645,6 +651,7 @@ public:
         } else {
             this->_writer.write(this->data, this->getCftInstanceHandle());
         }
+        this->_lastSequenceNumber = message.seq_num;
         return true;
     }
 };
@@ -761,6 +768,8 @@ public:
               this->_writer.write(*sample, this->getCftInstanceHandle());
           }
 
+          this->_lastSequenceNumber = message.seq_num;
+
           return true;
       }
   };
@@ -866,6 +875,8 @@ public:
         } else {
             this->_writer.write(this->data, this->getCftInstanceHandle());
         }
+
+        this->_lastSequenceNumber = message.seq_num;
 
         return true;
     }

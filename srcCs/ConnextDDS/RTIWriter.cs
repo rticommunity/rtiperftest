@@ -21,6 +21,7 @@ namespace PerformanceTest
         protected Semaphore pongSemaphore;
         protected int instancesToBeWritten = -1;
         protected bool reliable = false;
+        protected long lastSequenceNumber = 0;
 
         public RTIWriter(
                 DataWriter<T> writer,
@@ -73,6 +74,8 @@ namespace PerformanceTest
                 Console.Error.Write("Write error {0}\n", ex);
                 return false;
             }
+
+            lastSequenceNumber = message.seqNum;
 
             return true;
         }
@@ -139,6 +142,11 @@ namespace PerformanceTest
         public long GetPulledSampleCount()
         {
             return writer.DataWriterProtocolStatus.PulledSampleCount.Value;
+        }
+
+        public long GetLastSequenceNumber()
+        {
+            return lastSequenceNumber;
         }
 
         public void WaitForAck(TimeSpan timeSpan)
