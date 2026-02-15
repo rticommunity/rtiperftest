@@ -255,7 +255,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
     TestData_t _data;
     RTIOsapiSemaphore *_pongSemaphore;
     ParameterManager *_PM;
-    unsigned int _lastSequenceNumber;
 
     /* --- Buffers management --- */
     unsigned int _batchBufferSize;
@@ -263,8 +262,7 @@ class RTIRawTransportPublisher : public IMessagingWriter {
 
   public:
     RTIRawTransportPublisher(RTIRawTransportImpl *parent)
-            : _parent(parent),
-              _lastSequenceNumber(0)
+            : _parent(parent)
     {
         _plugin = parent->get_plugin();
         _peersDataList = parent->get_peers_data();
@@ -441,8 +439,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
             flush();
         }
 
-        _lastSequenceNumber = message.seq_num;
-
         return true;
     }
 
@@ -488,10 +484,6 @@ class RTIRawTransportPublisher : public IMessagingWriter {
         /* --- Dummy Function --- */
         return 0;
     };
-
-    unsigned int get_last_sequence_number() {
-        return _lastSequenceNumber;
-    }
 
     void wait_for_ack(int sec, unsigned int nsec) {
         /* --- Dummy Function --- */

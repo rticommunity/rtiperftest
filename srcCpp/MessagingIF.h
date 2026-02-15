@@ -146,9 +146,6 @@ class IMessagingWriter
     virtual unsigned int get_sample_count_peak() {
         return 0;
     };
-    virtual unsigned int get_last_sequence_number() {
-        return 0;
-    };
     virtual void wait_for_ack(int /*sec*/, unsigned int /*nsec*/) {
     };
 #ifdef RTI_CUSTOM_TYPE

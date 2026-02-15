@@ -1248,14 +1248,12 @@ class LatencyListener : public IMessagingCB
     int                last_data_length;
     unsigned long     *_latency_history;
     unsigned long      clock_skew_count;
-    unsigned long      unexpected_pongs_count;
     unsigned int       _num_latency;
     IMessagingWriter *_writer;
 
     ParameterManager *_PM;
     PerftestPrinter *_printer;
     int  subID;
-    bool _latencyTest;
     bool printIntervals;
     bool showCpu;
 
@@ -1265,7 +1263,6 @@ class LatencyListener : public IMessagingCB
         latency_min = perftest_cpp::LATENCY_RESET_VALUE;
         latency_max = 0;
         count = 0;
-        unexpected_pongs_count = 0;
     }
 
  public:
@@ -1286,8 +1283,6 @@ class LatencyListener : public IMessagingCB
         latency_max = 0;
         last_data_length = 0;
         clock_skew_count = 0;
-        unexpected_pongs_count = 0;
-        _latencyTest = PM.get<bool>("latencyTest");
 
         if (num_latency > 0)
         {
@@ -1361,15 +1356,6 @@ class LatencyListener : public IMessagingCB
 
         sec = message.timestamp_sec;
         usec = message.timestamp_usec;
-
-        if (_latencyTest
-            && message.seq_num != _writer->get_last_sequence_number()) {
-            ++unexpected_pongs_count;
-            fprintf(stderr,
-                "Received an unexpected pong response. (See summary for more information)\n");
-            return;
-        }
-
         sentTime = ((unsigned long long) sec << 32) | (unsigned long long) usec;
 
         if (now >= sentTime) {
@@ -1477,16 +1463,6 @@ class LatencyListener : public IMessagingCB
             fflush(stderr);
         }
 
-        if (unexpected_pongs_count != 0) {
-            fprintf(stderr,
-                    "\n[INFO] Received %lu unexpected pong response(s).\n"
-                    "This occurs when a pong is received after the timeout for its ping.\n"
-                    "The resulting RTTs for these ping-pong messages are excluded from the\n"
-                    "latency calculations since are likely results of unknown network behaviors.\n",
-                    unexpected_pongs_count);
-            fflush(stderr);
-        }
-
         // Before Sorting the array, it is the right time to print into a file
         // if we have to.
         if (_PM->is_set("latencyFile")) {
@@ -1540,7 +1516,6 @@ class LatencyListener : public IMessagingCB
         latency_max = 0;
         count = 0;
         clock_skew_count = 0;
-        unexpected_pongs_count = 0;
     }
 };
 

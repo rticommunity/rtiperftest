@@ -1056,7 +1056,7 @@ public final class PerfTest {
             // Check if using callbacks or read thread
             if (!_useReadThread) {
                 // create latency pong reader
-                reader_listener = new LatencyListener(num_latency,_latencyTest?writer:null, _latencyTest);
+                reader_listener = new LatencyListener(num_latency,_latencyTest?writer:null);
                 reader = _messagingImpl.createReader(LATENCY_TOPIC_NAME.VALUE, reader_listener);
                 if (reader == null)
                 {
@@ -1072,7 +1072,7 @@ public final class PerfTest {
                     System.err.print("Problem creating latency reader.\n");
                     return;
                 }
-                reader_listener = new LatencyListener(reader, _latencyTest?writer:null, num_latency, _latencyTest);
+                reader_listener = new LatencyListener(reader, _latencyTest?writer:null, num_latency);
 
                 final LatencyListener final_listener = reader_listener;
                 Thread thread = new Thread(

@@ -24,11 +24,9 @@ namespace PerformanceTest
         public bool EndTest { get; set; }
         private readonly uint[] latencyHistory;
         private uint clockSkewCount = 0;
-        private ulong unexpectedPongsCount = 0;
         private readonly IMessagingReader reader;
         private readonly IMessagingWriter writer;
         public CpuMonitor cpu = new CpuMonitor();
-        private readonly bool latencyTest;
         private int NumLatency => latencyHistory.Length;
 
         private void ResetLatencyCounters()
@@ -38,7 +36,6 @@ namespace PerformanceTest
             latencyMin = Perftest.LATENCY_RESET_VALUE;
             latencyMax = 0;
             count = 0;
-            unexpectedPongsCount = 0;
         }
 
         public LatencyListener(
@@ -50,8 +47,6 @@ namespace PerformanceTest
             this.parameters = parameters;
             this.writer = writer;
             this.printer = printer;
-            this.latencyTest = parameters.LatencyTest;
-            this.unexpectedPongsCount = 0;
             if (numLatency > 0)
             {
                 latencyHistory = new uint[numLatency];
@@ -85,14 +80,6 @@ namespace PerformanceTest
             if (message.Size == Perftest.INITIALIZE_SIZE || message.Size == Perftest.FINISHED_SIZE)
             {
                 return;
-            }
-
-            if (latencyTest && message.seqNum != writer.GetLastSequenceNumber())
-            {
-                Console.Error.WriteLine(
-                    $"Received an unexpected pong response with seqNum: {message.seqNum}. "
-                    + $"Expected: {writer.GetLastSequenceNumber()}");
-                ++unexpectedPongsCount;
             }
 
             sec = message.timestampSec;
@@ -243,16 +230,6 @@ namespace PerformanceTest
                     latencyHistory,
                     count,
                     outputCpu);
-
-            if (unexpectedPongsCount != 0)
-            {
-                Console.Error.Write(
-                    "\n[INFO] Received {0} unexpected pong response(s).\n"
-                    + "This occurs when a pong is received after the timeout for its ping.\n"
-                    + "The resulting RTTs for these ping-pong messages are excluded from the\n"
-                    + "latency calculations since are likely results of unknown network behaviors.\n",
-                    unexpectedPongsCount);
-            }
 
             latencySum = 0;
             latencySumSquare = 0;

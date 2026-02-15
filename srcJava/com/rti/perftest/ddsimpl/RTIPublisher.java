@@ -40,7 +40,6 @@ final class RTIPublisher<T> implements IMessagingWriter {
     private Semaphore _pongSemaphore = new Semaphore(0,true);
     private int _instancesToBeWritten = -1;
     private boolean _isReliable;
-    private long _lastSequenceNumber = 0;
 
     // -----------------------------------------------------------------------
     // Public Methods
@@ -107,8 +106,6 @@ final class RTIPublisher<T> implements IMessagingWriter {
         } finally {
             _typeHelper.bindataUnloan();
         }
-
-        _lastSequenceNumber = message.seq_num;
 
         return true;
     }
@@ -180,11 +177,6 @@ final class RTIPublisher<T> implements IMessagingWriter {
         DataWriterProtocolStatus status = new DataWriterProtocolStatus();
         this._writer.get_datawriter_protocol_status(status);
         return status.pulled_sample_count;
-    }
-
-    public long getLastSequenceNumber()
-    {
-        return _lastSequenceNumber;
     }
 
     public void waitForAck(int sec, int nsec) {

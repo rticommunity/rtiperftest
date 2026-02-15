@@ -16,7 +16,6 @@ namespace PerformanceTest
         bool WaitForPingResponse();
         bool WaitForPingResponse(TimeSpan timeout);
         long GetPulledSampleCount();
-        long GetLastSequenceNumber();
         void WaitForAck(TimeSpan timeSpan);
     }
 }

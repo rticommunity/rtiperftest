@@ -219,7 +219,6 @@ class RTITSSPublisher : public IMessagingWriter,
 private:
     PerftestSemaphore *_pong_semaphore;
     bool _is_reliable;
-    unsigned int _lastSequenceNumber;
 
     bool (TSSConnection<Type, TypedTS, TypedCB>::*_send_function)(const TestMessage&, bool);
 
@@ -242,7 +241,6 @@ public:
     unsigned int get_pulled_sample_count();
     unsigned int get_sample_count();
     unsigned int get_sample_count_peak();
-    unsigned int get_last_sequence_number();
 };
 
 template <class Type, class TypedTS, class TypedCB>

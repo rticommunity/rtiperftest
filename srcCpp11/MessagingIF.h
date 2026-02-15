@@ -91,9 +91,6 @@ class IMessagingWriter
     virtual unsigned int get_pulled_sample_count() {
         return -1;
     };
-    virtual unsigned int get_last_sequence_number() {
-        return 0;
-    };
     virtual void wait_for_ack(long /*sec*/, unsigned long /*nsec*/) {
     };
 };

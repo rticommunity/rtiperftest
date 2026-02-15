@@ -654,8 +654,7 @@ RTITSSPublisher<Type, TypedTS, TypedCB>::RTITSSPublisher(
                                                 num_instances,
                                                 instancesToBeWritten,
                                                 loaning),
-          _pong_semaphore(pongSemaphore),
-          _lastSequenceNumber(0)
+          _pong_semaphore(pongSemaphore)
 {
     DDS_DataWriterQos qos;
     DDS_DataWriterQos_initialize(&qos);
@@ -676,11 +675,7 @@ template <class Type, class TypedTS, class TypedCB>
 bool RTITSSPublisher<Type, TypedTS, TypedCB>::send(const TestMessage &message,
                                           bool isCftWildCardKey)
 {
-    bool result = (this->*_send_function)(message, isCftWildCardKey);
-    if (result) {
-        _lastSequenceNumber = message.seq_num;
-    }
-    return result;
+    return (this->*_send_function)(message, isCftWildCardKey);
 }
 
 template <class Type, class TypedTS, class TypedCB>
@@ -820,12 +815,6 @@ unsigned int RTITSSPublisher<Type, TypedTS, TypedCB>::get_sample_count_peak()
     // Not supported in Micro
     return 0;
 #endif
-}
-
-template <class Type, class TypedTS, class TypedCB>
-unsigned int RTITSSPublisher<Type, TypedTS, TypedCB>::get_last_sequence_number()
-{
-    return _lastSequenceNumber;
 }
 
 

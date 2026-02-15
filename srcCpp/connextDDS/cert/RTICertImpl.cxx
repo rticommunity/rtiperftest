@@ -470,7 +470,6 @@ protected:
     DDS_InstanceHandle_t *_instanceHandles;
     bool _isReliable;
     DDS_ReturnCode_t retCode;
-    unsigned int _lastSequenceNumber;
 
     long &getCftInstanceIndex() {
         return _numInstances;
@@ -489,8 +488,7 @@ public:
               _numInstances(num_instances),
               _instanceCounter(0),
               _instancesToBeWritten(instancesToBeWritten),
-              _isReliable(!_PM->is_set("bestEffort")),
-              _lastSequenceNumber(0)
+              _isReliable(!_PM->is_set("bestEffort"))
     {
         /* Adding one extra instance for MAX_CFT_VALUE */
         _instanceHandles = (DDS_InstanceHandle_t *) malloc(
@@ -577,11 +575,6 @@ public:
     {
         /* Not supported in Cert */
         return 0;
-    }
-
-    virtual unsigned int get_last_sequence_number() override
-    {
-        return _lastSequenceNumber;
     }
 
     virtual void wait_for_ack(int sec, unsigned int nsec) override
@@ -739,8 +732,6 @@ public:
         else std::cerr << ">> wrote sample " << this->_data->seq_num << std::endl;
 #endif
 
-        this->_lastSequenceNumber = message.seq_num;
-
         brc = DDS_OctetSeq_unloan(&_data->bin_data);
         CHECK_BOOL(brc, "DDS_OctetSeq_unloan");
 
@@ -894,8 +885,6 @@ public:
 #ifdef DEBUG_PING_PONG
         else std::cerr << ">> wrote sample " << data->seq_num << std::endl;
 #endif
-
-        this->_lastSequenceNumber = message.seq_num;
 
         return true;
     done:
