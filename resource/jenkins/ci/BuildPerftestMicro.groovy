@@ -115,7 +115,14 @@ void stashBundles(entry, architecture, zeroCopy) {
 
 List<Map<String, Closure>> generateBuildStages(Boolean zeroCopy) {
     Map<String, Closure> stages = [:]
-    BUILD_MATRIX.each { entry ->
+    List buildMatrix = BUILD_MATRIX
+    if (zeroCopy) {
+        buildMatrix = BUILD_MATRIX.findAll { entry ->
+            !entry.version.contains('2.4.14')
+        }
+    }
+
+    buildMatrix.each { entry ->
         entry.architectures.each { arch ->
             stages["${entry.version}-${arch}"] = {
                 stage("${entry.version}-${arch}") {
@@ -177,9 +184,7 @@ void buildPerftestMicro(entry, architecture, zeroCopy, isCert) {
     sh "cp -r ${sourceDir}/include ${targetDir}"
 
     sh "chmod +x ${targetDir}/rtiddsgen/scripts/rtiddsgen"
-    if (isCert) {
-        sh "chmod +x ${targetDir}/resource/scripts/rtime-make"
-    }
+    sh "chmod +x ${targetDir}/resource/scripts/rtime-make"
 
     List<String> zeroCopyFlags = ['--no-zeroCopy']
     if (zeroCopy) {
@@ -189,9 +194,11 @@ void buildPerftestMicro(entry, architecture, zeroCopy, isCert) {
             zeroCopyFlags += "--cert-zc-datalen ${datasize}"
         }
     }
+    
+    String useCertCodeFlag = !isCert && zeroCopy ? '--micro-use-cert-code' : ''
 
     for (zeroCopyFlag in zeroCopyFlags) {
-        sh "./build.sh --cpp-build ${entry.typeFlag} --rtimehome ${env.WORKSPACE}/${targetDir} --platform ${architecture} ${zeroCopyFlag}"
+        sh "./build.sh --cpp-build ${entry.typeFlag} --rtimehome ${env.WORKSPACE}/${targetDir} --platform ${architecture} ${zeroCopyFlag} ${useCertCodeFlag}"
     }
 
     stashBundles(entry, architecture, zeroCopy)
@@ -203,7 +210,14 @@ void uploadBundle(entry, architecture) {
     String bundleNameZC = 'rti-perftest-zc'
 
     unstash "${bundleName}-${entry.version}-${architecture}"
-    unstash "${bundleNameZC}-${entry.version}-${architecture}"
+
+    Boolean isMicro2_14 = entry.version?.contains('2.4.14')
+    
+    if (!isMicro2_14) {
+        unstash "${bundleNameZC}-${entry.version}-${architecture}"
+    } else {
+        echo "Skipping ZC bundle for Micro 2.4.14.x"
+    }
 
     rtUpload (
         serverId: getRtiArtifactoryServerId(),

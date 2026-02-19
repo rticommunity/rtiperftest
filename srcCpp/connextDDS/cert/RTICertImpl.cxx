@@ -333,9 +333,11 @@ void RTICertImpl_ZCopy<T, TSeq>::shutdown()
     RT_Registry_T *registry = NULL;
     factory = DDS_DomainParticipantFactory_get_instance();
     CHECK_PTR(factory, "DDS_DomainParticipantFactory_get_instance");
+#ifdef RTI_ZEROCOPY_AVAILABLE
     registry = DDS_DomainParticipantFactory_get_registry(factory);
     CHECK_PTR(registry, "DDS_DomainParticipantFactory_get_registry");
     RT_Registry_unregister(registry, NETIO_DEFAULT_NOTIF_NAME, NULL, NULL);
+#endif
 done:
     return;
 }
@@ -409,10 +411,14 @@ bool RTICertImplBase<T, TSeq>::validate_input()
         return false;
     };
 
-#ifdef RTI_CERT
+#if RTIME_DDS_VERSION_MAJOR == 2
     if (_PM->get<std::string>("transport") == "SHMEM")
     {
+#ifdef RTI_CERT
         fprintf(stderr, "SHMEM is not supported for Connext Cert.\n");
+#else
+        fprintf(stderr, "SHMEM is not supported for Connext Micro 2.\n");
+#endif
         return false;
     }
 #endif
@@ -745,7 +751,7 @@ public:
  */
 
 
-#ifdef RTI_ZEROCOPY_AVAILABLE
+#ifdef RTI_ZEROCOPY_AVAILABLE 
 /*********************************
  * ZCopyCertPublisher class
  */
@@ -1305,7 +1311,7 @@ RTICertImpl<T, TSeq>::configure_participant_qos(DDS_DomainParticipantQos &dpQos)
     DDS_DomainParticipantFactory *factory;
     struct DDS_DomainParticipantFactoryQos dpfQos =
         DDS_DomainParticipantFactoryQos_INITIALIZER;
-    dpQos = DDS_DomainParticipantQos_INITIALIZER;
+    // dpQos = DDS_DomainParticipantQos_INITIALIZER;
     const std::vector<std::string> peerList =
         this->_PM->template get_vector<std::string>("peer");
     RT_Registry_T *registry;
@@ -1445,7 +1451,7 @@ bool RTICertImpl_ZCopy<T, TSeq>::configure_participant_qos(
 {
     DDS_DomainParticipantFactory *factory;
     struct DDS_DomainParticipantFactoryQos dpfQos = DDS_DomainParticipantFactoryQos_INITIALIZER;
-    dpQos = DDS_DomainParticipantQos_INITIALIZER;
+    // dpQos = DDS_DomainParticipantQos_INITIALIZER;
     RT_Registry_T *registry;
     struct DPSE_DiscoveryPluginProperty discProp = DPSE_DiscoveryPluginProperty_INITIALIZER;
     DDS_DomainParticipantListener participantlistener = DDS_DomainParticipantListener_INITIALIZER;
@@ -1624,6 +1630,10 @@ bool RTICertImplBase<T, TSeq>::configure_writer_qos(
     if (qos_profile == "ThroughputQos") {
         dw_qos.resource_limits.max_samples = _PM->get<int>("sendQueueSize");
         this->_sendQueueSize = dw_qos.resource_limits.max_samples;
+
+        #if defined(RTI_ZEROCOPY_AVAILABLE) && (RTIME_DDS_VERSION_MAJOR == 4)
+        dw_qos.writer_resource_limits.writer_loaned_sample_allocation = 1000;
+        #endif
 
         if (_PM->get<bool>("keyed")) {
             dw_qos.resource_limits.max_samples_per_instance =
@@ -1906,7 +1916,12 @@ bool RTICertImplBase<T, TSeq>::initialize(
     }
 
     if (!_PM->get<bool>("dynamicData")) {
-        retCode = DDS_DomainParticipant_register_type(_participant, _typename, _plugin);
+        retCode = DDS_DomainParticipant_register_type(_participant, _typename,
+#if RTIME_DDS_VERSION_MAJOR == 4
+            (DDS_TypePluginI*)_plugin);
+#else
+            _plugin);
+#endif
         CHECK_RETCODE(retCode, "DDS_DomainParticipant_register_type");
     } else {
         fprintf(stderr, "Dynamic data not supported in CERT.\n");
@@ -2043,6 +2058,9 @@ IMessagingWriter *RTICertImplBase<T, TSeq>::create_writer(const char *topic_name
                        &DDS_TOPIC_QOS_DEFAULT,
                        NULL,
                        DDS_STATUS_MASK_NONE);
+#if (RTIME_DDS_VERSION_MAJOR == 4)
+    DDS_TypePluginI* plugin_interface = NULL;
+#endif
     if (topic == NULL) {
         fprintf(stderr,"Problem creating topic %s.\n", topic_name);
         return NULL;
@@ -2093,12 +2111,21 @@ IMessagingWriter *RTICertImplBase<T, TSeq>::create_writer(const char *topic_name
         rem_participant_name = PARTICIPANT_NAME_PX;
     }
 
+#if (RTIME_DDS_VERSION_MAJOR == 4)
+    plugin_interface = (DDS_TypePluginI*)this->_plugin;
+#endif
+
     if (DDS_RETCODE_OK !=
         DPSE_RemoteSubscription_assert(
                 this->_participant,
                 rem_participant_name.c_str(),
                 &rem_subscription_data,
-                this->_plugin->get_key_kind(this->_plugin, NULL)))
+#if (RTIME_DDS_VERSION_MAJOR == 4)
+                plugin_interface->key_kind
+#else
+                this->_plugin->get_key_kind(this->_plugin, NULL)
+#endif
+        ))
     {
         printf("failed to assert remote subscription: %s\n", rem_participant_name.c_str());
         goto done;
@@ -2198,6 +2225,9 @@ IMessagingReader *RTICertImplBase<T, TSeq>::create_reader(
                        &DDS_TOPIC_QOS_DEFAULT,
                        NULL,
                        DDS_STATUS_MASK_NONE);
+#if (RTIME_DDS_VERSION_MAJOR == 4)
+    DDS_TypePluginI* plugin_interface = NULL;
+#endif
     CHECK_PTR(topic, "Problem creating topic");
     topic_desc = DDS_Topic_as_topicdescription(topic);
 
@@ -2258,12 +2288,21 @@ IMessagingReader *RTICertImplBase<T, TSeq>::create_reader(
         rem_participant_name = PARTICIPANT_NAME_SX;
     }
 
+#if (RTIME_DDS_VERSION_MAJOR == 4)
+    plugin_interface = (DDS_TypePluginI*)this->_plugin;
+#endif
+
     if (DDS_RETCODE_OK !=
         DPSE_RemotePublication_assert(
                 this->_participant,
                 rem_participant_name.c_str(),
                 &rem_publication_data,
-                this->_plugin->get_key_kind(this->_plugin, NULL)))
+#if (RTIME_DDS_VERSION_MAJOR == 4)
+                plugin_interface->key_kind
+#else
+                this->_plugin->get_key_kind(this->_plugin, NULL)
+#endif
+        ))
     {
         printf("failed to assert remote publisher: %s\n", rem_participant_name.c_str());
         goto done;
@@ -2470,7 +2509,7 @@ namespace {
         return address_hex;
     }
 
-#ifndef RTI_CERT_IS_PI
+#if !defined(RTI_CERT_IS_PI) || (RTIME_DDS_VERSION_MAJOR == 4)
     bool configureUDPv4Transport(
             RT_Registry_T *registry,
             PerftestTransport &transport,
@@ -2487,7 +2526,6 @@ namespace {
         udp_property->max_send_buffer_size = _PM->get<int>("sendBufferSize");
 
         brc = RT_Registry_unregister(registry, NETIO_DEFAULT_UDP_NAME, NULL, NULL);
-        CHECK_BOOL(brc, "RT_Registry_unregister");
 
         /* Set interface to use if provided */
         if (!_PM->get<std::string>("allowInterfaces").empty()) {

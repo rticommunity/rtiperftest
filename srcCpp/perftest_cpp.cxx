@@ -286,13 +286,13 @@ int perftest_cpp::Run(int argc, char *argv[])
             case 0: // = 0000 (Not keyed)
                 _MessagingImpl = new RTICertImpl<TestData_t, TestData_tSeq>(
                         TestData_tTypeSupport_get_type_name(),
-                        TestData_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestData_tTypePlugin_get());
                 break;
 
             case 1: // Keyed = 0001
                 _MessagingImpl = new RTICertImpl<TestDataKeyed_t, TestDataKeyed_tSeq>(
                         TestDataKeyed_tTypeSupport_get_type_name(),
-                        TestDataKeyed_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestDataKeyed_tTypePlugin_get());
                 break;
 
     #ifdef RTI_ZEROCOPY_AVAILABLE
@@ -300,13 +300,13 @@ int perftest_cpp::Run(int argc, char *argv[])
             case 2: // = 0010 (zerocopy + Not keyed)
                 _MessagingImpl = new RTICertImpl_ZCopy<TestData_Cert_ZCopy_t, TestData_Cert_ZCopy_tSeq>(
                         TestData_Cert_ZCopy_tTypeSupport_get_type_name(),
-                        TestData_Cert_ZCopy_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestData_Cert_ZCopy_tTypePlugin_get());
                 break;
 
             case 3: // zerocopy + Keyed = 0011
                 _MessagingImpl = new RTICertImpl_ZCopy<TestDataKeyed_Cert_ZCopy_t, TestDataKeyed_Cert_ZCopy_tSeq>(
                         TestDataKeyed_Cert_ZCopy_tTypeSupport_get_type_name(),
-                        TestDataKeyed_Cert_ZCopy_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestDataKeyed_Cert_ZCopy_tTypePlugin_get());
                 break;
 
     #endif

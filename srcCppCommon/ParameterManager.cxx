@@ -395,8 +395,8 @@ void ParameterManager::initialize()
     create("flatdata", flatData);
   #endif
 
-  #if RTI_ZEROCOPY_AVAILABLE
-    #if(defined(RTI_CERT) || defined(RTI_FLATDATA_AVAILABLE))
+  #if defined(RTI_ZEROCOPY_AVAILABLE) || (RTIME_DDS_VERSION_MAJOR == 4)
+    #if(defined(RTI_CERT) || defined(RTI_FLATDATA_AVAILABLE)) || (RTIME_DDS_VERSION_MAJOR == 4)
     Parameter<bool> *zerocopy = new Parameter<bool>(false);
     zerocopy->set_command_line_argument("-zeroCopy", "");
     zerocopy->set_description(

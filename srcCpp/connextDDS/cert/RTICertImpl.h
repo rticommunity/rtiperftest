@@ -21,10 +21,14 @@
 #include "rh_sm/rh_sm_history.h"
 #include "rti_me_c.h"
 
-#ifdef RTI_CERT_IS_PI
+#if defined(RTI_CERT_IS_PI) && (RTIME_DDS_VERSION_MAJOR != 4)
 #include "rti_me_psl/netio/netio_psl_udp.h"
 #else
 #include "netio/netio_udp.h"
+#endif
+
+#if RTIME_DDS_VERSION_MAJOR == 4
+#include "netio_shmem/netio_shmem.h"
 #endif
 
 #include "dds_c/dds_c_sequence.h"
@@ -33,17 +37,29 @@
 #include "perftest.h"
 #include "perftestPlugin.h"
 #include "perftestSupport.h"
-#ifdef RTI_ZEROCOPY_AVAILABLE
+#if defined(RTI_ZEROCOPY_AVAILABLE) || (RTIME_DDS_VERSION_MAJOR == 4)
 #include "perftest_cert_zc.h"
 #include "perftest_cert_zcPlugin.h"
 #include "perftest_cert_zcSupport.h"
+#endif
+#ifdef RTI_ZEROCOPY_AVAILABLE
 #include "netio_zcopy/netio_zcopy.h"
 #ifdef RTI_CERT_IS_PI
+#if defined RTIME_DDS_VERSION_MAJOR && (RTIME_DDS_VERSION_MAJOR != 4)
 #include "rti_me_psl/netio/netio_mynotif.h"
 #else
+#include "netio/netio_notif.h"
+#endif
+#else
+#if defined RTIME_DDS_VERSION_MAJOR && (RTIME_DDS_VERSION_MAJOR != 4)
 #include "netio_zcopy/posixNotifMechanism.h"
 #endif
+#endif
+#if defined RTIME_DDS_VERSION_MAJOR && (RTIME_DDS_VERSION_MAJOR == 4)
+#include "netio_zcopy/netio_zcopy_default_notif_mech.h"
+#else
 #include "netio_zcopy/netio_zcopy_publication.h"
+#endif
 #endif
 
 /* Maximum number of peer possible. -peer is used to provide peer addresses */
@@ -168,7 +184,7 @@ protected:
         IMessagingCB *callback) override;
 };
 
-#ifdef RTI_ZEROCOPY_AVAILABLE
+#if defined(RTI_ZEROCOPY_AVAILABLE) || (RTIME_DDS_VERSION_MAJOR == 4)
 template <typename T, typename TSeq>
 class RTICertImpl_ZCopy : public RTICertImplBase<T, TSeq>
 {

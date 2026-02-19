@@ -1417,8 +1417,6 @@ function build_tss_cpp()
 
 function calculate_cert_zerocopy_defines()
 {
-    additional_rtiddsgen_defines="-DRTI_CERT"
-
     # Determine ZeroCopy availability
     if [ "${SKIP_ZEROCOPY}" == "1" ]; then
         echo -e "${INFO_TAG} Skipping ZeroCopy build for CERT"
@@ -1459,7 +1457,14 @@ function build_cert_cpp()
         additional_defines=" -DRTI_QNX"
         additional_included_libraries="m\;socket"
     fi
-    additional_defines="-DPERFTEST_CERT -DRTI_LANGUAGE_CPP_TRADITIONAL -DO3"${additional_defines}
+    additional_defines="-DPERFTEST_CERT -DRTI_LANGUAGE_CPP_TRADITIONAL"${additional_defines}
+
+    if [ "${RELEASE_DEBUG}" == "release" ]; then
+        echo -e "${INFO_TAG} C++ code will be optimized."
+        additional_defines=${additional_defines}" -DO3"
+    else
+        additional_defines=${additional_defines}" -DO0"
+    fi
 
     # Copy the CMakeLists.txt file and system file to the srcCpp folder.
     cp "${resource_folder}/cert/CMakeLists.txt" "${classic_cpp_folder}/CMakeLists.txt"
@@ -1471,7 +1476,7 @@ function build_cert_cpp()
     rtiddsgen_command="\"${rtiddsgen_executable}\" ${additional_rtiddsgen_defines} \
             -micro -language C \
             -replace -create typefiles \
-            ${rtiddsgen_extra_options} \
+            ${additional_defines} \
             -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
@@ -1486,7 +1491,7 @@ function build_cert_cpp()
     fi
 
     # Generate CERT ZeroCopy types
-    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+    if [[ "${ZEROCOPY_AVAILABLE}" == "1" || ( "${BUILD_CERT_WITH_REGULAR_MICRO}" == "1" && "${BUILD_MICRO_24x_COMPATIBILITY}" == "0" ) ]]; then
         if [ "${CERT_ZC_DATALEN}" -lt "$((CERT_ZC_OVERHEAD + 1))" ]; then
             echo -e "${ERROR_TAG} The value of --cert-zc-datalen has to be "
             echo -e "greater or equal than the overhead of the sample, which "

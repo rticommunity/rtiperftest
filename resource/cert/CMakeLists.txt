@@ -45,6 +45,21 @@ function(remove_unwanted_flags)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" PARENT_SCOPE)
 endfunction()
 
+function(get_micro_major_version dds_config_h)
+    if (NOT EXISTS ${dds_config_h})
+        set(return_value -1 PARENT_SCOPE)
+    endif()
+    file(STRINGS ${dds_config_h} config_strings)
+    foreach(l in ${config_strings})
+        string(REPLACE "\\" "" lm ${l})
+        if(${lm} MATCHES "^[ ]*#define[ ]+RTIME_DDS_VERSION_MAJOR[ ]+([0-9]+).*")
+            set(maj ${CMAKE_MATCH_1})
+        endif()
+    endforeach()
+    set(ts "")
+    set(micro_major_version "${maj}" PARENT_SCOPE)
+endfunction(get_micro_major_version)
+
 LINK_DIRECTORIES()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -64,6 +79,7 @@ SET(IDL_SOURCE_C perftest.idl)
 IF (RTIME_ZEROCOPY_AVAILABLE)
     SET(IDL_SOURCE_C ${IDL_SOURCE_C} perftest_cert_zc.idl)
     add_compile_definitions(RTI_ZEROCOPY_AVAILABLE)
+    add_definitions(-DRTIME_HAVE_ZCOPYV2=1)
 ENDIF()
 
 SET(IDL_GEN_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/gen)
@@ -124,28 +140,69 @@ IF (DEFINED RTI_CERT OR cert_match)
     ENDIF()
     add_definitions(${ADDITIONAL_DEFINES} -DRTI_CERT -DPERFTEST_CERT)
 ELSE()
-    SET(MICRO_C_LIBS rti_me_rhsm${RTI_LIB_SUFFIX} 
-                    rti_me_whsm${RTI_LIB_SUFFIX} 
-                    rti_me_discdpse${RTI_LIB_SUFFIX} 
-                    rti_me_discdpde${RTI_LIB_SUFFIX} 
-                    rti_me${RTI_LIB_SUFFIX}
+    get_micro_major_version("$ENV{RTIMEHOME}/include/rti_me/dds_c/dds_c_config.h")
+
+    set(MICRO_C_LIBS "")
+
+    IF (RTIME_ZEROCOPY_AVAILABLE)
+        list(APPEND MICRO_C_LIBS rti_me_netiozcopy${RTI_LIB_SUFFIX})
+    ENDIF()
+
+    IF (micro_major_version STREQUAL "4")
+        list(APPEND MICRO_C_LIBS
+                rti_me_netiosdm${RTI_LIB_SUFFIX}
+                rti_me_netioshmem${RTI_LIB_SUFFIX}
+                rti_me_ddsxtypes${RTI_LIB_SUFFIX}
+                rti_me_netiopsl${RTI_LIB_SUFFIX} 
+                rti_me_ospsl${RTI_LIB_SUFFIX} 
                                     )
+    ENDIF()
+
+    list(APPEND MICRO_C_LIBS rti_me_rhsm${RTI_LIB_SUFFIX}
+                    rti_me_whsm${RTI_LIB_SUFFIX}
+                    rti_me_discdpse${RTI_LIB_SUFFIX}
+                    rti_me_discdpde${RTI_LIB_SUFFIX})
+
+    IF(arch_is_pi)
+        LIST(APPEND MICRO_C_LIBS
+            rti_me_netiopsl${RTI_LIB_SUFFIX}
+            rti_me_ospsl${RTI_LIB_SUFFIX}
+            )
+    ENDIF()
+
+    IF (NOT micro_major_version STREQUAL "4")
+        list(APPEND MICRO_C_LIBS
+            rti_me_psl${RTI_LIB_SUFFIX}
+        )
+    ENDIF()
+
+    LIST(APPEND MICRO_C_LIBS
+        rti_me${RTI_LIB_SUFFIX}
+    )
+
+    IF(arch_is_pi)
+        LIST(APPEND MICRO_C_LIBS
+            rti_me_ospsl${RTI_LIB_SUFFIX})
+    ENDIF()
+
     add_definitions(${ADDITIONAL_DEFINES} -DPERFTEST_CERT)
 ENDIF()
 
 INCLUDE_DIRECTORIES(gen/ $ENV{RTIMEHOME}/include $ENV{RTIMEHOME}/include/rti_me)
 
 IF (${arch_is_pi})
-    INCLUDE_DIRECTORIES($ENV{RTIMEHOME}/../rti_me_psl.1.0/include
-        $ENV{RTIMEHOME}/../rti_me_psl.1.0/include/rti_me_psl)
+    IF (RTIME_CERT)
+        INCLUDE_DIRECTORIES($ENV{RTIMEHOME}/../rti_me_psl.1.0/include
+            $ENV{RTIMEHOME}/../rti_me_psl.1.0/include/rti_me_psl)
+    ELSE()
+        INCLUDE_DIRECTORIES($ENV{RTIMEHOME}/include/rti_me/rti_me_psl)
+    ENDIF()
 ENDIF()
 
 LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${RTIME_TARGET_NAME})
 # If ${core_lib_dir_name} is not empty, we are working with a
 # Platform Independent Cert
-IF (${arch_is_pi})
-    LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${core_lib_dir_name})
-ENDIF()
+LINK_DIRECTORIES($ENV{RTIMEHOME}/lib/${core_lib_dir_name})
 
 FOREACH(idl ${IDL_SOURCE_C})
     GET_FILENAME_COMPONENT(filename ${idl} NAME)
@@ -176,4 +233,4 @@ ADD_EXECUTABLE(perftest_cpp_cert
 
 set_target_properties(perftest_cpp_cert PROPERTIES OUTPUT_NAME ${PERFTEST_EXECUTABLE_NAME})
 
-TARGET_LINK_LIBRARIES(perftest_cpp_cert  ${MICRO_C_LIBS} ${PLATFORM_LIBS})
+TARGET_LINK_LIBRARIES(perftest_cpp_cert ${MICRO_C_LIBS} ${PLATFORM_LIBS})
