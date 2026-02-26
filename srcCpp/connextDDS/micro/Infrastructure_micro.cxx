@@ -184,7 +184,8 @@ bool configureUDPv4Transport(
             malloc(sizeof(struct UDP_InterfaceFactoryProperty));
     *udp_property = UDP_INTERFACE_FACTORY_PROPERTY_DEFAULT;
 #endif
-    udp_property->max_message_size = 65536;
+    /* Max message size allowed for the UDP transport registration */
+    udp_property->max_message_size = 65507;
     udp_property->max_receive_buffer_size = 2097152;
     udp_property->max_send_buffer_size = 524288;
 
