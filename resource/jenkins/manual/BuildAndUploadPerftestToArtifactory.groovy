@@ -81,7 +81,9 @@ def generateBuildStages(List<String> architectures, List<String> languages) {
                     downloadArtifactoryStage(arch)
                     languages.each { lang ->
                         stage(lang) {
-                            buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --secure --openssl-home ${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}/third_party/openssl-${params.OPENSSL_VERSION}/${arch} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen")                        }
+                            // Uncomment the secure and openssl flags if we want to compile WITH the security libraries.
+                            // buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --secure --openssl-home ${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}/third_party/openssl-${params.OPENSSL_VERSION}/${arch} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen") }
+                            buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen") }
                     }
                 }
             }
@@ -145,11 +147,13 @@ def generateBundle(String arch) {
     def artifactoryFolderVersion = CONNEXT_VERSION.endsWith('0') ? CONNEXT_VERSION_SHORT : CONNEXT_VERSION
 
     runCommand "mkdir -p ${folder}/bin"
-    runCommand "mkdir -p ${folder}/resource"
+    // Uncomment this if we want to include back the secure folder.
+    // runCommand "mkdir -p ${folder}/resource"
     runCommand "mkdir -p ${folder}/doc"
 
     runCommand "cp -r bin/${arch}             ${folder}/bin/"
-    runCommand "cp -r resource/secure         ${folder}/resource/"
+    // Uncomment this if we want to include back the secure folder.
+    // runCommand "cp -r resource/secure         ${folder}/resource/"
     runCommand "cp -r doc/*                   ${folder}/doc/"
     runCommand "cp -r perftest_qos_profiles.xml ${folder}/"
 
