@@ -268,7 +268,7 @@ IF (${RTIME_LIGHTWEIGHT_SECURE})
         AND EXISTS "${PSL_LIB_PATH}/${RTI_LIB_PREFIX}pskpsl${RTI_LIB_SUFFIX}${RTI_LIB_EXT}")
 
         LIST(APPEND MICRO_C_LIBS "rti_me_ddspsk${RTI_LIB_SUFFIX}")
-        LIST(APPEND MICRO_C_LIBS "rti_me_pskpsl${RTI_LIB_SUFFIX}")
+        LIST(APPEND MICRO_C_LIBS "rti_me_pskpsl_openssl3${RTI_LIB_SUFFIX}")
     ELSE()
         MESSAGE(FATAL_ERROR "PSK libraries were not found.")
     ENDIF()
