@@ -264,13 +264,19 @@ IF (EXISTS "${LIB_PATH}/${RTI_LIB_PREFIX}netiozcopy${RTI_LIB_SUFFIX}${RTI_LIB_EX
 ENDIF()
 
 IF (${RTIME_LIGHTWEIGHT_SECURE})
-    IF (EXISTS "${LIB_PATH}/${RTI_LIB_PREFIX}ddspsk${RTI_LIB_SUFFIX}${RTI_LIB_EXT}"
-        AND EXISTS "${PSL_LIB_PATH}/${RTI_LIB_PREFIX}pskpsl${RTI_LIB_SUFFIX}${RTI_LIB_EXT}")
-
+    IF (EXISTS "${LIB_PATH}/${RTI_LIB_PREFIX}ddspsk${RTI_LIB_SUFFIX}${RTI_LIB_EXT}")
         LIST(APPEND MICRO_C_LIBS "rti_me_ddspsk${RTI_LIB_SUFFIX}")
-        LIST(APPEND MICRO_C_LIBS "rti_me_pskpsl_openssl3${RTI_LIB_SUFFIX}")
+
+        # Check for either pskpsl_openssl3 or pskpsl
+        IF (EXISTS "${PSL_LIB_PATH}/${RTI_LIB_PREFIX}pskpsl_openssl3${RTI_LIB_SUFFIX}${RTI_LIB_EXT}")
+            LIST(APPEND MICRO_C_LIBS "rti_me_pskpsl_openssl3${RTI_LIB_SUFFIX}")
+        ELSEIF (EXISTS "${PSL_LIB_PATH}/${RTI_LIB_PREFIX}pskpsl${RTI_LIB_SUFFIX}${RTI_LIB_EXT}")
+            LIST(APPEND MICRO_C_LIBS "rti_me_pskpsl${RTI_LIB_SUFFIX}")
+        ELSE()
+            MESSAGE(FATAL_ERROR "PSK PSL library (pskpsl or pskpsl_openssl3) was not found.")
+        ENDIF()
     ELSE()
-        MESSAGE(FATAL_ERROR "PSK libraries were not found.")
+        MESSAGE(FATAL_ERROR "PSK DDSPSK library was not found.")
     ENDIF()
 ENDIF()
 
