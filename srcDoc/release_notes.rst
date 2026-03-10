@@ -3,17 +3,17 @@
 Release Notes
 =============
 
-Release Notes develop
+Release Notes 4.3
 ---------------------
 
-What's New in develop
+What's New in 4.3
 ~~~~~~~~~~~~~~~~~~~~~
 
 Added compatibility with Connext Micro 2.4.14.3 |newTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The maximum sequence size has been reduced for Micro to ensure it does not exceed
-the maximum UDPv4 packet size, making Perftest develop compatible with Micro 2.4.14.3.
+the maximum UDPv4 packet size, making Perftest 4.3 compatible with Micro 2.4.14.3.
 
 New command-line option to control the CPU thread affinity |newTag|
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -34,7 +34,7 @@ In earlier releases, deprecated property names were retained to ensure backward
 compatibility with *RTI Connext 6.0.X*. Starting with this release, the property
 names have been updated as *RTI Connext* no longer supports the old names.
 
-What's Fixed in develop
+What's Fixed in 4.3
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Communication issue between Publisher and Subscriber when using two different QNX boards |fixedTag|
@@ -48,15 +48,15 @@ during the registration process.
 Crash when no pong samples received in latency test |fixedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-If the Publisher did not receive any pong samples, Perftest could 
-crash when trying to display latency statistics. Perftest now checks 
+If the Publisher did not receive any pong samples, Perftest could
+crash when trying to display latency statistics. Perftest now checks
 for the presence of latency data before displaying statistics.
 
 Assert Error when using Raw Transport in Debug mode |fixedTag|
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-When compiling *Perftest* in debug mode, the publisher side failed to initialize if using 
-a middleware implementation that did not support listeners, such as rawTransport mode. 
+When compiling *Perftest* in debug mode, the publisher side failed to initialize if using
+a middleware implementation that did not support listeners, such as rawTransport mode.
 This issue was due to a thread name exceeding the maximum supported length.
 
 Release Notes 4.2
@@ -69,7 +69,7 @@ What's New in 4.2
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 When the `-pubRate` parameter is used, batching is now disabled by default to
-avoid possible confusion. However, if `-pubRate` is explicitly set via 
+avoid possible confusion. However, if `-pubRate` is explicitly set via
 command line, batching will remain enabled.
 
 ``-scan`` option is now removed
@@ -118,7 +118,7 @@ What's Fixed in 4.2
 
 Incorrect latency calculations when data size changed
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
-At the beginning of a test, some samples were sent indicating that a new data size would be used. 
+At the beginning of a test, some samples were sent indicating that a new data size would be used.
 Those samples were discarded, but *Perftest* incorrectly kept the samples' latency information and used it to calculate the different latency statistics.
 This issue caused some inconsistencies in the results displayed, though it did not affect the final results.
 
