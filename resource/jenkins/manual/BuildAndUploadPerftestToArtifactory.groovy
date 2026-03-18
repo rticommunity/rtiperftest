@@ -142,9 +142,9 @@ def buildPerftestAgainstPro(String connextArch, String nddsHome, String flags) {
 
 def generateBundle(String arch) {
     unstash "perftest-${arch}"
-    def folder = "rti_perftest_Connext-${CONNEXT_VERSION_SHORT}_${arch}"
-    def zipName = "rti_perftest-${BRANCHNAME}_Connext-${CONNEXT_VERSION_SHORT}_${arch}"
     def artifactoryFolderVersion = CONNEXT_VERSION.endsWith('0') ? CONNEXT_VERSION_SHORT : CONNEXT_VERSION
+    def folder = "rti_perftest_Connext-${artifactoryFolderVersion}_${arch}"
+    def zipName = "rti_perftest-${BRANCHNAME}_Connext-${artifactoryFolderVersion}_${arch}"
 
     runCommand "mkdir -p ${folder}/bin"
     // Uncomment this if we want to include back the secure folder.
