@@ -768,7 +768,7 @@ namespace PerformanceTest
 
                 // permissions file
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.access_control.permissions_file",
+                    policy.Add("dds.sec.access.permissions",
                     parameters.SecurePermissionsFile));
 
                 // permissions authority file (legacy property, it should be permissions_file)
@@ -827,15 +827,15 @@ namespace PerformanceTest
                 if (parameters.SecurePSKAlgorithm.Contains("GMAC"))
                 {
                     dpQos = dpQos.WithProperty(policy =>
-                        policy.Add("com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind", "SIGN"));
+                        policy.Add("dds.sec.access.rtps_psk_protection_kind", "SIGN"));
                 }
 
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
+                    policy.Add("dds.sec.crypto.rtps_psk_secret_passphrase",
                     parameters.SecurePSK));
 
                 dpQos = dpQos.WithProperty(policy =>
-                    policy.Add("com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
+                    policy.Add("dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
                     parameters.SecurePSKAlgorithm));
             }
 

@@ -16,20 +16,16 @@ LANGUAGES = []
 
 ////////////////////UTILS/////////////////
 def extractConnextVersion(String artifactoryPath) {
-    def matcher = artifactoryPath =~ /release(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/
+    def matcher = artifactoryPath =~ /BUILD_(\d+\.\d+\.\d+\.\d+)_\d{8}T\d{6}Z_([A-Z_-]+)/
     if (matcher.find()) {
-        def major = matcher[0][1]
-        def minor = matcher[0][2]
-        def patch = matcher[0][3]
-        def build = matcher[0][4] // might be null
-        return build ? "${major}.${minor}.${patch}.${build}" : "${major}.${minor}.${patch}"
+        return matcher[0][1]
     } else {
         error("Could not extract Connext version from path: ${artifactoryPath}")
     }
 }
 
 def extractBuildIdentifier(String artifactoryPath) {
-    def matcher = artifactoryPath =~ /(BUILD_\d+\.\d+\.\d+\.\d+_\d{8}T\d{6}Z_RTI_REL)/
+    def matcher = artifactoryPath =~ /(BUILD_\d+\.\d+\.\d+\.\d+_\d{8}T\d{6}Z_[A-Z_-]+)/
     if (matcher.find()) {
         return matcher[0][1]
     } else {
@@ -68,7 +64,7 @@ def getVSDevCmdPatternForArch(String connextArch) {
     return archMap[connextArch] ?: ""
 }
 
-def getScriptExtensionForArch(String connextArch) {
+def getZipExtensionForArch(String connextArch) {
     return connextArch.contains('Win') ? 'zip' : 'tar.gz'
 }
 /////////////////////////////////////////
@@ -85,7 +81,9 @@ def generateBuildStages(List<String> architectures, List<String> languages) {
                     downloadArtifactoryStage(arch)
                     languages.each { lang ->
                         stage(lang) {
-                            buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --secure --openssl-home ${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}/third_party/openssl-3.0.12/${arch} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen")                        }
+                            // Uncomment the secure and openssl flags if we want to compile WITH the security libraries.
+                            // buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --secure --openssl-home ${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}/third_party/openssl-${params.OPENSSL_VERSION}/${arch} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen") }
+                            buildPerftestAgainstPro("${arch}", "${env.WORKSPACE}/unlicensed/rti_connext_dds-${CONNEXT_VERSION_SHORT}", "--${lang} --rtiddsgen-path ${env.WORKSPACE}/unlicensed/rti_rtiddsgen/bin/rtiddsgen") }
                     }
                 }
             }
@@ -144,24 +142,28 @@ def buildPerftestAgainstPro(String connextArch, String nddsHome, String flags) {
 
 def generateBundle(String arch) {
     unstash "perftest-${arch}"
-    def folder = "rti_perftest_Connext-${arch}"
+    def artifactoryFolderVersion = CONNEXT_VERSION.endsWith('0') ? CONNEXT_VERSION_SHORT : CONNEXT_VERSION
+    def folder = "rti_perftest_Connext-${artifactoryFolderVersion}_${arch}"
+    def zipName = "rti_perftest-${BRANCHNAME}_Connext-${artifactoryFolderVersion}_${arch}"
 
     runCommand "mkdir -p ${folder}/bin"
-    runCommand "mkdir -p ${folder}/resource"
+    // Uncomment this if we want to include back the secure folder.
+    // runCommand "mkdir -p ${folder}/resource"
     runCommand "mkdir -p ${folder}/doc"
 
     runCommand "cp -r bin/${arch}             ${folder}/bin/"
-    runCommand "cp -r resource/secure         ${folder}/resource/"
+    // Uncomment this if we want to include back the secure folder.
+    // runCommand "cp -r resource/secure         ${folder}/resource/"
     runCommand "cp -r doc/*                   ${folder}/doc/"
     runCommand "cp -r perftest_qos_profiles.xml ${folder}/"
 
     if (!arch.contains('Win')) {
         runCommand """
-            tar czvf ${folder}.tar.gz ${folder}
+            tar czvf ${zipName}.tar.gz ${folder}
         """
     } else {
         runCommand """
-            zip -r ${folder}.zip ${folder}/
+            zip -r ${zipName}.zip ${folder}/
         """
     }
     rtUpload (
@@ -170,8 +172,8 @@ def generateBundle(String arch) {
             """{
             "files": [
                 {
-                    "pattern": "${env.WORKSPACE}/${folder}.${getScriptExtensionForArch(arch)}",
-                    "target": "perftest-ci/${BRANCHNAME}/connext/${CONNEXT_VERSION}/${BUILD_IDENTIFIER}/${folder}.${getScriptExtensionForArch(arch)}",
+                    "pattern": "${env.WORKSPACE}/${zipName}.${getZipExtensionForArch(arch)}",
+                    "target": "perftest-ci/${BRANCHNAME}/connext/${artifactoryFolderVersion}/${BUILD_IDENTIFIER}/${zipName}.${getZipExtensionForArch(arch)}",
                     "props": "rti.artifact.kind=bundle;rti.product.name=perftest;rti.product.version=${CONNEXT_VERSION}"
                 }
             ]
@@ -187,7 +189,7 @@ pipeline {
     parameters {
         string(
             name: 'ARTIFACTORY_PATH',
-            defaultValue: 'connext-ci/pro/release7.5.0.0/BUILD_7.5.0.0_20250313T000000Z_RTI_REL',
+            defaultValue: '',
             description: 'Path where connext will be pulled i.e. connext-ci/pro/release7.5.0.0/BUILD_7.5.0.0_20250313T000000Z_RTI_REL/installers',
             trim: true
         )
@@ -201,6 +203,12 @@ pipeline {
             name: 'CONNEXT_BUILD_LANGUAGES',
             defaultValue: 'cpp-build',
             description: 'Comma-separated list of language flags to build.',
+            trim: true
+        )
+        string(
+            name: 'OPENSSL_VERSION',
+            defaultValue: '',
+            description: 'OpenSSL version to use for building perftest.',
             trim: true
         )
     }

@@ -22,7 +22,7 @@ publishing application and ``-sub`` specifies a subscribing
 application. If you do not specify ``-pub``, then ``-sub`` is
 assumed.
 
-Some of these parameters are valid when using *RTI Connext DDS Professional*, 
+Some of these parameters are valid when using *RTI Connext Professional*, 
 *RTI Connext Micro*, and the Raw Transport feature; some of them are 
 available for just some of these implementations. Whether or not a parameter is available 
 is stated in the descriptions of the parameters and in the ``-help`` 
@@ -52,7 +52,8 @@ Test Parameters for Publishing and Subscribing Applications
    **Default:** ``false`` (use reliable communication)
 
    For an introduction to the RTI reliability model, see
-   `Reliable Communications, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/reliable.htm>`__.
+   `Reliability Models for Sending Data <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/reliable.htm>`__
+   in the *RTI Connext Core Libraries User's Manual* .
 
 -  ``-dataLen <bytes>``
 
@@ -74,7 +75,7 @@ Test Parameters for Publishing and Subscribing Applications
 
 -  ``-verbosity``
 
-   Run with different levels of verbosity for *Connext DDS*.
+   Run with different levels of verbosity for *Connext*.
 
    | ``0`` - ``SILENT``
    | ``1`` - ``ERROR`` (default)
@@ -86,7 +87,7 @@ Test Parameters for Publishing and Subscribing Applications
    Run using the Dynamic Data API functions instead of the *rtiddsgen*
    generated calls.
 
-   This parameter is not available when compiling against *Connext DDS
+   This parameter is not available when compiling against *Connext 
    Micro*.
 
    **Default:** ``false``
@@ -182,9 +183,10 @@ Test Parameters for Publishing and Subscribing Applications
    | ``3`` - ``PERSISTENT``
 
    For an introduction to the RTI durability model, see
-   `Basic QoS, in the RTI Connext DDS Getting Started Guide <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/getting_started_guide/cpp11/intro_qos.html>`__. 
-   See also: 
-   `Mechanisms for Achieving Information Durability and Persistence, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/MechanismsForDurabilityAndPersistence.htm>`__.
+   `Basic QoS <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/getting_started_guide/cpp11/intro_qos.html>`__
+   in the *RTI Connext Getting Started* and 
+   `Mechanisms for Achieving Information Durability and Persistence <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/MechanismsForDurabilityAndPersistence.htm>`__
+   in the *RTI Connext Core Libraries User's Manual*. 
 
    ``PERSISTENT`` is not available when compiling against *Connext Micro*.
 
@@ -199,8 +201,8 @@ Test Parameters for Publishing and Subscribing Applications
    | **Range:** ``0 - 200``
 
    See 
-   `Choosing a Domain ID and Creating Multiple Domains, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/ChoosingDomainID.htm>`__. 
-
+   `Choosing a Domain ID and Creating Multiple Domains <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/ChoosingDomainID.htm>`__. 
+   in the *RTI Connext Core Libraries User's Manual*. 
 
 -  ``-help``
 
@@ -315,7 +317,8 @@ Test Parameters for Publishing and Subscribing Applications
        Some QoS values are 'hard-coded' in the application.
        Therefore, setting them in the XML file has no effect.
        See comments in ``perftest_qos_profiles.xml``, as well as in 
-       `Configuring QoS with XML, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/XMLConfiguration.htm>`__. 
+       `Configuring QoS with XML <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/XMLConfiguration.htm>`__ 
+       in the *RTI Connext Core Libraries User's Manual*.
 
 -  ``-qosLibrary <library name>``
 
@@ -466,7 +469,7 @@ Test Parameters for Publishing and Subscribing Applications
 
    To see what values can be used for the different threads, see the 
    following tables in the
-   `RTI Connext DDS Core Libraries Platform Notes <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/platform_notes/index.htm>`__:
+   `RTI Connext Core Libraries Platform Notes <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/platform_notes/index.htm>`__:
 
     - "Thread-Priority Definitions for Linux Platforms" table
     - "Thread-Priority Definitions for macOS Platforms" table
@@ -478,6 +481,23 @@ Test Parameters for Publishing and Subscribing Applications
 
    **Default:**
    Not set. The priority will not be modified.
+
+-  ``-threadCPUAffinity A:B:C:D``
+
+   This command-line parameter is supported only for Traditional C++ and
+   Modern C++ API implementations. It sets the CPU affinity for the application threads:
+
+    - **A** for the main thread (the one sending the data), or the asynchronous publishing thread if that one is used.
+    - **B** for the receive thread(s) created by *Connext*.
+    - **C** for the event thread created by *Connext*.
+    - **D** for the database thread created by *Connext*.
+
+   The values A, B, C, and D can be either a single CPU number or a range list of CPU numbers.
+
+   This parameter is not available when compiling against *RTI Connext Micro* or when using the Raw Transport feature.
+
+   **Default:**
+   Not set. The CPU affinity will not be modified.
 
 -  ``-cacheStats``
 
@@ -752,10 +772,10 @@ Test Parameters only for Publishing Applications
    | **Range:** ``1`` to maximum synchronous size
 
    For more information on batching data for high throughput, see the
-   **High Throughput for Streaming Data** design pattern in the *RTI Connext DDS Core
+   **High Throughput for Streaming Data** design pattern in the *RTI Connext Core
    Libraries Getting Started Guide*. See also: **How to Measure Latency
    for a Given Throughput** and the **BATCH QosPolicy** section in
-   the *RTI Connext DDS Core Libraries User's Manual*.
+   the *RTI Connext Core Libraries User's Manual*.
 
    This parameter is not available when compiling against *RTI Connext
    Micro*.
@@ -1050,12 +1070,13 @@ Test Parameters only for Subscribing Applications
    Inconsistent samples will be reported as lost.
 
    See information about checking data consistency in
-   `Using Zero Copy Transfer Over Shared Memory, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/SendingLDZeroCopyUsing.htm>`__.
+   `Using Zero Copy Transfer Over Shared Memory <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/SendingLDZeroCopyUsing.htm>`__
+   in the *RTI Connext Core Libraries User's Manual*.
 
    This parameter can only be used along with ``-zeroCopy``.
 
    This parameter is not available when compiling against *Connext
-   Micro* or a *Connext DDS* release before 6.0.0.
+   Micro* or a *Connext* release before 6.0.0.
 
    **Default:** Not set
 
@@ -1143,7 +1164,7 @@ UDPv4 and shared memory communications.
 
    Use sockets as a transport instead of a DDS protocol. This option supports
    ``UDPv4`` and shared memory (``SHMEM``).
-   Some of the *Connext DDS* parameters are not supported when using sockets.
+   Some of the *Connext* parameters are not supported when using sockets.
 
    This parameter is not available when compiling against *Connext Micro*.
 
@@ -1262,8 +1283,8 @@ To avoid the cost of blocking, consider the following:
 
 For more information on the send queue size, see information about the
 ``max_samples`` field in
-`RESOURCE_LIMITS QosPolicy, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/RESOURCE_LIMITS_QosPolicy.htm>`__.
-
+`RESOURCE_LIMITS QosPolicy <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/RESOURCE_LIMITS_QosPolicy.htm>`__
+in the *RTI Connext Core Libraries User's Manual*.
 
 .. _Number of Iterations vs. Latency Count:
 
@@ -1312,13 +1333,13 @@ performance, be sure to run the test for a number of samples (see
 WaitSet event count and delay
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Perftest*, like *Connext DDS*, gives you
+*Perftest*, like *Connext*, gives you
 the option to either process received data in the middleware's receive
 thread, via a listener callback, or to process the data in a separate thread 
 (see ``-useReadThread``) via an object called `Waitset`. The latter approach
 can be beneficial in that it decouples the operation of your application
 from the middleware, so that your processing will not interfere with
-*Connext DDS*'s internal activities. However, it does introduce
+*Connext*'s internal activities. However, it does introduce
 additional context switches into your data receive path. When data is
 arriving at a high rate, these context switches can adversely affect
 performance when they occur with each data sample.
@@ -1335,9 +1356,10 @@ in order to achieve better (smaller) latency results, an approach where we set
 ``-waitsetDelayUsec 0`` and ``-waitsetEventCount 1`` is recommended.
 
 For more information, see
-`Receive Threads, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Receive_Threads.htm>`__
+`Receive Threads <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Receive_Threads.htm>`__
 and 
-`Conditions and WaitSets, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Conditions_and_WaitSets.htm>`__.
+`Conditions and WaitSets <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Conditions_and_WaitSets.htm>`__
+in the *RTI Connext Core Libraries User's Manual*.
 
 
 .. _How to Measure Latency for a Given Throughput:
@@ -1396,13 +1418,14 @@ throughputs higher than the ``max_no_batch`` throughput rate.
 Auto-tuning and turbo mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since release 5.1.0, *Connext DDS* includes two features that allow the middleware
+Since release 5.1.0, *Connext* includes two features that allow the middleware
 to auto-tune communications to achieve better performance. These
 features are Auto Throttling and Turbo Mode. For more
 information, see
-`Auto Throttling for DataWriter Performance—Experimental Feature, in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Auto_Throttling.htm>`__
-and the section "Turbo Mode: Automatically Adjusting the Number of Bytes in a Batch—Experimental," in
-`BATCH QosPolicy (DDS Extension), in the RTI Connext DDS Core Libraries User's Manual <https://community.rti.com/static/documentation/connext-dds/6.1.0/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/BATCH_Qos.htm>`__.
+`Auto Throttling for DataWriter Performance—Experimental Feature <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/Auto_Throttling.htm>`__
+and the section "Turbo Mode: Automatically Adjusting the Number of Bytes in a Batch—Experimental" in
+`BATCH QosPolicy (DDS Extension) <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/users_manual/index.htm#users_manual/BATCH_Qos.htm>`__
+in the *RTI Connext Core Libraries User's Manual*.
 The performance test application includes two
 command-line options to enable these features: ``-enableAutoThrottle``
 and ``-enableTurboMode``.

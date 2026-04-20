@@ -48,6 +48,7 @@ pipeline {
             }
             post {
                 success {
+                    zip archive: true, dir: 'doc', exclude: 'html/.doctrees/**, html/.buildinfo, pdf/.doctrees/**', glob: '', overwrite: true, zipFile: 'rtiperftest_doc.zip'
                     /* Publish the documentation preview in Jenkins */
                     publishHTML(
                         [

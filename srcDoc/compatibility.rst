@@ -3,7 +3,7 @@
 Compatibility
 =============
 
-*RTI Perftest 4.2.0* is designed to be compatible with the *RTI Connext DDS*
+*RTI Perftest 4.3* is designed to be compatible with the *RTI Connext DDS*
 middleware. It has been compiled and tested against:
 
 - *RTI Connext DDS Professional* 6.0.0 and above. Nonetheless previous versions
@@ -35,7 +35,7 @@ repository:
 
     git checkout release/2.0 -- resource/secure
 
-*RTI Connext DDS 6.0.1 Security Plugins* Changes
+RTI Connext DDS 6.0.1 Security Plugins Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In order to add compatibility for *RTI Connext DDS 6.0.1* including the
@@ -43,7 +43,7 @@ In order to add compatibility for *RTI Connext DDS 6.0.1* including the
 
 When building a Windows application, *RTI Perftest* must now link against
 ``libssl`` and ``libcrypto`` instead of ``ssleay32`` and ``libeay32``, as documented
-`here <https://community.rti.com/static/documentation/connext-dds/6.0.1/doc/manuals/migration_guide/601/product601/security601.html>`__.
+in the `Connext Migration Guide <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/migration_guide/601/product601/security601.html>`__.
 
 This breaks compatibility against previous versions of *RTI Connext DDS*. In order
 to compile against previous versions a manual change has to be made in the ``build.bat``
@@ -109,8 +109,8 @@ Known Issues
 Compilation Errors in Microsoft Visual Studio 2017 Express
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Due to `this issue <https://community.rti.com/static/documentation/connext-dds/6.0.0/doc/manuals/connext_dds/code_generator/html_files/RTI_CodeGenerator_ReleaseNotes/index.htm#code_generator/ReleaseNotes/KnownIssues/Known_Issues.htm?Highlight=RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION>`__
-documented in the Know Issues for *RTI Connext DDS*, when compiling with
+Due to `this issue <https://community.rti.com/static/documentation/connext-dds/current/doc/manuals/connext_dds_professional/code_generator/release_notes/known_issues.html#examples-and-generated-code-for-visual-studio-2017-and-later-may-not-compile-error-msb8036>`__
+documented in the Known Issues for *RTI Code Generator*, when compiling with
 *Visual Studio 2017 Express*, you need to set the `RTI_VS_WINDOWS_TARGET_PLATFORM_VERSION`
 as follows to avoid compilation errors:
 
@@ -125,7 +125,7 @@ Shared Memory issues when running the Modern C++ API or .Net Implementation
 
 *RTI Perftest* uses `UDPv4` and `SHMEM` by default; however certain operating
 systems don't support Shared Memory, or the default configuration is not enough for
-*RTI Connext DDS* to work properly. In these cases *RTI Perftest* will show
+*RTI Connext* to work properly. In these cases *RTI Perftest* will show
 errors when trying to create the Participant entity:
 
 .. code-block:: console

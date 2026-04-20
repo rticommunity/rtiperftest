@@ -801,26 +801,18 @@ function additional_defines_calculation_micro()
 
     if [ "${USE_SECURE_LIBS}" == "1" ]; then
         additional_defines="${additional_defines} -DRTI_SECURE_PERFTEST"
+        
+        find_ssl_libraries "openssl-3"
+        if [[ "${RTI_CRYPTOHOME}" != "" ]]; then
+            export OPENSSLHOME="${RTI_CRYPTOHOME}/${RELEASE_DEBUG}-${STATIC_DYNAMIC}"
+        fi
 
-        if [ "${STATIC_DYNAMIC}" == "dynamic" ]; then
-            echo -e "${INFO_TAG} Using Security Plugins. Linking Dynamically."
+        if [ "${USE_LW_SECURE_LIBS}" == "1" ]; then
+            additional_defines="${additional_defines} -DRTI_LW_SECURE_PERFTEST"
         else
-            if [ "${RTI_CRYPTOHOME}" == "" ]; then
-                # In this case, we are going to try to use the one that should be
-                # under $NDDSHOME/third_party/<crypto_lib_dir>/<arch>, we will check if
-                # it exists.
-                export RTI_CRYPTOHOME="$NDDSHOME/third_party/${RTI_CRYPTO_LIB_DIRECTORY}${RTI_CRYPTO_LIB_DIRECTORY_VERSION}/${platform}"
-                if [ ! -f "${RTI_CRYPTOHOME}" ]; then
-                    # Well, we tried...
-                    echo -e "${ERROR_TAG} In order to link statically using the "\
-                        "Security Plugins you need to also provide a path to a"\
-                        "crypto library. Set either the OpenSSL home path by"\
-                        "using the --openssl-home option or the WolfSSL home path"\
-                        "by using the --wolfssl-home option"
-                    exit -1
-                fi
-                echo -e "${INFO_TAG} Using the CRYPTO LIBS FROM openSSL from: \"${RTI_CRYPTOHOME}\""
-            fi
+            echo -e "${ERROR_TAG} Micro does not support full security. The"\
+                "PSK feature can be used with the --lightWeightSecurity option."
+            exit -1
         fi
     fi
 }
@@ -1011,6 +1003,7 @@ function build_cpp()
     additional_header_files="${additional_header_files_custom_type} \
         RTIRawTransportImpl.h \
         ThreadPriorities.h \
+        ThreadCPUAffinity.h \
         Parameter.h \
         ParameterManager.h \
         RTIDDSLoggerDevice.h \
@@ -1424,8 +1417,6 @@ function build_tss_cpp()
 
 function calculate_cert_zerocopy_defines()
 {
-    additional_rtiddsgen_defines="-DRTI_CERT"
-
     # Determine ZeroCopy availability
     if [ "${SKIP_ZEROCOPY}" == "1" ]; then
         echo -e "${INFO_TAG} Skipping ZeroCopy build for CERT"
@@ -1466,7 +1457,14 @@ function build_cert_cpp()
         additional_defines=" -DRTI_QNX"
         additional_included_libraries="m\;socket"
     fi
-    additional_defines="-DPERFTEST_CERT -DRTI_LANGUAGE_CPP_TRADITIONAL -DO3"${additional_defines}
+    additional_defines="-DPERFTEST_CERT -DRTI_LANGUAGE_CPP_TRADITIONAL"${additional_defines}
+
+    if [ "${RELEASE_DEBUG}" == "release" ]; then
+        echo -e "${INFO_TAG} C++ code will be optimized."
+        additional_defines=${additional_defines}" -DO3"
+    else
+        additional_defines=${additional_defines}" -DO0"
+    fi
 
     # Copy the CMakeLists.txt file and system file to the srcCpp folder.
     cp "${resource_folder}/cert/CMakeLists.txt" "${classic_cpp_folder}/CMakeLists.txt"
@@ -1478,7 +1476,7 @@ function build_cert_cpp()
     rtiddsgen_command="\"${rtiddsgen_executable}\" ${additional_rtiddsgen_defines} \
             -micro -language C \
             -replace -create typefiles \
-            ${rtiddsgen_extra_options} \
+            ${additional_defines} \
             -d \"${classic_cpp_folder}\" \"${idl_location}/perftest.idl\" "
 
     echo ""
@@ -1493,7 +1491,7 @@ function build_cert_cpp()
     fi
 
     # Generate CERT ZeroCopy types
-    if [ "${ZEROCOPY_AVAILABLE}" == "1" ]; then
+    if [[ "${ZEROCOPY_AVAILABLE}" == "1" || ( "${BUILD_CERT_WITH_REGULAR_MICRO}" == "1" && "${BUILD_MICRO_24x_COMPATIBILITY}" == "0" ) ]]; then
         if [ "${CERT_ZC_DATALEN}" -lt "$((CERT_ZC_OVERHEAD + 1))" ]; then
             echo -e "${ERROR_TAG} The value of --cert-zc-datalen has to be "
             echo -e "greater or equal than the overhead of the sample, which "
@@ -1621,6 +1619,7 @@ function build_cpp11()
 
     additional_header_files=" \
         ThreadPriorities.h \
+        ThreadCPUAffinity.h \
         Parameter.h \
         ParameterManager.h \
         MessagingIF.h \
@@ -1650,6 +1649,8 @@ function build_cpp11()
         perftest_ZeroCopyPlugin.cxx"
     fi
 
+    export USE_RTIDDSGEN_ENV_VAR=True
+    export RTIDDSGEN_STANDARD=DDS_PSM_Cxx
 
     ##############################################################################
     # Generate files for srcCpp11
@@ -1792,6 +1793,9 @@ function build_cpp11()
 
     # Removing README files if those are created by rtiddsgen
     rm -rf "${modern_cpp_folder}/README_${platform}.txt"
+
+    unset USE_RTIDDSGEN_ENV_VAR
+    unset RTIDDSGEN_STANDARD
 }
 
 function build_java()
@@ -2132,7 +2136,7 @@ while [ "$1" != "" ]; do
         --debug)
             RELEASE_DEBUG=debug
             ;;
-        --ns-resolution)
+        --latency-high-resolution)
             RTI_PERFTEST_NANO_CLOCK=1
             ;;
         --force-c++11-infrastructure)

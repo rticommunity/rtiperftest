@@ -7,7 +7,17 @@
 #include "custom.idl"
 #endif
 
+/*
+ * This is the max size across Connext Pro and Connext Micro/Cert,
+ * using a sequence larger than this would imply that when adding the headers,
+ * the packet would exceed the maximum UDPv4 size of a packet.
+ */
+#if defined(PERFTEST_RTI_PRO)
 const long MAX_BOUNDED_SEQ_SIZE = 65470;
+#else
+const long MAX_BOUNDED_SEQ_SIZE = 65448;
+#endif
+
 #ifndef RTI_FLATDATA_MAX_SIZE
   const long RTI_FLATDATA_MAX_SIZE = 10485760; // 10MB
 #endif
@@ -19,7 +29,7 @@ const unsigned long DEFAULT_THROUGHPUT_BATCH_SIZE = 8192; // 8kB
 /*
  * Topic Names for the different channel RTI Perftest will use
  */
-#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(RTI_CERT)
+#if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(PERFTEST_CERT)
 const string THROUGHPUT_TOPIC_NAME = "Throughput";
 const string LATENCY_TOPIC_NAME = "Latency";
 const string ANNOUNCEMENT_TOPIC_NAME = "Announcement";

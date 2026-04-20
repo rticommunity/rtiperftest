@@ -16,14 +16,7 @@
 
 PerftestClock::PerftestClock()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
-  #ifndef RTI_WIN32
-
-    OSAPI_NtpTime_from_millisec(&clockTimeAux, 0, 0);
-    clockSec = 0;
-    clockUsec = 0;
-
-  #else
+  #ifdef RTI_WIN32
     _frequency = 0.0;
     LARGE_INTEGER ticks;
     if(!QueryPerformanceFrequency(&ticks)){
@@ -31,9 +24,7 @@ PerftestClock::PerftestClock()
     }
 
     _frequency = double(ticks.QuadPart);
-
-  #endif
-  #endif
+  #endif // RTI_WIN32
 }
 
 PerftestClock::~PerftestClock()
@@ -48,20 +39,29 @@ PerftestClock &PerftestClock::getInstance()
 
 unsigned long long PerftestClock::getTime()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
-    #ifndef RTI_WIN32
+  #ifndef RTI_WIN32
+   #if  RTI_NTP_TIME_COMPATIBLE
+    OSAPI_NtpTime clockTimeAux;
+    RTI_INT32 clockSec;
+    RTI_UINT32 clockUsec;
 
     if (!OSAPI_System_get_time((OSAPI_NtpTime*)&clockTimeAux)) {
         return 0;
     }
 
-    OSAPI_NtpTime_to_microsec(
-            &clockSec,
-            &clockUsec,
-            (struct OSAPI_NtpTime*)&clockTimeAux);
-    return clockUsec + (unsigned long long) 1000000 * clockSec;
+    OSAPI_NtpTime_to_microsec(&clockSec, &clockUsec, &clockTimeAux);
 
-    #else
+    return clockUsec + (unsigned long long) 1000000 * clockSec;
+   #else
+    OSAPI_SystemTime clockTimeAux;
+
+    if (!OSAPI_System_get_time(&clockTimeAux)) {
+        return 0;
+    }
+
+    return clockTimeAux.sec * 1000000ULL + clockTimeAux.nanosec / 1000ULL;
+    #endif
+  #else
     /*
      * RTI Connext DDS Micro takes the timestamp by GetSystemTimeAsFileTime,
      * this function should have a resolution of 100 nanoseconds but
@@ -80,14 +80,17 @@ unsigned long long PerftestClock::getTime()
     QueryPerformanceCounter(&ticks);
     return ticks.QuadPart / (unsigned long long) (_frequency /1000000.0);
 
-    #endif /* RTI_WIN32 */
-  #else
-    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
-    return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
-  #endif /* RTI_PERFTEST_NANO_CLOCK */
-
-
+  #endif /* RTI_WIN32 */
 }
+
+#ifdef RTI_PERFTEST_NANO_CLOCK
+unsigned long long PerftestClock::getTimeNs()
+{
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
+    return (static_cast<unsigned long long>(timeStruct.tv_sec) * 1000000000ULL)
+            + static_cast<unsigned long long>(timeStruct.tv_nsec);
+}
+#endif // RTI_PERFTEST_NANO_CLOCK
 
 void PerftestClock::milliSleep(unsigned int millisec)
 {
@@ -181,7 +184,8 @@ bool configureUDPv4Transport(
             malloc(sizeof(struct UDP_InterfaceFactoryProperty));
     *udp_property = UDP_INTERFACE_FACTORY_PROPERTY_DEFAULT;
 #endif
-    udp_property->max_message_size = 65536;
+    /* Max message size allowed for the UDP transport registration */
+    udp_property->max_message_size = 65507;
     udp_property->max_receive_buffer_size = 2097152;
     udp_property->max_send_buffer_size = 524288;
 
@@ -460,128 +464,76 @@ bool PerftestConfigureTransport(
 bool PerftestConfigureSecurity(
         PerftestSecurity &security,
         DDS_DomainParticipantQos &qos,
-        ParameterManager *_PM)
+        ParameterManager *parameterManager)
 {
-    // configure use of security plugins, based on provided arguments
-    RTRegistry *registry =
-            DDSDomainParticipantFactory::get_instance()->get_registry();
+    /* Mark property as static because it is required to be
+     * valid as long as the the library is registered.
+     */
+    static struct DDS_PskServiceFactoryProperty psk_svc_property = DDS_PskServiceFactoryProperty_INITIALIZER;
+    static struct DDS_SecTransform_Configuration psl_config = {0};
+    RTRegistry *registry = DDSDomainParticipantFactory::get_instance()->get_registry();
 
-    // Properties to register built-in security plugins
-    SECCORE_SecurePluginFactoryProperty sec_plugin_prop;
+    psk_svc_property.psl_get_interface_func = PSK_OSSL_get_interface;
+    psk_svc_property.psl_config = &psl_config;
 
-    DDS_Boolean retval;
-
-    // register plugin factory with registry
-    if (!SECCORE_SecurePluginFactory::register_suite(
-                    registry,SECCORE_DEFAULT_SUITE_NAME,sec_plugin_prop))
+    // Register library with  theregistry
+    if (!DDS_PskLibrary_register(registry->get_c_registry(), &psk_svc_property))
     {
-        printf("Failed to register security plugins factory\n");
+        printf("Failed to register psk library \n");
         return false;
     }
 
     // Enable security in DomainParticipantQos
-    if (!qos.trust.suite.set_name(SECCORE_DEFAULT_SUITE_NAME))
+    if (!qos.trust.suite.set_name(DDS_PSK_DEFAULT_SUITE_NAME))
     {
-        printf("Failed to set security suite name: %s\n",
-               SECCORE_DEFAULT_SUITE_NAME);
+        printf("Failed to set security suite name: %s\n", DDS_PSK_DEFAULT_SUITE_NAME);
         return false;
     }
 
-    // check if governance file provided
-    if (!_PM->get<std::string>("secureGovernanceFile").empty()) {
-        retval = qos.property.value.assert_property(
-                        "dds.sec.access.governance",
-                        _PM->get<std::string>("secureGovernanceFile").c_str(),
-                        false);
-
-    } else {
-        fprintf(stderr,
-                "%s SecureGovernanceFile cannot be empty when using security.\n",
-                classLoggingString.c_str());
-        return false;
-    }
-    if (!retval) {
-        printf("Failed to add property dds.sec.access.governance\n");
-        return false;
-    }
-
-    // permissions file
-    if (!qos.property.value.assert_property(
-                "dds.sec.access.permissions",
-                _PM->get<std::string>("securePermissionsFile").c_str(),
-                false))
-    {
-        printf("Failed to add property "
-                "dds.sec.access.permissions\n");
-        return false;
-    }
-
-    // permissions authority file (legacy property, it should be permissions_file)
-    if (!qos.property.value.assert_property(
-                "dds.sec.access.permissions_ca",
-                _PM->get<std::string>("secureCertAuthority").c_str(),
-                false))
-    {
-        printf("Failed to add property "
-                "dds.sec.access.permissions_ca\n");
-        return false;
-    }
-
-    // certificate authority
-    if (!qos.property.value.assert_property(
-                "dds.sec.auth.identity_ca",
-                _PM->get<std::string>("secureCertAuthority").c_str(),
-                false))
-    {
-        printf("Failed to add property "
-                "dds.sec.auth.identity_ca\n");
-        return false;
-    }
-
-    // public key
-    if (!qos.property.value.assert_property(
-                "dds.sec.auth.identity_certificate",
-                _PM->get<std::string>("secureCertFile").c_str(),
-                false))
-    {
-        printf("Failed to add property "
-                "dds.sec.auth.identity_certificate\n");
-        return false;
-    }
-
-    // private key
-    if (!qos.property.value.assert_property(
-                "dds.sec.auth.private_key",
-                _PM->get<std::string>("securePrivateKey").c_str(),
-                false))
-    {
-        printf("Failed to add property "
-                "dds.sec.auth.private_key\n");
-        return false;
-    }
-
-    if (_PM->is_set("secureDebug")) {
-        if (!qos.property.value.assert_property(
-                    "logging.log_level",
-                    perftest::to_string(_PM->get<int>("secureDebug")).c_str(),
-                    false))
-        {
-            printf("Failed to add property "
-                    "logging.log_level\n");
+    // Configure use of security plugins, based on provided arguments
+     if (parameterManager->is_set("securePSK")) {
+        if (DDS_PropertyQosPolicyHelper_add_property(
+                &qos.property,
+                "dds.sec.crypto.rtps_psk_secret_passphrase",
+                parameterManager->get<std::string>("securePSK").c_str(),
+                DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
             return false;
+        }
+
+        if (parameterManager->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
+            /* Pro supports AES128+GMAC and AES256+GMAC as symmetric cipher algorithms
+             * which imply either AES128+GCM or AES256+GCM with a protection kind of SIGN
+             * instead of the default of ENCRYPT. Micro does not support GMAC as a valid
+             * symmetric cipher algorithm, so we will apply the same logic here for
+             * compatibility in the pertftest.
+             */
+            std::string algorithm = parameterManager->get<std::string>("securePSKAlgorithm");
+            algorithm.replace(algorithm.find("GMAC"), 4, "GCM");
+            if (DDS_PropertyQosPolicyHelper_add_property(
+                    &qos.property,
+                    "dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
+                    algorithm.c_str(),
+                    DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+                return false;
+            }
+            if (DDS_PropertyQosPolicyHelper_add_property(
+                    &qos.property,
+                    "dds.sec.access.rtps_psk_protection_kind",
+                    "SIGN",
+                    DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+                return false;
+            }
+        } else {
+            if (DDS_PropertyQosPolicyHelper_add_property(
+                    &qos.property,
+                    "dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm",
+                    parameterManager->get<std::string>("securePSKAlgorithm").c_str(),
+                    DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+                return false;
+            }
         }
     }
 
-    if (_PM->is_set("secureEnableAAD")) {
-        if (!qos.property.value.assert_property(
-            "com.rti.serv.secure.cryptography.enable_additional_authenticated_data",
-            "1",
-            false))
-        {
-            printf("Failed to add property enable_additional_authenticated_data\n");
-            return false;
-        }
-    }
     return true;
 }
 #endif

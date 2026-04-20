@@ -76,7 +76,7 @@ extern "C" void RTIAndroid_registerOnPrintf(RTIAndroidOnPrintfMethod onPrintf) {
 bool perftest_cpp::_testCompleted = false;
 const int timeout_wait_for_ack_sec = 0;
 const unsigned int timeout_wait_for_ack_nsec = 100000000;
-const Perftest_ProductVersion_t perftest_cpp::_version = {9, 9, 9, 9};
+const Perftest_ProductVersion_t perftest_cpp::_version = {4, 3, 0, 0};
 
 /*
  * PERFTEST-108
@@ -164,6 +164,13 @@ int perftest_cpp::Run(int argc, char *argv[])
             && !_threadPriorities.set_main_thread_priority()) {
         return -1;
     }
+
+  #ifdef PERFTEST_RTI_PRO
+    if (_threadCPUAffinity.isInitialized()
+            && !_threadCPUAffinity.set_main_thread_affinity()) {
+        return -1;
+    }
+  #endif
 
   #if defined(PERFTEST_RTI_PRO) || defined(PERFTEST_RTI_MICRO) || defined(RTI_PERF_TSS)
     if (_PM.get<bool>("rawTransport")) {
@@ -279,13 +286,13 @@ int perftest_cpp::Run(int argc, char *argv[])
             case 0: // = 0000 (Not keyed)
                 _MessagingImpl = new RTICertImpl<TestData_t, TestData_tSeq>(
                         TestData_tTypeSupport_get_type_name(),
-                        TestData_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestData_tTypePlugin_get());
                 break;
 
             case 1: // Keyed = 0001
                 _MessagingImpl = new RTICertImpl<TestDataKeyed_t, TestDataKeyed_tSeq>(
                         TestDataKeyed_tTypeSupport_get_type_name(),
-                        TestDataKeyed_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestDataKeyed_tTypePlugin_get());
                 break;
 
     #ifdef RTI_ZEROCOPY_AVAILABLE
@@ -293,13 +300,13 @@ int perftest_cpp::Run(int argc, char *argv[])
             case 2: // = 0010 (zerocopy + Not keyed)
                 _MessagingImpl = new RTICertImpl_ZCopy<TestData_Cert_ZCopy_t, TestData_Cert_ZCopy_tSeq>(
                         TestData_Cert_ZCopy_tTypeSupport_get_type_name(),
-                        TestData_Cert_ZCopy_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestData_Cert_ZCopy_tTypePlugin_get());
                 break;
 
             case 3: // zerocopy + Keyed = 0011
                 _MessagingImpl = new RTICertImpl_ZCopy<TestDataKeyed_Cert_ZCopy_t, TestDataKeyed_Cert_ZCopy_tSeq>(
                         TestDataKeyed_Cert_ZCopy_tTypeSupport_get_type_name(),
-                        TestDataKeyed_Cert_ZCopy_tTypePlugin_get());
+                        (NDDS_Type_Plugin*)TestDataKeyed_Cert_ZCopy_tTypePlugin_get());
                 break;
 
     #endif
@@ -568,6 +575,16 @@ bool perftest_cpp::validate_input()
         _threadPriorities.isSet = true;
     }
 
+  #ifdef PERFTEST_RTI_PRO
+    if (_PM.is_set("threadCPUAffinity")) {
+        if (!_threadCPUAffinity.parse_affinities(_PM.get<std::string>("threadCPUAffinity"))) {
+            fprintf(stderr, "Could not set -threadCPUAffinity.\n");
+            return false;
+        }
+        // isSet is already set to true in parse_affinities
+    }
+  #endif
+
     // Check if we need to enable the use of unbounded sequences.
     if (_PM.get<unsigned long long>("dataLen") > MAX_BOUNDED_SEQ_SIZE) {
         if (_PM.get<int>("unbounded") == 0) {
@@ -780,6 +797,21 @@ void perftest_cpp::print_configuration()
         stringStream << "\t\tDataBase and Event threads Priority: "
                 << _threadPriorities.dbAndEvent << std::endl;
     }
+
+  #ifdef PERFTEST_RTI_PRO
+    // Thread CPU Affinity
+    if (_threadCPUAffinity.isInitialized()) {
+        stringStream << "\tUsing thread CPU Affinity:" << std::endl;
+        stringStream << "\t\tMain thread Core(s): "
+                << _threadCPUAffinity.get_cores_main_str() << std::endl;
+        stringStream << "\t\tReceive thread Core(s): "
+                << _threadCPUAffinity.get_cores_receive_str() << std::endl;
+        stringStream << "\t\tDataBase Core(s): "
+                << _threadCPUAffinity.get_cores_db_str() << std::endl;
+        stringStream << "\t\tEvent thread Core(s): "
+                << _threadCPUAffinity.get_cores_event_str() << std::endl;
+    }
+  #endif
 
     stringStream << _MessagingImpl->print_configuration();
 
@@ -1060,6 +1092,7 @@ class ThroughputListener : public IMessagingCB
 
             fflush(stdout);
         } else if (endTest) {
+            _printer->print_throughput_summary(0, 0, 0, 0, 0, 0, 0);
             fprintf(stderr,
                     "\nNo samples have been received by the Subscriber side,\n"
                     "however 1 or more Publishers sent the finalization message.\n\n"
@@ -1526,6 +1559,12 @@ public:
         if (count == 0)
         {
             if (endTest) {
+              #ifdef PERFTEST_RTI_PRO
+                _printer->print_latency_summary(0, 0, 0, 0, *_latency_history, 0, 0, 0, 0, 0);
+                
+              #else
+                _printer->print_latency_summary(0, 0, 0, 0, _latency_history, 0, 0);
+              #endif
                 fprintf(stderr,
                         "\nNo Pong samples have been received in the Publisher side.\n"
                         "If you are interested in latency results, you might need to\n"
@@ -1737,7 +1776,11 @@ public:
         double latency_std;
         double outputCpu = 0.0;
 
+      #ifndef RTI_PERFTEST_NANO_CLOCK
         now = PerftestClock::getInstance().getTime();
+      #else
+        now = PerftestClock::getInstance().getTimeNs();
+      #endif
 
         switch (message.size) {
             // Initializing message, don't process
@@ -1989,7 +2032,7 @@ int perftest_cpp::Publisher()
         }
 
         announcementReadThread = PerftestThread_new(
-                "announcementReadThread",
+                "announceThread",
                 threadPriority,
                 threadOptions,
                 ReadThread<AnnouncementListener>,
@@ -2130,11 +2173,6 @@ int perftest_cpp::Publisher()
     unsigned long pubRate_sample_period = 1;
     unsigned long rate = 0;
 
-    struct PerftestTimer::ScheduleInfo schedInfo = {
-            (unsigned int)_PM.get<unsigned long long>("executionTime"),
-            Timeout
-    };
-
     time_last_check = PerftestClock::getInstance().getTime();
 
     /* Minimum value for pubRate_sample_period will be 1 so we execute 100 times
@@ -2148,7 +2186,40 @@ int perftest_cpp::Publisher()
     }
 
     if (_PM.get<unsigned long long>("executionTime") > 0) {
-        executionTimeoutThread = PerftestTimer::getInstance().setTimeout(schedInfo);
+
+        struct PerftestTimer::ScheduleInfo schedInfo = {
+            (unsigned int)_PM.get<unsigned long long>("executionTime"),
+            Timeout
+        };
+
+        // Set thread priority and CPU affinity if configured
+        int execThreadPriority = Perftest_THREAD_PRIORITY_DEFAULT;
+        int execThreadOptions = Perftest_THREAD_OPTION_DEFAULT;
+        if (_threadPriorities.isSet) {
+            execThreadPriority = _threadPriorities.main + 10;
+            execThreadOptions = Perftest_THREAD_SETTINGS_REALTIME_PRIORITY
+                    | Perftest_THREAD_SETTINGS_PRIORITY_ENFORCE;
+        }
+
+        int execThreadCpuAffinity = -1;
+      #ifdef PERFTEST_RTI_PRO
+        if (_threadCPUAffinity.isInitialized()) {
+            // For simplicity, use the first core assigned to main thread
+            // (get_cores_main() returns a vector<int>)
+            const std::vector<int>& cores = _threadCPUAffinity.get_cores_main();
+            if (!cores.empty()) {
+                execThreadCpuAffinity = cores[0];
+            }
+        }
+      #endif // PERFTEST_RTI_PRO
+
+        executionTimeoutThread = PerftestTimer::getInstance().setParameters(
+            schedInfo,
+            execThreadPriority,
+            execThreadOptions,
+            execThreadCpuAffinity
+        );
+
         if (executionTimeoutThread == NULL) {
             fprintf(stderr, "Problem creating timeoutThread for executionTime.\n");
             return -1;
@@ -2272,7 +2343,12 @@ int perftest_cpp::Publisher()
 
                 // Each time ask a different subscriber to echo back
                 pingID = num_pings % numSubscribers;
+
+              #ifndef RTI_PERFTEST_NANO_CLOCK
                 unsigned long long now = PerftestClock::getInstance().getTime();
+              #else
+                unsigned long long now = PerftestClock::getInstance().getTimeNs();
+              #endif
                 message.timestamp_sec = (int)((now >> 32) & 0xFFFFFFFF);
                 message.timestamp_usec = (unsigned int)(now & 0xFFFFFFFF);
                 ++num_pings;
@@ -2463,6 +2539,13 @@ const ThreadPriorities perftest_cpp::get_thread_priorities()
 {
     return _threadPriorities;
 }
+
+#ifdef PERFTEST_RTI_PRO
+const ThreadCPUAffinity perftest_cpp::get_thread_cpu_affinity()
+{
+    return _threadCPUAffinity;
+}
+#endif
 
 void perftest_cpp::Timeout() {
     _testCompleted = true;

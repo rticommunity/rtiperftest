@@ -36,11 +36,7 @@ void PerftestCSVPrinter::print_latency_header()
     if (_printHeaders && _printIntervals) {
         fprintf(_outputFile, "\nIntervals One-Way Latency for %d Bytes:\n", _dataLength);
         fprintf(_outputFile, "Length (Bytes)"
-                ", Latency (" PERFT_TIME_UNIT
-                "), Ave (" PERFT_TIME_UNIT
-                "), Std (" PERFT_TIME_UNIT
-                "), Min (" PERFT_TIME_UNIT
-                "), Max (" PERFT_TIME_UNIT ")");
+                ", Latency (μs), Ave (μs), Std (μs), Min (μs), Max (μs)");
         if (_showCPU) {
             fprintf(_outputFile, ", CPU (%%)");
         }
@@ -70,6 +66,8 @@ void PerftestCSVPrinter::print_latency_interval(
         unsigned long latencyMax,
         double outputCpu)
 {
+
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     fprintf(_outputFile, "%14d,%13lu,%9.0lf,%9.1lf,%9lu,%9lu",
             _dataLength,
             latency,
@@ -77,6 +75,15 @@ void PerftestCSVPrinter::print_latency_interval(
             latencyStd,
             latencyMin,
             latencyMax);
+  #else
+    fprintf(_outputFile, "%14d,%13.3f,%9.3f,%9.3f,%9.3f,%9.3f",
+        _dataLength,
+        latency / 1000.0,
+        latencyAve / 1000.0,
+        latencyStd / 1000.0,
+        latencyMin / 1000.0,
+        latencyMax / 1000.0);
+  #endif //RTI_PERFTEST_NANO_CLOCK
     if (_showCPU) {
         fprintf(_outputFile, ",%8.2f", outputCpu);
     }
@@ -103,25 +110,25 @@ void PerftestCSVPrinter::print_latency_summary(
             fprintf(_outputFile, "\nOne-way Latency Summary:\n");
         }
         fprintf(_outputFile, "Sample Size (Bytes)"
-                ", Ave (" PERFT_TIME_UNIT
-                "), Std (" PERFT_TIME_UNIT
-                "), Min (" PERFT_TIME_UNIT
-                "), Max (" PERFT_TIME_UNIT
-                "), 50%% (" PERFT_TIME_UNIT
-                "), 90%% (" PERFT_TIME_UNIT
-                "), 99%% (" PERFT_TIME_UNIT
-                "), 99.99%% (" PERFT_TIME_UNIT
-                "), 99.9999%% (" PERFT_TIME_UNIT
-                ")");
+                ", Ave (μs), Std (μs), Min (μs), Max (μs), 50%% (μs), 90%% (μs),"
+                " 99%% (μs), 99.99%% (μs), 99.9999%% (μs)");
         if (_printSerialization) {
-            fprintf(_outputFile, ", Serialization (" PERFT_TIME_UNIT
-                    "), Deserialization (" PERFT_TIME_UNIT
-                    "), Total (" PERFT_TIME_UNIT ")");
+            fprintf(_outputFile, ", Serialization (μs), Deserialization (μs), Total (μs)");
         }
         if (_showCPU) {
             fprintf(_outputFile, ", CPU (%%)");
         }
         fprintf(_outputFile, "\n");
+    }
+
+  #ifndef RTI_PERFTEST_NANO_CLOCK
+    unsigned long p50 = 0, p90 = 0, p99 = 0, p9999 = 0, p999999 = 0;
+    if (latencyHistory) {
+        p50 = latencyHistory[count * 50 / 100];
+        p90 = latencyHistory[count * 90 / 100];
+        p99 = latencyHistory[count * 99 / 100];
+        p9999 = latencyHistory[(int) (count * (9999.0 / 10000))];
+        p999999 = latencyHistory[(int) (count * (999999.0 / 1000000))];
     }
     fprintf(_outputFile, "%19d,%9.0lf,%9.1lf,%9lu,%9lu,%9lu,%9lu,%9lu,%12lu,%14lu",
             totalSampleSize,
@@ -129,11 +136,32 @@ void PerftestCSVPrinter::print_latency_summary(
             latencyStd,
             latencyMin,
             latencyMax,
-            latencyHistory[count * 50 / 100],
-            latencyHistory[count * 90 / 100],
-            latencyHistory[count * 99 / 100],
-            latencyHistory[(int) (count * (9999.0 / 10000))],
-            latencyHistory[(int) (count * (999999.0 / 1000000))]);
+            p50,
+            p90,
+            p99,
+            p9999,
+            p999999);
+  #else
+    double p50 = 0, p90 = 0, p99 = 0, p9999 = 0, p999999 = 0;
+    if (latencyHistory) {
+        p50 = latencyHistory[count * 50 / 100] / 1000.0;
+        p90 = latencyHistory[count * 90 / 100] / 1000.0;
+        p99 = latencyHistory[count * 99 / 100] / 1000.0;
+        p9999 = latencyHistory[(int) (count * (9999.0 / 10000))] / 1000.0;
+        p999999 = latencyHistory[(int) (count * (999999.0 / 1000000))] / 1000.0;
+    }
+    fprintf(_outputFile, "%19d,%9.3f,%9.3f,%9.3f,%9.3f,%9.3f,%9.3f,%9.3f,%12.3f,%14.3f",
+            totalSampleSize,
+            latencyAve / 1000.0,
+            latencyStd / 1000.0,
+            latencyMin / 1000.0,
+            latencyMax / 1000.0,
+            p50,
+            p90,
+            p99,
+            p9999,
+            p999999);
+  #endif
     if (_printSerialization) {
         fprintf(_outputFile, ",%19.3f,%21.3f,%11.3f",
                 serializeTime,
@@ -254,6 +282,7 @@ void PerftestJSONPrinter::print_latency_interval(
     } else {
         fprintf(_outputFile, ",");
     }
+#ifndef RTI_PERFTEST_NANO_CLOCK
     fprintf(_outputFile, "\n\t\t\t\t{\n"
             "\t\t\t\t\t\"latency\": %lu,\n"
             "\t\t\t\t\t\"latency_ave\": %1.2lf,\n"
@@ -265,6 +294,19 @@ void PerftestJSONPrinter::print_latency_interval(
             latencyStd,
             latencyMin,
             latencyMax);
+#else
+    fprintf(_outputFile, "\n\t\t\t\t{\n"
+            "\t\t\t\t\t\"latency\": %.3f,\n"
+            "\t\t\t\t\t\"latency_ave\": %.3f,\n"
+            "\t\t\t\t\t\"latency_std\": %.3f,\n"
+            "\t\t\t\t\t\"latency_min\": %.3f,\n"
+            "\t\t\t\t\t\"latency_max\": %.3f",
+            latency / 1000.0,
+            latencyAve / 1000.0,
+            latencyStd / 1000.0,
+            latencyMin / 1000.0,
+            latencyMax / 1000.0);
+#endif
     if (_showCPU) {
         fprintf(_outputFile, ",\n\t\t\t\t\t\"CPU\": %1.2f", outputCpu);
     }
@@ -286,6 +328,7 @@ void PerftestJSONPrinter::print_latency_summary(
     if (_printIntervals) {
         fprintf(_outputFile, "\n\t\t\t],\n");
     }
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     fprintf(_outputFile, "\t\t\t\"summary\":{\n"
             "\t\t\t\t\"latency_ave\": %1.2lf,\n"
             "\t\t\t\t\"latency_std\": %1.2lf,\n"
@@ -305,6 +348,27 @@ void PerftestJSONPrinter::print_latency_summary(
             latencyHistory[count * 99 / 100],
             latencyHistory[(int) (count * (9999.0 / 10000))],
             latencyHistory[(int) (count * (999999.0 / 1000000))]);
+  #else
+    fprintf(_outputFile, "\t\t\t\"summary\":{\n"
+            "\t\t\t\t\"latency_ave\": %.3f,\n"
+            "\t\t\t\t\"latency_std\": %.3f,\n"
+            "\t\t\t\t\"latency_min\": %.3f,\n"
+            "\t\t\t\t\"latency_max\": %.3f,\n"
+            "\t\t\t\t\"latency_50\": %.3f,\n"
+            "\t\t\t\t\"latency_90\": %.3f,\n"
+            "\t\t\t\t\"latency_99\": %.3f,\n"
+            "\t\t\t\t\"latency_99.99\": %.3f,\n"
+            "\t\t\t\t\"latency_99.9999\": %.3f",
+            latencyAve / 1000.0,
+            latencyStd / 1000.0,
+            latencyMin / 1000.0,
+            latencyMax / 1000.0,
+            latencyHistory[count * 50 / 100] / 1000.0,
+            latencyHistory[count * 90 / 100] / 1000.0,
+            latencyHistory[count * 99 / 100] / 1000.0,
+            latencyHistory[(int) (count * (9999.0 / 10000))] / 1000.0,
+            latencyHistory[(int) (count * (999999.0 / 1000000))] / 1000.0);
+  #endif
     if (_printSerialization) {
         fprintf(_outputFile, ",\n\t\t\t\t\"serialize\": %1.3f,\n"
                 "\t\t\t\t\"deserialize\": %1.3f,\n"
@@ -424,16 +488,29 @@ void PerftestLegacyPrinter::print_latency_interval(
         unsigned long latencyMax,
         double outputCpu)
 {
-    fprintf(_outputFile, "One-Way Latency: %6lu " PERFT_TIME_UNIT
-            " Ave %6.0lf " PERFT_TIME_UNIT
-            " Std %6.1lf " PERFT_TIME_UNIT
-            " Min %6lu " PERFT_TIME_UNIT
-            " Max %6lu " PERFT_TIME_UNIT,
+  #ifndef RTI_PERFTEST_NANO_CLOCK
+    fprintf(_outputFile, "One-Way Latency: %6lu μs"
+            " Ave %6.0lf μs"
+            " Std %6.1lf μs"
+            " Min %6lu μs"
+            " Max %6lu μs",
             latency,
             latencyAve,
             latencyStd,
             latencyMin,
             latencyMax);
+  #else
+    fprintf(_outputFile, "One-Way Latency: %9.3f μs"
+            " Ave %9.3f μs"
+            " Std %9.3f μs"
+            " Min %9.3f μs"
+            " Max %9.3f μs",
+            latency / 1000.0,
+            latencyAve / 1000.0,
+            latencyStd / 1000.0,
+            latencyMin / 1000.0,
+            latencyMax / 1000.0);
+  #endif
     if (_showCPU) {
         fprintf(_outputFile, " CPU %1.2f (%%)", outputCpu);
     }
@@ -452,16 +529,17 @@ void PerftestLegacyPrinter::print_latency_summary(
         double deserializeTime,
         double outputCpu)
 {
+  #ifndef RTI_PERFTEST_NANO_CLOCK
     fprintf(_outputFile, "Length: %5d"
-            " Latency: Ave %6.0lf " PERFT_TIME_UNIT
-            " Std %6.1lf " PERFT_TIME_UNIT
-            " Min %6lu " PERFT_TIME_UNIT
-            " Max %6lu " PERFT_TIME_UNIT
-            " 50%% %6lu " PERFT_TIME_UNIT
-            " 90%% %6lu " PERFT_TIME_UNIT
-            " 99%% %6lu " PERFT_TIME_UNIT
-            " 99.99%% %6lu " PERFT_TIME_UNIT
-            " 99.9999%% %6lu " PERFT_TIME_UNIT,
+            " Latency: Ave %6.0lf μs"
+            " Std %6.1lf μs"
+            " Min %6lu μs"
+            " Max %6lu μs"
+            " 50%% %6lu μs"
+            " 90%% %6lu μs"
+            " 99%% %6lu μs"
+            " 99.99%% %6lu μs"
+            " 99.9999%% %6lu μs",
             totalSampleSize,
             latencyAve,
             latencyStd,
@@ -472,6 +550,28 @@ void PerftestLegacyPrinter::print_latency_summary(
             latencyHistory[count * 99 / 100],
             latencyHistory[(int) (count * (9999.0 / 10000))],
             latencyHistory[(int) (count * (999999.0 / 1000000))]);
+  #else
+    fprintf(_outputFile, "Length: %5d"
+            " Latency: Ave %9.3f μs"
+            " Std %9.3f μs"
+            " Min %9.3f μs"
+            " Max %9.3f μs"
+            " 50%% %9.3f μs"
+            " 90%% %9.3f μs"
+            " 99%% %9.3f μs"
+            " 99.99%% %9.3f μs"
+            " 99.9999%% %9.3f μs",
+            totalSampleSize,
+            latencyAve / 1000.0,
+            latencyStd / 1000.0,
+            latencyMin / 1000.0,
+            latencyMax / 1000.0,
+            latencyHistory[count * 50 / 100] / 1000.0,
+            latencyHistory[count * 90 / 100] / 1000.0,
+            latencyHistory[count * 99 / 100] / 1000.0,
+            latencyHistory[(int) (count * (9999.0 / 10000))] / 1000.0,
+            latencyHistory[(int) (count * (999999.0 / 1000000))] / 1000.0);
+  #endif
     if (_showCPU) {
         fprintf(_outputFile, " CPU %1.2f (%%)", outputCpu);
     }

@@ -504,7 +504,7 @@ if !BUILD_CPP! == 1 (
 	)
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
-	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h PerftestPrinter.h FileDataLoader.h"
+	set "additional_header_files=!additional_header_files_custom_type!!additional_header_files!RTIRawTransportImpl.h Parameter.h ParameterManager.h ThreadPriorities.h ThreadCPUAffinity.h RTIDDSLoggerDevice.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h Infrastructure_common.h Infrastructure_pro.h PerftestPrinter.h FileDataLoader.h"
 	set "additional_source_files=!additional_source_files_custom_type!!additional_source_files!RTIRawTransportImpl.cxx Parameter.cxx ParameterManager.cxx ThreadPriorities.cxx RTIDDSLoggerDevice.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx Infrastructure_common.cxx Infrastructure_pro.cxx PerftestPrinter.cxx FileDataLoader.cxx"
 
 	if !FLATDATA_AVAILABLE! == 1 (
@@ -702,7 +702,7 @@ if !BUILD_CPP11! == 1 (
 
 	set "ADDITIONAL_DEFINES=/0x !ADDITIONAL_DEFINES!"
 
-	set "additional_header_files=ThreadPriorities.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h PerftestPrinter.h"
+	set "additional_header_files=ThreadPriorities.h ThreadCPUAffinity.h Parameter.h ParameterManager.h MessagingIF.h RTIDDSImpl.h perftest_cpp.h qos_string.h CpuMonitor.h PerftestTransport.h PerftestPrinter.h"
 	set "additional_source_files=ThreadPriorities.cxx Parameter.cxx ParameterManager.cxx RTIDDSImpl.cxx CpuMonitor.cxx PerftestTransport.cxx PerftestPrinter.cxx"
 
 	if !FLATDATA_AVAILABLE! == 1 (
@@ -714,6 +714,9 @@ if !BUILD_CPP11! == 1 (
 	if "!additional_rti_libs!" NEQ "" (
 		set additional_rti_libs_str=-additionalRtiLibraries "!additional_rti_libs!"
 	)
+
+    set USE_RTIDDSGEN_ENV_VAR=True
+    set RTIDDSGEN_STANDARD=DDS_PSM_Cxx
 
 	echo[
 	echo [INFO] "%rtiddsgen_executable%" -language %modern_cpp_lang_string% ^

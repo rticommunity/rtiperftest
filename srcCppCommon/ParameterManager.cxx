@@ -335,6 +335,24 @@ void ParameterManager::initialize()
             | Middleware::RAWTRANSPORT);
     create("threadPriorities", threadPriorities);
 
+    Parameter<std::string> *threadCPUAffinity = new Parameter<std::string>("");
+    threadCPUAffinity->set_command_line_argument("-threadCPUAffinity", "<A:B:C:D>");
+    threadCPUAffinity->set_description(
+            "Set the CPU assigned for the different application Threads:\n"
+            "A - For the Main Thread, which will be the one\n"
+            "    sending the data. Also for the Asynchronous \n"
+            "    thread if that one is used.\n"
+            "B - For the Receive Threads.\n"
+            "C - For the Event Thread.\n"
+            "D - For the DataBase Thread.\n"
+            "The CPU can be set as a number or a range of CPUs.\n"
+            "For example: 0,1,2,3 or 0-3.\n");
+    threadCPUAffinity->set_type(T_STR);
+    threadCPUAffinity->set_extra_argument(YES);
+    threadCPUAffinity->set_group(GENERAL);
+    threadCPUAffinity->set_supported_middleware(Middleware::RTIDDSPRO);
+    create("threadCPUAffinity", threadCPUAffinity);
+
     Parameter<std::string> *outputFormat = new Parameter<std::string>("csv");
     outputFormat->set_command_line_argument("-outputFormat", "<format>");
     outputFormat->set_description(
@@ -377,8 +395,8 @@ void ParameterManager::initialize()
     create("flatdata", flatData);
   #endif
 
-  #if RTI_ZEROCOPY_AVAILABLE
-    #if(defined(RTI_CERT) || defined(RTI_FLATDATA_AVAILABLE))
+  #if defined(RTI_ZEROCOPY_AVAILABLE) || (RTIME_DDS_VERSION_MAJOR == 4)
+    #if(defined(RTI_CERT) || defined(RTI_FLATDATA_AVAILABLE)) || (RTIME_DDS_VERSION_MAJOR == 4)
     Parameter<bool> *zerocopy = new Parameter<bool>(false);
     zerocopy->set_command_line_argument("-zeroCopy", "");
     zerocopy->set_description(
@@ -848,14 +866,14 @@ void ParameterManager::initialize()
     pubRatebps->set_command_line_argument("-pubRatebps", "<bps>:<method>");
     pubRatebps->set_description(
             "Limit the throughput to the specified number\n"
-            "of samples/s. Default 0 (don't limit)\n"
+            "of bits/s. Default 0 (don't limit)\n"
             "[OPTIONAL] Method to control the throughput can be:\n"
             "'spin' or 'sleep'.\nDefault method: spin");
     pubRatebps->set_type(T_PAIR_NUMERIC_STR);
     pubRatebps->set_extra_argument(YES);
     pubRatebps->set_group(PUB);
     pubRatebps->set_supported_middleware(Middleware::ALL);
-    pubRatebps->set_range(1, 10000000);
+    pubRatebps->set_range(1, LONG_MAX);
     pubRatebps->add_valid_str_value("sleep");
     pubRatebps->add_valid_str_value("spin");
     create("pubRatebps", pubRatebps);
@@ -1547,7 +1565,9 @@ void ParameterManager::initialize()
     securePSK->set_type(T_STR);
     securePSK->set_extra_argument(YES);
     securePSK->set_group(SECURE);
-    securePSK->set_supported_middleware(Middleware::RTIDDSPRO);
+    securePSK->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("securePSK", securePSK);
 
     // This one will be used both in Static and Dynamic. In static will be yet
@@ -1559,7 +1579,9 @@ void ParameterManager::initialize()
     securePSKAlgorithm->set_type(T_STR);
     securePSKAlgorithm->set_extra_argument(YES);
     securePSKAlgorithm->set_group(SECURE);
-    securePSKAlgorithm->set_supported_middleware(Middleware::RTIDDSPRO);
+    securePSKAlgorithm->set_supported_middleware(
+            Middleware::RTIDDSPRO
+            | Middleware::RTIDDSMICRO);
     create("securePSKAlgorithm", securePSKAlgorithm);
 
 

@@ -42,6 +42,7 @@
 #include <rti/util/util.hpp>
 #include "MessagingIF.h"
 #include "ThreadPriorities.h"
+#include "ThreadCPUAffinity.h"
 
 #define PERFTEST_DISCOVERY_TIME_MSEC 1000   // 1 second
 #define ONE_MILLION 1000000L     // 1 million == 1 second in us
@@ -69,6 +70,7 @@ class perftest_cpp
     void print_configuration();
     unsigned int get_samples_per_batch();
     const ThreadPriorities get_thread_priorities();
+    const ThreadCPUAffinity get_thread_cpu_affinity();
     static void MilliSleep(unsigned int millisec);
     static const rti::core::ProductVersion GetDDSVersion();
     static const Perftest_ProductVersion_t get_perftest_version();
@@ -86,7 +88,11 @@ class perftest_cpp
     int RunPublisher();
     int RunSubscriber();
     static void *waitAndExecute(void *scheduleInfo);
-    static RTIOsapiThread *SetTimeout(ScheduleInfo &info);
+    static RTIOsapiThread *SetParameters(
+        ScheduleInfo &info,
+        int threadPriority,
+        int threadOptions,
+        int cpuAffinity);
 
     // Private members
     ParameterManager _PM;
@@ -97,6 +103,7 @@ class perftest_cpp
     static const Perftest_ProductVersion_t _version;
 
     ThreadPriorities _threadPriorities;
+    ThreadCPUAffinity _threadCPUAffinity;
 
   public:
 

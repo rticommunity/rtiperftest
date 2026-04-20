@@ -18,8 +18,9 @@
 #include "Infrastructure_common.h"
 
 #ifdef RTI_SECURE_PERFTEST
-  #include "sec_core/sec_core_cpp.h"
   #include "PerftestSecurity.h"
+  #include "dds_psk/dds_psk.h"
+  #include "rti_me_psl/pskpsl/psk_ossl_transform.h"
 #endif
 
 #ifdef RTI_WIN32
@@ -30,6 +31,15 @@
 
 
 #ifndef RTI_USE_CPP_11_INFRASTRUCTURE
+
+#if (RTIME_DDS_VERSION_MAJOR == 4 && RTIME_DDS_VERSION_MINOR >= 2) || \
+    (RTIME_DDS_VERSION_MAJOR == 2 && RTIME_DDS_VERSION_MINOR == 4 && \
+        RTIME_DDS_VERSION_REVISION == 14 && RTIME_DDS_VERSION_RELEASE >= 3) || \
+    (RTIME_DDS_VERSION_MAJOR > 4)
+    #define RTI_NTP_TIME_COMPATIBLE 0
+#else
+    #define RTI_NTP_TIME_COMPATIBLE 1
+#endif
 
 /********************************************************************/
 /*
@@ -61,17 +71,13 @@ inline RTI_BOOL PerftestSemaphore_take(PerftestSemaphore *sem, int timeout)
 class PerftestClock {
 
   private:
-  #ifndef RTI_PERFTEST_NANO_CLOCK
-    #ifndef RTI_WIN32
-    OSAPI_NtpTime clockTimeAux;
-    RTI_INT32 clockSec;
-    RTI_UINT32 clockUsec;
-    #else
+  #ifdef RTI_WIN32
     double _frequency;
-    #endif
-  #else
-    struct timespec timeStruct;
   #endif
+
+  #ifdef RTI_PERFTEST_NANO_CLOCK
+    struct timespec timeStruct;
+  #endif // RTI_PERFTEST_NANO_CLOCK
 
   public:
     PerftestClock();
@@ -79,6 +85,9 @@ class PerftestClock {
 
     static PerftestClock &getInstance();
     unsigned long long getTime();
+  #ifdef RTI_PERFTEST_NANO_CLOCK
+    unsigned long long getTimeNs();
+  #endif // RTI_PERFTEST_NANO_CLOCK
     static void milliSleep(unsigned int millisec);
     static void sleep(const struct DDS_Duration_t& sleep_period);
 

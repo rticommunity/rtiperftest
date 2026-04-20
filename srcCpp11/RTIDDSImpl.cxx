@@ -1446,7 +1446,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         }
 
         // permissions file
-        dpQosProperties["com.rti.serv.secure.access_control.permissions_file"]
+        dpQosProperties["dds.sec.access.permissions"]
                 = _PM->get<std::string>("securePermissionsFile");
 
         // permissions authority file (legacy property, it should be permissions_file)
@@ -1478,7 +1478,7 @@ void RTIDDSImpl<T>::configureSecurePlugin(
   #endif // !defined(RTI_LW_SECURE_PERFTEST)
 
     if (_PM->is_set("securePSK")) {
-        dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase"]
+        dpQosProperties["dds.sec.crypto.rtps_psk_secret_passphrase"]
                     = _PM->get<std::string>("securePSK");
     }
 
@@ -1486,15 +1486,15 @@ void RTIDDSImpl<T>::configureSecurePlugin(
         if (!_PM->is_set("securePSK")) {
             _PM->set("securePSK", "DefaultValue");
         }
-        dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase"]
+        dpQosProperties["dds.sec.crypto.rtps_psk_secret_passphrase"]
                     = _PM->get<std::string>("securePSK");
 
         if (_PM->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
-            dpQosProperties["com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind"]
+            dpQosProperties["dds.sec.access.rtps_psk_protection_kind"]
                     = "SIGN";
         }
 
-        dpQosProperties["com.rti.serv.secure.dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm"]
+        dpQosProperties["dds.sec.crypto.rtps_psk_symmetric_cipher_algorithm"]
                     = _PM->get<std::string>("securePSKAlgorithm");
     }
 
@@ -1791,6 +1791,14 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
                 threadPriorities.dbAndEvent);
     }
 
+    ThreadCPUAffinity threadCPUAffinity = parent->get_thread_cpu_affinity();
+
+    if (threadCPUAffinity.isInitialized()) {
+        qos.policy<ReceiverPool>().thread().cpu_list(threadCPUAffinity.get_cores_receive());
+        qos.policy<Event>().thread().cpu_list(threadCPUAffinity.get_cores_event());
+        qos.policy<Database>().thread().cpu_list(threadCPUAffinity.get_cores_db());
+    }
+
     if (_PM->get<bool>("enableAutoThrottle")) {
         properties["dds.domain_participant.auto_throttle.enable"] = "true";
     }
@@ -1826,6 +1834,11 @@ bool RTIDDSImpl<T>::initialize(ParameterManager &PM, perftest_cpp *parent)
                 .mask(mask);
         publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread()
                 .priority(threadPriorities.main);
+    }
+
+    if (threadCPUAffinity.isInitialized()) {
+        publisherQoS.policy<AsynchronousPublisher>().thread().cpu_list(threadCPUAffinity.get_cores_main());
+        publisherQoS.policy<AsynchronousPublisher>().asynchronous_batch_thread().cpu_list(threadCPUAffinity.get_cores_main());
     }
 
     // Create the _publisher and _subscriber

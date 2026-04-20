@@ -213,6 +213,7 @@ void *PerftestTimer::waitAndExecute(void *scheduleInfo)
         info->handlerFunction();
     }
 
+    delete info; // Clean up the scheduleInfo after use
     return NULL;
 }
 
@@ -222,16 +223,30 @@ PerftestTimer &PerftestTimer::getInstance()
     return instance;
 }
 
-PerftestThread *PerftestTimer::setTimeout(PerftestTimer::ScheduleInfo &info)
+PerftestThread *PerftestTimer::setParameters(PerftestTimer::ScheduleInfo info, int threadPriority, int threadOptions, int cpuAffinity)
 {
     struct PerftestThread *timerThread = NULL;
 
     timerThread = PerftestThread_new(
             "timerThread",
-            Perftest_THREAD_PRIORITY_DEFAULT,
-            Perftest_THREAD_OPTION_DEFAULT,
+            threadPriority,
+            threadOptions,
             waitAndExecute,
-            &info);
+            new ScheduleInfo(info));
+
+    if (cpuAffinity >= 0 && timerThread != NULL) {
+        #ifdef RTI_LINUX
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(cpuAffinity, &cpuset);
+            int error = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+            if (error != 0) {
+                fprintf(stderr, "[ThreadCPUAffinity] Failed to set CPU affinity for timer thread (error %d)\n", error);
+            }
+        #else
+            fprintf(stderr, "[ThreadCPUAffinity] CPU affinity is not supported on this platform\n");
+        #endif
+    }
 
     return timerThread;
 }

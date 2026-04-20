@@ -196,6 +196,7 @@ import com.rti.perftest.TestMessage;
     public void print_summary_latency(boolean endTest) {
         if (_count == 0) {
             if (endTest) {
+                PerfTest._printer.print_latency_summary(0, 0, 0, 0, _latencyHistory, 0, 0);
                 System.out.printf(
                         "\nNo Pong samples have been received in the Publisher side.\n"
                         + "If you are interested in latency results, you might need to\n"

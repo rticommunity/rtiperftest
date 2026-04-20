@@ -16,7 +16,6 @@ using namespace std;
 
 PerftestClock::PerftestClock()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
     clock = RTIHighResolutionClock_new();
     if (clock == NULL) {
         throw std::bad_alloc();
@@ -25,14 +24,11 @@ PerftestClock::PerftestClock()
 
     clockSec = 0;
     clockUsec = 0;
-  #endif
 }
 
 PerftestClock::~PerftestClock()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
     RTIHighResolutionClock_delete(clock);
-  #endif
 }
 
 PerftestClock &PerftestClock::getInstance()
@@ -43,18 +39,22 @@ PerftestClock &PerftestClock::getInstance()
 
 unsigned long long PerftestClock::getTime()
 {
-  #ifndef RTI_PERFTEST_NANO_CLOCK
     clock->getTime(clock, &clockTimeAux);
     RTINtpTime_unpackToMicrosec(
             clockSec,
             clockUsec,
             clockTimeAux);
     return clockUsec + 1000000 * clockSec;
-  #else
-    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
-    return (timeStruct.tv_sec * ONE_BILLION) + timeStruct.tv_nsec;
-  #endif
 }
+
+#ifdef RTI_PERFTEST_NANO_CLOCK
+unsigned long long PerftestClock::getTimeNs()
+{
+    clock_gettime(CLOCK_MONOTONIC, &timeStruct);
+    return (static_cast<unsigned long long>(timeStruct.tv_sec) * 1000000000ULL)
+            + static_cast<unsigned long long>(timeStruct.tv_nsec);
+}
+#endif //RTI_PERFTEST_NANO_CLOCK
 
 void PerftestClock::milliSleep(unsigned int millisec)
 {
@@ -1233,7 +1233,7 @@ bool PerftestConfigureSecurity(
         // Permissions file
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.access_control.permissions_file",
+                "dds.sec.access.permissions",
                 parameterManager->get<std::string>("securePermissionsFile"))) {
             return false;
         }
@@ -1297,7 +1297,7 @@ bool PerftestConfigureSecurity(
 
         if (!addPropertyToParticipantQos(
                 qos,
-                "com.rti.serv.secure.dds.sec.crypto.rtps_psk_secret_passphrase",
+                "dds.sec.crypto.rtps_psk_secret_passphrase",
                 parameterManager->get<std::string>("securePSK").c_str())) {
             return false;
         }
@@ -1305,7 +1305,7 @@ bool PerftestConfigureSecurity(
         if (parameterManager->get<std::string>("securePSKAlgorithm").find("GMAC") != std::string::npos) {
             if (!addPropertyToParticipantQos(
                     qos,
-                    "com.rti.serv.secure.dds.sec.access.rtps_psk_protection_kind",
+                    "dds.sec.access.rtps_psk_protection_kind",
                     "SIGN")) {
                 return false;
             }

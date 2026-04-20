@@ -33,15 +33,6 @@
 #endif
 
 /*
- * Define the units for time when using Usec or Nsec
- */
-#ifndef RTI_PERFTEST_NANO_CLOCK
-  #define PERFT_TIME_UNIT "μs"
-#else
-  #define PERFT_TIME_UNIT "ns"
-#endif
-
-/*
  * Connext DDS Pro and Micro have their own implementation for:
  *
  * - Semaphore
@@ -243,7 +234,11 @@ class PerftestTimer
     PerftestTimer() {}  // We need empty constructor and destructor for VxWorks
     ~PerftestTimer() {}
     static PerftestTimer &getInstance();
-    PerftestThread *setTimeout(ScheduleInfo &info);
+    PerftestThread *setParameters(
+          ScheduleInfo info,
+          int threadPriority = Perftest_THREAD_PRIORITY_DEFAULT,
+          int threadOptions = Perftest_THREAD_OPTION_DEFAULT,
+          int cpuAffinity = -1);
 };
 
 /********************************************************************/
